@@ -1,0 +1,42 @@
+
+/*
+classes: 
+sliders = all input ranges(sliders)
+sliderStatus = spans showing the value of the sliders
+prosA =  slider inputs under PROS column for decision A 
+prosB =  slider inputs under CONS column for decision A 
+consA =  slider inputs under PROS column for decision B
+consB =  slider inputs under CONS column for decision B
+
+
+ids:
+A = Decision A cell in table
+B = Decision B cell in table
+
+
+
+*/
+
+
+table{
+    border:solid 2px black;
+}
+     
+
+tr,th,td{
+    border:solid 1px black;
+}
+
+/*changes all sliders to fill out cell and put some space above the slider*/
+input[type="range"]{
+    margin-top: 20px;
+    width: 98%;
+}
+
+/*puts a little space in between the text input on left and rigt side in the cell and centers*/
+input[type="text"]{
+    width: 94%;
+    margin-right: 5px;
+    margin-left: 5px;
+}
+        
