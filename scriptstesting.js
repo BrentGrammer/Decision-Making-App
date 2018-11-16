@@ -112,9 +112,9 @@ console.log(resultA,resultB);
 
             var difference = Math.abs(numA - numB);
             //Math.abs keeps the numbers absolute so that the negative number isn't converted to a positive number by the subtraction operation;
-            var numAPos = Math.abs(numA);
+            var numBPos = Math.abs(numB);
 
-            var differenceSum = (difference / numAPos) * 100;
+            var differenceSum = (difference / numBPos) * 100;
             var percentSum = Math.round(differenceSum);
 
             document.getElementById('greaterChoice').innerHTML = decisionA;
@@ -148,9 +148,9 @@ console.log(resultA,resultB);
           //Math.abs keeps the numbers absolute so that the negative number isn't converted to a positive number by the subtraction operation;
                 var difference = Math.abs(numB - numA);
           //convert the value of the lesser to positive int for basing percentage difference
-                var numBPos = Math.abs(numB);
+                var numAPos = Math.abs(numA);
 
-                var differenceSum = (difference / numBPos) * 100;
+                var differenceSum = (difference / numAPos) * 100;
                 var percentSum = Math.round(differenceSum);
 
                 document.getElementById('greaterChoice').innerHTML = decisionB;
