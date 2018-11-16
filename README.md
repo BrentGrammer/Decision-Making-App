@@ -1,6 +1,6 @@
 # DECISION MAKING APP
 
-Working Link to the App deployed on AWS: (https://decision-calculator.live/)
+## Working Link to the App deployed on AWS: (https://decision-calculator.live/)
 
 The goal of this app is to aid in the decision making process by assigning a user defined numeric value to each of the pros and cons entered, making a calculation based on that data and returning a result to the user (the percentage one decision is better than the other).  
 
