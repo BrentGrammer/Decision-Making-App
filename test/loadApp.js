@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { calculate, initApp, resetSliders, sliderChange, start } from "../scripts.js";
 
 function thisDir() {
   if (import.meta.dirname) {
@@ -15,7 +16,6 @@ function thisDir() {
 const root = path.resolve(thisDir(), "..");
 
 const html = readFileSync(path.join(root, "index.html"), "utf8");
-const appScript = readFileSync(path.join(root, "scripts.js"), "utf8");
 
 const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
 if (!bodyMatch) {
@@ -27,21 +27,15 @@ const bodyWithoutScripts = bodyMatch[1].replace(
   "",
 );
 
-const attachGlobals = `
-${appScript}
-globalThis.start = start;
-globalThis.sliderChange = sliderChange;
-globalThis.resetSliders = resetSliders;
-globalThis.considerationText = considerationText;
-globalThis.sumFilledWeights = sumFilledWeights;
-globalThis.calculate = calculate;
-`;
-
 export function loadApp() {
   delete globalThis.decisionA;
   delete globalThis.decisionB;
   document.body.innerHTML = bodyWithoutScripts;
-  new Function(attachGlobals)();
+  initApp();
+  globalThis.start = start;
+  globalThis.sliderChange = sliderChange;
+  globalThis.resetSliders = resetSliders;
+  globalThis.calculate = calculate;
 }
 
 export function fillConsideration(sliderClass, rowIndex, text, weight) {

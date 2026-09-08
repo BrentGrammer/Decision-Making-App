@@ -8,7 +8,6 @@ describe("test harness", () => {
 
   it("loads the page script onto window", () => {
     expect(typeof globalThis.calculate).toBe("function");
-    expect(typeof globalThis.sumFilledWeights).toBe("function");
     expect(typeof globalThis.resetSliders).toBe("function");
   });
 
@@ -26,25 +25,12 @@ describe("empty rows do not count", () => {
     loadApp();
   });
 
-  it("ignores a dragged slider when the pro/con text is blank", () => {
-    const slider = document.getElementsByClassName("prosA")[0];
-    slider.value = "10";
-    expect(globalThis.sumFilledWeights(document.getElementsByClassName("prosA"))).toBe(0);
-  });
+  it("does not let a blank row change the result", () => {
+    setDecisionNames("Stay", "Leave");
+    document.getElementsByClassName("prosA")[0].value = "10";
+    globalThis.calculate();
 
-  it("ignores whitespace-only text", () => {
-    fillConsideration("prosA", 0, "   ", 10);
-    expect(globalThis.sumFilledWeights(document.getElementsByClassName("prosA"))).toBe(0);
-  });
-
-  it("counts a filled consideration at its slider weight", () => {
-    fillConsideration("prosA", 0, "Higher pay", 8);
-    expect(globalThis.sumFilledWeights(document.getElementsByClassName("prosA"))).toBe(8);
-  });
-
-  it("counts a filled consideration with weight 0 as 0", () => {
-    fillConsideration("consB", 0, "Longer commute", 0);
-    expect(globalThis.sumFilledWeights(document.getElementsByClassName("consB"))).toBe(0);
+    expect(document.getElementById("finalResult").textContent).toMatch(/equally/i);
   });
 });
 

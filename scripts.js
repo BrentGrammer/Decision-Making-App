@@ -1,3 +1,5 @@
+import { compareDecisions } from "./scoring.js";
+
 function start() {
     const decisionA = prompt("Enter Decision A:", "") ?? "";
     const decisionB = prompt("Enter Decision B:", "") ?? "";
@@ -31,49 +33,39 @@ function considerationText(slider) {
     return input ? input.value.trim() : "";
 }
 
-function sumFilledWeights(sliders) {
-    let total = 0;
+function considerationsFrom(sliders) {
+    const considerations = [];
     for (const slider of sliders) {
-        if (!considerationText(slider)) {
-            continue;
-        }
-        total += parseInt(slider.value, 10);
+        considerations.push({
+            text: considerationText(slider),
+            weight: slider.value,
+        });
     }
-    return total;
+    return considerations;
 }
 
 function calculate() {
-    const prosASum = sumFilledWeights(document.getElementsByClassName('prosA'));
-    const consASum = sumFilledWeights(document.getElementsByClassName('consA'));
-    const prosBSum = sumFilledWeights(document.getElementsByClassName('prosB'));
-    const consBSum = sumFilledWeights(document.getElementsByClassName('consB'));
-
-    const resultA = prosASum - consASum;
-    const resultB = prosBSum - consBSum;
-    const difference = resultA - resultB;
-    const resultEl = document.getElementById("finalResult");
-    const decisionA = document.getElementById("A").textContent.trim();
-    const decisionB = document.getElementById("B").textContent.trim();
-
-    if (!decisionA || !decisionB) {
-        resultEl.textContent = "RESULT: Enter both decision names first.";
-        return;
-    }
-
-    if (difference === 0) {
-        resultEl.textContent = "RESULT: Both decisions are equally good(or bad...).";
-        return;
-    }
-
-    const greaterChoice = difference > 0 ? decisionA : decisionB;
-    const lesserChoice = difference > 0 ? decisionB : decisionA;
-
-    resultEl.textContent =
-        `RESULT: ${greaterChoice} is better than ${lesserChoice} by ${Math.abs(difference)} points.`;
-}
-
-for (const slider of document.getElementsByClassName("sliders")) {
-    slider.addEventListener("input", function () {
-        sliderChange(this);
+    document.getElementById("finalResult").textContent = compareDecisions({
+        decisionA: document.getElementById("A").textContent,
+        decisionB: document.getElementById("B").textContent,
+        prosA: considerationsFrom(document.getElementsByClassName("prosA")),
+        consA: considerationsFrom(document.getElementsByClassName("consA")),
+        prosB: considerationsFrom(document.getElementsByClassName("prosB")),
+        consB: considerationsFrom(document.getElementsByClassName("consB")),
     });
 }
+
+function initApp() {
+    window.start = start;
+    window.sliderChange = sliderChange;
+    window.resetSliders = resetSliders;
+    window.calculate = calculate;
+
+    for (const slider of document.getElementsByClassName("sliders")) {
+        slider.addEventListener("input", function () {
+            sliderChange(this);
+        });
+    }
+}
+
+export { start, sliderChange, resetSliders, calculate, initApp };
