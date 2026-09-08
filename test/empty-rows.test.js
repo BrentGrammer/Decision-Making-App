@@ -71,6 +71,20 @@ describe("reset", () => {
       expect(labels[i].textContent).toBe("0");
     }
   });
+
+  it("clears a previous result", () => {
+    setDecisionNames("Stay", "Leave");
+    fillConsideration("prosA", 0, "Pay", 8);
+    globalThis.calculate();
+    expect(document.getElementById("finalResult").textContent).toMatch(
+      /Stay is better than Leave/,
+    );
+
+    document.querySelector("form").reset();
+    globalThis.resetSliders();
+
+    expect(document.getElementById("finalResult").textContent).toBe("");
+  });
 });
 
 describe("ties", () => {

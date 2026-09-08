@@ -17,6 +17,7 @@ function resetSliders() {
     for (const label of document.getElementsByClassName("sliderStatus")) {
         label.textContent = "0";
     }
+    document.getElementById("finalResult").textContent = "";
 }
 
 function considerationText(slider) {
