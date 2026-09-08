@@ -10,6 +10,7 @@ import {
     addConsiderationRow,
     CONSIDERATION_GROUPS,
     getConsiderations,
+    removeConsiderationRow,
     restoreDefaultRows,
     sliderChange,
     validateConsiderationRow,
@@ -105,7 +106,7 @@ function onFormClick(event) {
     }
     const remove = event.target.closest(".remove-row");
     if (remove) {
-        remove.closest(".consideration-row").remove();
+        removeConsiderationRow(remove);
     }
 }
 

@@ -147,10 +147,19 @@ test("warns when a slider is moved with no text", async ({ page }) => {
   await expect(page.locator("#finalResult")).toHaveText(TIE_RESULT);
 });
 
+test("does not show remove when a list has one pro", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(
+    page.getByRole("button", { name: REMOVE_PRO_LABEL }),
+  ).toHaveCount(0);
+});
+
 test("shows a Remove tooltip when hovering over the remove button", async ({
   page,
 }) => {
   await page.goto("/");
+  await page.getByRole("button", { name: "Add a pro for decision A" }).click();
   const removeButton = page
     .getByRole("button", { name: REMOVE_PRO_LABEL })
     .first();

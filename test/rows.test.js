@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { leadResult, TIE_RESULT } from "../js/constants/strings.js";
+import { leadResult } from "../js/constants/strings.js";
 import {
   addConsideration,
   fillConsideration,
@@ -55,14 +55,54 @@ describe("add and remove rows", () => {
     );
   });
 
-  it("can remove the last row of a list", () => {
+  it("keeps the last row of a list", () => {
     setDecisionNames("Stay", "Leave");
     fillConsideration("prosA", 0, "Pay", 8);
     removeConsideration("prosA", 0);
     globalThis.calculate();
 
-    expect(document.getElementsByClassName("prosA").length).toBe(0);
-    expect(document.getElementById("finalResult").textContent).toBe(TIE_RESULT);
+    expect(document.getElementsByClassName("prosA").length).toBe(1);
+    expect(document.getElementById("finalResult").textContent).toBe(
+      leadResult("Stay", "Leave", 8),
+    );
+  });
+
+  it("does not offer remove on a list's only row", () => {
+    const remove = document
+      .getElementsByClassName("prosA")[0]
+      .closest(".consideration-row")
+      .querySelector(".remove-row");
+
+    expect(remove.hidden).toBe(true);
+  });
+
+  it("offers remove after a second row is added", () => {
+    addConsideration("prosA");
+
+    const first = document
+      .getElementsByClassName("prosA")[0]
+      .closest(".consideration-row")
+      .querySelector(".remove-row");
+    const second = document
+      .getElementsByClassName("prosA")[1]
+      .closest(".consideration-row")
+      .querySelector(".remove-row");
+
+    expect(first.hidden).toBe(false);
+    expect(second.hidden).toBe(false);
+  });
+
+  it("hides remove again after returning to one row", () => {
+    addConsideration("prosA");
+    removeConsideration("prosA", 1);
+
+    const remaining = document
+      .getElementsByClassName("prosA")[0]
+      .closest(".consideration-row")
+      .querySelector(".remove-row");
+
+    expect(document.getElementsByClassName("prosA").length).toBe(1);
+    expect(remaining.hidden).toBe(true);
   });
 
   it("restores the default empty rows on reset", () => {

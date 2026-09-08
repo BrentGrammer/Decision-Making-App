@@ -232,6 +232,10 @@ input[type="text"][aria-invalid="true"] {
     flex-shrink: 0;
 }
 
+.remove-row[hidden] {
+    display: none;
+}
+
 .remove-row svg {
     display: block;
     width: 1.5rem;

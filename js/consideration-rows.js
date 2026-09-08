@@ -127,9 +127,35 @@ export function addConsiderationRow(group, { focus = true } = {}) {
         .querySelector(`[data-group="${groupDef.id}"] .consideration-rows`)
         .appendChild(row);
 
+    syncRemoveButtons(groupDef.id);
+
     if (focus) {
         textInput.focus();
     }
+}
+
+function listRows(groupId) {
+    return document.querySelectorAll(
+        `[data-group="${groupId}"] .consideration-row`,
+    );
+}
+
+function syncRemoveButtons(groupId) {
+    const rows = listRows(groupId);
+    const hide = rows.length <= 1;
+    for (const row of rows) {
+        row.querySelector(".remove-row").hidden = hide;
+    }
+}
+
+export function removeConsiderationRow(removeButton) {
+    const list = removeButton.closest(".list");
+    const groupId = list.dataset.group;
+    if (listRows(groupId).length <= 1) {
+        return;
+    }
+    removeButton.closest(".consideration-row").remove();
+    syncRemoveButtons(groupId);
 }
 
 export function restoreDefaultRows() {
