@@ -73,8 +73,8 @@ These are definite defects. They should be fixed before product/modeling redesig
 
 ### Result display and state bugs
 
-7. **Ties leave the previous result on screen.**  
-   Equal nets only `alert()`. The result paragraph (`#finalResult`) is not cleared or updated.
+7. **~~Ties leave the previous result on screen.~~ Done.**  
+   Equal nets write a tie sentence onto `#finalResult` (same wording as the old alert). A later non-tie still rewrites the whole paragraph, so child spans are not required after the first `calculate()`.
 
 8. **Calculate before START uses undefined names.**  
    `decisionA` / `decisionB` are implicit globals set only in `start()`. Calculating first yields “undefined is N% better than undefined.”

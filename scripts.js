@@ -46,26 +46,24 @@ function sumFilledWeights(sliders) {
 }
 
 function calculate() {
-    var prosASum = sumFilledWeights(document.getElementsByClassName('prosA'));
-    var consASum = sumFilledWeights(document.getElementsByClassName('consA'));
-    var prosBSum = sumFilledWeights(document.getElementsByClassName('prosB'));
-    var consBSum = sumFilledWeights(document.getElementsByClassName('consB'));
+    const prosASum = sumFilledWeights(document.getElementsByClassName('prosA'));
+    const consASum = sumFilledWeights(document.getElementsByClassName('consA'));
+    const prosBSum = sumFilledWeights(document.getElementsByClassName('prosB'));
+    const consBSum = sumFilledWeights(document.getElementsByClassName('consB'));
 
-    var resultA = prosASum - consASum;
-    var resultB = prosBSum - consBSum;
-    var difference = resultA - resultB;
-
-    console.log(resultA, resultB, difference);
+    const resultA = prosASum - consASum;
+    const resultB = prosBSum - consBSum;
+    const difference = resultA - resultB;
+    const resultEl = document.getElementById('finalResult');
 
     if (difference === 0) {
-        alert("RESULT: Both decisions are equally good(or bad...).");
+        resultEl.textContent = "RESULT: Both decisions are equally good(or bad...).";
         return;
     }
 
-    var greaterChoice = difference > 0 ? decisionA : decisionB;
-    var lesserChoice = difference > 0 ? decisionB : decisionA;
+    const greaterChoice = difference > 0 ? decisionA : decisionB;
+    const lesserChoice = difference > 0 ? decisionB : decisionA;
 
-    document.getElementById('greaterChoice').innerHTML = greaterChoice;
-    document.getElementById('lesserChoice').innerHTML = lesserChoice;
-    document.getElementById('difference').innerHTML = Math.abs(difference);
+    resultEl.textContent =
+        `RESULT: ${greaterChoice} is better than ${lesserChoice} by ${Math.abs(difference)} points.`;
 }

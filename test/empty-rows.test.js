@@ -72,3 +72,37 @@ describe("reset", () => {
     }
   });
 });
+
+describe("ties", () => {
+  beforeEach(() => {
+    loadApp();
+    globalThis.decisionA = "Stay";
+    globalThis.decisionB = "Leave";
+  });
+
+  it("replaces a previous lead with a tie message when scores are equal", () => {
+    fillConsideration("prosA", 0, "Pay", 8);
+    fillConsideration("prosB", 0, "Growth", 3);
+    globalThis.calculate();
+
+    fillConsideration("prosB", 0, "Growth", 8);
+    globalThis.calculate();
+
+    const result = document.getElementById("finalResult").textContent;
+    expect(result).toMatch(/equally/i);
+    expect(result).not.toMatch(/leads/i);
+  });
+
+  it("still shows a lead after a previous tie", () => {
+    fillConsideration("prosA", 0, "Pay", 5);
+    fillConsideration("prosB", 0, "Growth", 5);
+    globalThis.calculate();
+
+    fillConsideration("prosA", 0, "Pay", 9);
+    globalThis.calculate();
+
+    expect(document.getElementById("finalResult").textContent).toBe(
+      "RESULT: Stay is better than Leave by 4 points.",
+    );
+  });
+});
