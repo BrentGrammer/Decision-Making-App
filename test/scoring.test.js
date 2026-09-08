@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { compareDecisions, sumFilledWeights } from "../scoring.js";
+import {
+  compareDecisions,
+  DECISION_NAME_MAX_LENGTH,
+  DECISION_NAME_MIN_LENGTH,
+  isValidDecisionName,
+  KIND,
+  sumFilledWeights,
+} from "../js/scoring.js";
 
 describe("sumFilledWeights", () => {
   it("ignores a weight when the text is blank", () => {
@@ -19,6 +26,34 @@ describe("sumFilledWeights", () => {
   });
 });
 
+describe("isValidDecisionName", () => {
+  it("rejects a blank name", () => {
+    expect(isValidDecisionName("")).toBe(false);
+  });
+
+  it("rejects whitespace-only names", () => {
+    expect(isValidDecisionName("   ")).toBe(false);
+  });
+
+  it("accepts names at the minimum length", () => {
+    expect(isValidDecisionName("a".repeat(DECISION_NAME_MIN_LENGTH))).toBe(
+      true,
+    );
+  });
+
+  it("accepts names at the maximum length", () => {
+    expect(isValidDecisionName("a".repeat(DECISION_NAME_MAX_LENGTH))).toBe(
+      true,
+    );
+  });
+
+  it("rejects names longer than the maximum", () => {
+    expect(
+      isValidDecisionName("x".repeat(DECISION_NAME_MAX_LENGTH + 1)),
+    ).toBe(false);
+  });
+});
+
 describe("compareDecisions", () => {
   it("does not treat missing names as undefined", () => {
     const result = compareDecisions({
@@ -30,8 +65,7 @@ describe("compareDecisions", () => {
       consB: [],
     });
 
-    expect(result).not.toMatch(/undefined/i);
-    expect(result).toBe("RESULT: Enter both decision names first.");
+    expect(result).toEqual({ kind: KIND.missingNames });
   });
 
   it("reports a tie when the nets are equal", () => {
@@ -44,7 +78,7 @@ describe("compareDecisions", () => {
         prosB: [{ text: "Growth", weight: 8 }],
         consB: [],
       }),
-    ).toMatch(/equally/i);
+    ).toEqual({ kind: KIND.tie });
   });
 
   it("reports the lead in points", () => {
@@ -57,25 +91,17 @@ describe("compareDecisions", () => {
         prosB: [{ text: "Growth", weight: 5 }],
         consB: [],
       }),
-    ).toBe("RESULT: Stay is better than Leave by 4 points.");
+    ).toEqual({
+      kind: KIND.lead,
+      winner: "Stay",
+      loser: "Leave",
+      points: 4,
+    });
   });
 
-  it("accepts names of one character", () => {
-    expect(
-      compareDecisions({
-        decisionA: "A",
-        decisionB: "B",
-        prosA: [{ text: "Pay", weight: 8 }],
-        consA: [],
-        prosB: [],
-        consB: [],
-      }),
-    ).toBe("RESULT: A is better than B by 8 points.");
-  });
-
-  it("accepts names of 50 characters", () => {
-    const decisionA = "a".repeat(50);
-    const decisionB = "b".repeat(50);
+  it("accepts names at the minimum length", () => {
+    const decisionA = "a".repeat(DECISION_NAME_MIN_LENGTH);
+    const decisionB = "b".repeat(DECISION_NAME_MIN_LENGTH);
 
     expect(
       compareDecisions({
@@ -86,20 +112,46 @@ describe("compareDecisions", () => {
         prosB: [],
         consB: [],
       }),
-    ).toBe(`RESULT: ${decisionA} is better than ${decisionB} by 8 points.`);
+    ).toEqual({
+      kind: KIND.lead,
+      winner: decisionA,
+      loser: decisionB,
+      points: 8,
+    });
   });
 
-  it("does not score when a name is longer than 50 characters", () => {
+  it("accepts names at the maximum length", () => {
+    const decisionA = "a".repeat(DECISION_NAME_MAX_LENGTH);
+    const decisionB = "b".repeat(DECISION_NAME_MAX_LENGTH);
+
     expect(
       compareDecisions({
-        decisionA: "Stay",
-        decisionB: "x".repeat(51),
+        decisionA,
+        decisionB,
         prosA: [{ text: "Pay", weight: 8 }],
         consA: [],
         prosB: [],
         consB: [],
       }),
-    ).toBe("RESULT: Each decision name must be 1–50 characters.");
+    ).toEqual({
+      kind: KIND.lead,
+      winner: decisionA,
+      loser: decisionB,
+      points: 8,
+    });
+  });
+
+  it("does not score when a name is longer than the maximum", () => {
+    expect(
+      compareDecisions({
+        decisionA: "Stay",
+        decisionB: "x".repeat(DECISION_NAME_MAX_LENGTH + 1),
+        prosA: [{ text: "Pay", weight: 8 }],
+        consA: [],
+        prosB: [],
+        consB: [],
+      }),
+    ).toEqual({ kind: KIND.nameLength });
   });
 
   it("treats whitespace-only names as missing", () => {
@@ -112,6 +164,6 @@ describe("compareDecisions", () => {
         prosB: [],
         consB: [],
       }),
-    ).toBe("RESULT: Enter both decision names first.");
+    ).toEqual({ kind: KIND.missingNames });
   });
 });

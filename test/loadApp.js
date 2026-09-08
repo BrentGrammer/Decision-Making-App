@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { calculate, initApp, resetSliders, sliderChange } from "../scripts.js";
+import { calculate, initApp, resetSliders, sliderChange } from "../js/scripts.js";
 
 function thisDir() {
   if (import.meta.dirname) {
@@ -31,6 +31,9 @@ export function loadApp() {
   delete globalThis.decisionA;
   delete globalThis.decisionB;
   document.body.innerHTML = bodyWithoutScripts;
+  if (typeof HTMLElement.prototype.scrollIntoView !== "function") {
+    HTMLElement.prototype.scrollIntoView = function () {};
+  }
   initApp();
   globalThis.sliderChange = sliderChange;
   globalThis.resetSliders = resetSliders;

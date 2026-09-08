@@ -2,53 +2,59 @@
 
 ## Handoff (for the next session)
 
-**When:** 8 September 2026, after Category 1 leftovers, scoring extract, Vite serve, and a light Material-style UI.  
+**When:** 8 September 2026, after in-page names, scoring/UI-string split, `js/` layout, Vite serve, Playwright, and a light Material-style UI.
 **Start here.** Historical review notes are below; they still describe *why* the old percent formula was wrong. Several “current” sentences in those notes are stale. Trust this handoff and the code.
 
 ### Where the project is
 
-Category **1 (critical bugs / invalid math)** is done. Leftovers from that pass are also done (RESET result + names, live slider labels, README math copy).
+Category **1 (critical bugs / invalid math)** is done. In-page decision names (no START / `prompt()`) are done.
 
-The app is still a **static page**, now with two JS layers:
+The app is still a **static page**. `index.html` stays at the repo root (GitHub Pages + Vite serve). App modules live under `js/`. No `src/`, no app bundler. Vite is **dev server only** (`npm run serve`). Open via that server (or GitHub Pages), not `file://`.
 
-- `scoring.js` — DOM-free: `{ text, weight }[]` + names → result sentence
-- `scripts.js` — UI: read the table, call `compareDecisions`, write `#finalResult`, `initApp()`
+```text
+index.html
+main.css
+js/
+  scripts.js              DOM, initApp, field errors, scroll-into-view
+  scoring.js              DOM-free: weights, name rules, comparison outcome
+  constants/strings.js   UI sentences + formatComparison(outcome)
+test/                     Vitest + jsdom
+e2e/                      Playwright (Chromium)
+docs/                     future-feature notes
+```
 
-No `src/`, no app bundler. Vite is **dev server only** (`npm run serve`), not a rewrite. The page loads as ES modules; open via that server (or GitHub Pages), not `file://`.
+Scoring returns a **structured outcome** (`KIND.missingNames` | `nameLength` | `tie` | `lead`). `formatComparison` in `js/constants/strings.js` turns that into the result sentence. Length limits (`DECISION_NAME_MIN_LENGTH` / `MAX`) stay in `scoring.js`. Tests import UI strings from `constants/strings.js` — do not hardcode those sentences in tests.
 
-Scoring (unchanged):
+Scoring math (unchanged):
 
 ```text
 score = sum(filled pro weights) − sum(filled cons)
 difference = scoreA − scoreB
 ```
 
-A row counts only if the adjacent text is non-blank. Empty sliders default to `0`. Result copy:
+A row counts only if the adjacent text is non-blank. Empty sliders default to `0`. Extra distinct cons still add up (that is intended). Near-duplicate phrasing is a future warning, not a formula change — see `docs/ai-duplicate-detection.md`.
 
-- Missing names: `RESULT: Enter both decision names first.`
-- Tie: `RESULT: Both decisions are equally good(or bad...).`
-- Lead: `RESULT: Stay is better than Leave by 4 points.`
-
-Decision names live in `#A` / `#B` (`textContent`). `resetSliders()` clears names, slider labels (`"0"`), and `#finalResult`. Native `type="reset"` still zeros form inputs.
+Decision names are inputs `#A` / `#B` (1–50 characters after trim). Invalid names show `#A-error` / `#B-error` and `aria-invalid`. Calculate writes `#finalResult` and `scrollIntoView`s it (`aria-live="polite"`). Native `type="reset"` zeros form fields (including names); `resetSliders()` still sets slider labels to `"0"` and clears the result and name errors.
 
 ### How to run
 
 ```bash
-npm install   # first clone only
-npm test      # vitest run
-npm run test:watch
-npm run serve # Vite, usually http://localhost:5173/
+npm install                      # first clone only
+npx playwright install chromium   # first clone only, for e2e
+npm test                         # vitest
+npm run test:e2e                 # Playwright; reuses Vite if already running
+npm run serve                    # Vite, usually http://localhost:5173/
 ```
 
-Tests: `test/scoring.test.js` (plain objects) + `test/empty-rows.test.js` (page via jsdom) + `test/loadApp.js`. **20 tests**, all passing at handoff.
+Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (formatComparison) + `test/empty-rows.test.js` (page via jsdom) + `test/loadApp.js`. Playwright: `e2e/decision.spec.js`. All passing at handoff.
 
 ### How tests load the app
 
-`loadApp()` injects the HTML body (scripts stripped), then `import`s `scripts.js` and calls `initApp()`. It assigns `start` / `calculate` / `resetSliders` / `sliderChange` onto `globalThis`. Scoring tests `import` `scoring.js` directly — no DOM.
+`loadApp()` injects the HTML body (scripts stripped), then `import`s `js/scripts.js` and calls `initApp()`. It assigns `calculate` / `resetSliders` / `sliderChange` onto `globalThis`. jsdom may lack `scrollIntoView`; `loadApp()` stubs it. Scoring tests `import` `js/scoring.js` directly.
 
-jsdom **inline `onclick`** still cannot see page functions unless they are on `window` (`initApp` does that). Drive behavior by calling `globalThis.resetSliders()` / `calculate()` (and `form.reset()` for native form reset). Do not `.click()` RESET unless the harness is changed.
+jsdom **inline `onclick`** still cannot see page functions unless they are on `window` (`initApp` does that). Drive jsdom by calling `globalThis.resetSliders()` / `calculate()` (and `form.reset()` for native form reset). Do not `.click()` RESET in jsdom. Playwright **should** click Calculate / Reset.
 
-RESET: `type="reset"` zeros inputs; `resetSliders()` sets labels to `"0"` (not `.value`) because `onclick` can run **before** the form reset. Names and `#finalResult` are not form fields, so they are cleared in `resetSliders()`.
+RESET: `type="reset"` zeros inputs; `resetSliders()` sets labels to `"0"` (not `.value`) because `onclick` can run **before** the form reset.
 
 Slider labels: `input` listeners in `initApp()`, not `onchange`. Tests dispatch `input` (or call `sliderChange`). Readout copy is `Value:` (the number is `.sliderStatus`).
 
@@ -56,24 +62,26 @@ Slider labels: `input` listeners in `initApp()`, not `onchange`. Tests dispatch 
 
 - Surgical changes; one concern per pass. TDD: failing test → confirm red → production code.
 - Test **behavior**, not implementation details (markup, regex-on-source, how a slider is wired).
+- Assert UI sentences via imports from `js/constants/strings.js`, not duplicated English in the test file.
 - No narrating comments in source. Domain words: `decisionA` / `decisionB`.
-- Do **not** start a framework rewrite. `src/` only if the app grows further. Vite stays serve-only unless a real build is needed for deploy.
-- Combined importance + impact on **one slider** is intentional.
-- CSS: tokens in `:root` (`--color-pro`, `--color-con`, …). Slider/hint color via `--slider` / `--hint` on the element — no `!important`, no duplicated vendor overrides to win specificity. Light theme only. Do not ship a custom cursor image; `cursor: pointer` is the system pointer.
+- Do **not** start a framework rewrite. App JS stays under `js/` as ES modules. `src/` / an app bundler only if deploy needs a real build. Vite stays serve-only until then.
+- Combined importance + impact on **one slider** is intentional. Keep the **sum**; do not average to cancel list length.
+- CSS: tokens in `:root` (`--color-pro`, `--color-con`, `--color-error`, …). Slider/hint color via `--slider` / `--hint` on the element — no `!important`, no duplicated vendor overrides to win specificity. Light theme only. Do not ship a custom cursor image; `cursor: pointer` is the system pointer.
 - Pico / Materialize-the-library were rejected (generic kit look). Custom CSS with a Material-ish bar/elevation is the look. Cons sliders and Cons/Concern info icons share `--color-con`.
 - WebKit vs Firefox range thumbs must stay in **separate** rules (combined prefix selectors get dropped).
 
 ### What is done this stretch
 
-RESET clears result and names. Live slider labels. README matches point-difference math. Scoring extracted. `initApp` + ES modules. Vite `npm run serve`. Light panel UI: app bar, table sheet, inset slider wells, `Value:` readouts, info-icon header tips (original long copy on hover/focus), teal pros / terracotta cons.
+In-page names; START / `prompt()` removed. Name validation (min 1 / max 50, field errors, blur + calculate). Calculate scrolls `#finalResult` into view. Scoring outcomes split from UI strings. App modules under `js/`. Vitest + Playwright. Light panel UI (unchanged look): app bar, table sheet, inset slider wells, `Value:` readouts, info-icon header tips, teal pros / terracotta cons.
 
 ### What to do next (Category 2)
 
 Product/modeling, not bugfixes:
 
-1. Shared criteria matrix vs independent pro/con lists.
-2. In-page names instead of `prompt()`.
-3. Add/remove rows; show contribution of each row; sensitivity (“would one point flip the winner?”).
+1. Add/remove pro and con rows (independent lists; do not pair a pro with a con on the same row). Scoring already accepts any length.
+2. Show contribution of each row; sensitivity (“would one point flip the winner?”).
+3. Shared criteria matrix vs independent lists — later, if you want the same questions for both options.
+4. Duplicate-phrasing warning — `docs/ai-duplicate-detection.md` (AI, not this pass).
 
 The hosted GitHub Pages copy may still be the old percent app until redeployed.
 
@@ -81,15 +89,19 @@ The hosted GitHub Pages copy may still be the old percent app until redeployed.
 
 | File | Role |
 |---|---|
-| `index.html` | Page, table, Start / Calculate / Reset |
-| `scoring.js` | Scoring + result sentence (no DOM) |
-| `scripts.js` | DOM / `initApp` |
+| `index.html` | Page, name fields, table, Calculate / Reset |
+| `js/scoring.js` | Weights, name rules, `{ kind, … }` outcome |
+| `js/constants/strings.js` | UI strings + `formatComparison` |
+| `js/scripts.js` | DOM / `initApp` |
 | `main.css` | Light Material-style layout + tokens |
 | `test/loadApp.js` | jsdom loader + `fillConsideration` / `setDecisionNames` |
-| `test/scoring.test.js` | Scoring behavior |
+| `test/scoring.test.js` | Scoring outcomes |
+| `test/strings.test.js` | Result sentences |
 | `test/empty-rows.test.js` | Page behavior |
-| `package.json` | `vitest`, `jsdom`, `vite` (serve) |
+| `e2e/decision.spec.js` | Browser: names, errors, reset, scroll |
+| `package.json` | `vitest`, `jsdom`, `vite` (serve), `@playwright/test` |
 | `REVIEW.md` | This review + handoff |
+
 
 ---
 

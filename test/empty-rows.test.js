@@ -1,4 +1,12 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  DECISION_NAME_FIELD_ERROR,
+  leadResult,
+  MISSING_NAMES_RESULT,
+  NAME_LENGTH_RESULT,
+  TIE_RESULT,
+} from "../js/constants/strings.js";
+import { DECISION_NAME_MAX_LENGTH } from "../js/scoring.js";
 import { fillConsideration, loadApp, setDecisionNames } from "./loadApp.js";
 
 describe("test harness", () => {
@@ -30,7 +38,7 @@ describe("empty rows do not count", () => {
     document.getElementsByClassName("prosA")[0].value = "10";
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toMatch(/equally/i);
+    expect(document.getElementById("finalResult").textContent).toBe(TIE_RESULT);
   });
 });
 
@@ -62,8 +70,8 @@ describe("reset", () => {
     setDecisionNames("Stay", "Leave");
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
-    expect(document.getElementById("finalResult").textContent).toMatch(
-      /Stay is better than Leave/,
+    expect(document.getElementById("finalResult").textContent).toBe(
+      leadResult("Stay", "Leave", 8),
     );
 
     document.querySelector("form").reset();
@@ -115,8 +123,7 @@ describe("ties", () => {
     globalThis.calculate();
 
     const result = document.getElementById("finalResult").textContent;
-    expect(result).toMatch(/equally/i);
-    expect(result).not.toMatch(/leads/i);
+    expect(result).toBe(TIE_RESULT);
   });
 
   it("still shows a lead after a previous tie", () => {
@@ -128,7 +135,7 @@ describe("ties", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      "RESULT: Stay is better than Leave by 4 points.",
+      leadResult("Stay", "Leave", 4),
     );
   });
 });
@@ -144,7 +151,7 @@ describe("decision names", () => {
 
     const result = document.getElementById("finalResult").textContent;
     expect(result).not.toMatch(/undefined/i);
-    expect(result).toBe("RESULT: Enter both decision names first.");
+    expect(result).toBe(MISSING_NAMES_RESULT);
   });
 
   it("uses names typed into the decision fields", () => {
@@ -154,8 +161,19 @@ describe("decision names", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      "RESULT: Stay is better than Leave by 8 points.",
+      leadResult("Stay", "Leave", 8),
     );
+  });
+
+  it("scrolls the result into view after calculate", () => {
+    setDecisionNames("Stay", "Leave");
+    fillConsideration("prosA", 0, "Pay", 8);
+    const result = document.getElementById("finalResult");
+    result.scrollIntoView = vi.fn();
+
+    globalThis.calculate();
+
+    expect(result.scrollIntoView).toHaveBeenCalled();
   });
 
   it("uses the names from the table, not leftover globals", () => {
@@ -166,7 +184,7 @@ describe("decision names", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      "RESULT: Stay is better than Leave by 8 points.",
+      leadResult("Stay", "Leave", 8),
     );
   });
 
@@ -177,7 +195,7 @@ describe("decision names", () => {
 
     expect(document.querySelector("#finalResult img")).toBeNull();
     expect(document.getElementById("finalResult").textContent).toBe(
-      "RESULT: Stay is better than <img src=x> by 8 points.",
+      leadResult("Stay", "<img src=x>", 8),
     );
   });
 
@@ -187,7 +205,7 @@ describe("decision names", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      "RESULT: A is better than B by 8 points.",
+      leadResult("A", "B", 8),
     );
     expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(
       "true",
@@ -197,15 +215,15 @@ describe("decision names", () => {
     );
   });
 
-  it("accepts names of 50 characters", () => {
-    const decisionA = "a".repeat(50);
-    const decisionB = "b".repeat(50);
+  it("accepts names at the maximum length", () => {
+    const decisionA = "a".repeat(DECISION_NAME_MAX_LENGTH);
+    const decisionB = "b".repeat(DECISION_NAME_MAX_LENGTH);
     setDecisionNames(decisionA, decisionB);
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      `RESULT: ${decisionA} is better than ${decisionB} by 8 points.`,
+      leadResult(decisionA, decisionB, 8),
     );
     expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(
       "true",
@@ -224,10 +242,10 @@ describe("decision names", () => {
     );
     expect(document.getElementById("A-error").hidden).toBe(false);
     expect(document.getElementById("A-error").textContent).toBe(
-      "Enter a name (1–50 characters).",
+      DECISION_NAME_FIELD_ERROR,
     );
     expect(document.getElementById("B-error").textContent).toBe(
-      "Enter a name (1–50 characters).",
+      DECISION_NAME_FIELD_ERROR,
     );
   });
 
@@ -243,7 +261,7 @@ describe("decision names", () => {
       "true",
     );
     expect(document.getElementById("B-error").textContent).toBe(
-      "Enter a name (1–50 characters).",
+      DECISION_NAME_FIELD_ERROR,
     );
   });
 
@@ -256,12 +274,12 @@ describe("decision names", () => {
       "true",
     );
     expect(document.getElementById("finalResult").textContent).toBe(
-      "RESULT: Enter both decision names first.",
+      MISSING_NAMES_RESULT,
     );
   });
 
-  it("shows a field error when a name is longer than 50 characters", () => {
-    setDecisionNames("Stay", "x".repeat(51));
+  it("shows a field error when a name is longer than the maximum", () => {
+    setDecisionNames("Stay", "x".repeat(DECISION_NAME_MAX_LENGTH + 1));
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
@@ -270,10 +288,10 @@ describe("decision names", () => {
     );
     expect(document.getElementById("B-error").hidden).toBe(false);
     expect(document.getElementById("B-error").textContent).toBe(
-      "Enter a name (1–50 characters).",
+      DECISION_NAME_FIELD_ERROR,
     );
     expect(document.getElementById("finalResult").textContent).toBe(
-      "RESULT: Each decision name must be 1–50 characters.",
+      NAME_LENGTH_RESULT,
     );
   });
 
@@ -283,7 +301,7 @@ describe("decision names", () => {
 
     expect(inputA.getAttribute("aria-invalid")).toBe("true");
     expect(document.getElementById("A-error").textContent).toBe(
-      "Enter a name (1–50 characters).",
+      DECISION_NAME_FIELD_ERROR,
     );
   });
 

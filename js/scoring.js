@@ -1,6 +1,25 @@
 export const DECISION_NAME_MIN_LENGTH = 1;
 export const DECISION_NAME_MAX_LENGTH = 50;
 
+export const KIND = Object.freeze({
+    missingNames: "missingNames",
+    nameLength: "nameLength",
+    tie: "tie",
+    lead: "lead",
+});
+
+export function trimmedDecisionName(value) {
+    return String(value ?? "").trim();
+}
+
+export function isValidDecisionName(value) {
+    const name = trimmedDecisionName(value);
+    return (
+        name.length >= DECISION_NAME_MIN_LENGTH &&
+        name.length <= DECISION_NAME_MAX_LENGTH
+    );
+}
+
 export function sumFilledWeights(considerations) {
     let total = 0;
     for (const consideration of considerations) {
@@ -24,27 +43,30 @@ export function compareDecisions({
     prosB,
     consB,
 }) {
-    const nameA = String(decisionA).trim();
-    const nameB = String(decisionB).trim();
+    const nameA = trimmedDecisionName(decisionA);
+    const nameB = trimmedDecisionName(decisionB);
     if (
         nameA.length < DECISION_NAME_MIN_LENGTH ||
         nameB.length < DECISION_NAME_MIN_LENGTH
     ) {
-        return "RESULT: Enter both decision names first.";
+        return { kind: KIND.missingNames };
     }
     if (
         nameA.length > DECISION_NAME_MAX_LENGTH ||
         nameB.length > DECISION_NAME_MAX_LENGTH
     ) {
-        return "RESULT: Each decision name must be 1–50 characters.";
+        return { kind: KIND.nameLength };
     }
 
     const difference = netScore(prosA, consA) - netScore(prosB, consB);
     if (difference === 0) {
-        return "RESULT: Both decisions are equally good(or bad...).";
+        return { kind: KIND.tie };
     }
 
-    const greaterChoice = difference > 0 ? nameA : nameB;
-    const lesserChoice = difference > 0 ? nameB : nameA;
-    return `RESULT: ${greaterChoice} is better than ${lesserChoice} by ${Math.abs(difference)} points.`;
+    return {
+        kind: KIND.lead,
+        winner: difference > 0 ? nameA : nameB,
+        loser: difference > 0 ? nameB : nameA,
+        points: Math.abs(difference),
+    };
 }

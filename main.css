@@ -282,6 +282,7 @@ input[type="text"]:focus {
 
 .result {
     margin: 0;
+    scroll-margin-bottom: 1.5rem;
     font-size: 1.25rem;
     font-weight: 500;
     color: var(--color-pro);

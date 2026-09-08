@@ -1,18 +1,11 @@
 import {
     compareDecisions,
-    DECISION_NAME_MAX_LENGTH,
-    DECISION_NAME_MIN_LENGTH,
+    isValidDecisionName,
 } from "./scoring.js";
+import { DECISION_NAME_FIELD_ERROR, formatComparison } from "./constants/strings.js";
 
 function decisionNameMessage(value) {
-    const name = String(value).trim();
-    if (
-        name.length < DECISION_NAME_MIN_LENGTH ||
-        name.length > DECISION_NAME_MAX_LENGTH
-    ) {
-        return `Enter a name (${DECISION_NAME_MIN_LENGTH}–${DECISION_NAME_MAX_LENGTH} characters).`;
-    }
-    return "";
+    return isValidDecisionName(value) ? "" : DECISION_NAME_FIELD_ERROR;
 }
 
 function setNameValidity(input, message) {
@@ -86,14 +79,18 @@ function considerationsFrom(sliders) {
 
 function calculate() {
     validateDecisionNames();
-    document.getElementById("finalResult").textContent = compareDecisions({
-        decisionA: document.getElementById("A").value,
-        decisionB: document.getElementById("B").value,
-        prosA: considerationsFrom(document.getElementsByClassName("prosA")),
-        consA: considerationsFrom(document.getElementsByClassName("consA")),
-        prosB: considerationsFrom(document.getElementsByClassName("prosB")),
-        consB: considerationsFrom(document.getElementsByClassName("consB")),
-    });
+    const result = document.getElementById("finalResult");
+    result.textContent = formatComparison(
+        compareDecisions({
+            decisionA: document.getElementById("A").value,
+            decisionB: document.getElementById("B").value,
+            prosA: considerationsFrom(document.getElementsByClassName("prosA")),
+            consA: considerationsFrom(document.getElementsByClassName("consA")),
+            prosB: considerationsFrom(document.getElementsByClassName("prosB")),
+            consB: considerationsFrom(document.getElementsByClassName("consB")),
+        }),
+    );
+    result.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function initApp() {
