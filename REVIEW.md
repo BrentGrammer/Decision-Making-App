@@ -1,7 +1,8 @@
 # Decision Making App — Code Review
 
 Reviewed: September 7, 2026  
-Scope: `index.html`, `scripts.js`, `scriptstesting.js`, `main.css`, `README.md`
+Scope: `index.html`, `scripts.js`, `main.css`, `README.md`  
+Note: `scriptstesting.js` was a second copy of `calculate()` that disagreed on negative-case divisors. It was unused by the app and has been removed.
 
 ## Intent of the app
 
@@ -59,8 +60,8 @@ These are definite defects. They should be fixed before product/modeling redesig
 3. **Divide-by-1 when a net is 0 is a unit change, not a fix.**  
    When `resultB === 0`, the formula becomes `(resultA − 0) / 1 * 100`, i.e. `resultA × 100`. A net of 10 becomes “1000% better.” That is a different scale from every other branch, and it is the README’s Infinity% bug in disguise.
 
-4. **`scriptstesting.js` disagrees with `scripts.js` on negative cases.**  
-   The files are otherwise the same, but they swap which absolute net is used as the divisor. There are no actual tests. One of these files should become real tests or be removed so they cannot silently diverge.
+4. **~~`scriptstesting.js` disagreed with `scripts.js` on negative cases.~~ Done.**  
+   Removed. It was unused and not a test suite. Real tests belong in a later improvement.
 
 ### Input handling that corrupts the score
 
@@ -173,10 +174,10 @@ These are not “the current math is wrong.” They are other ways to look at th
 
 ## Recommended order of work
 
-1. Fix empty-row weighting and slider defaults (inputs must match user intent).
+1. ~~Delete or replace `scriptstesting.js`.~~ Removed (unused duplicate, not tests).
 2. Replace the percent formula with net scores + an honest margin (points or percentage points).
-3. Fix reset, ties, START/Calculate order, `textContent`, HTML, and globals.
-4. Delete or replace `scriptstesting.js` with actual tests.
+3. Fix empty-row weighting and slider defaults (inputs must match user intent).
+4. Fix reset, ties, START/Calculate order, `textContent`, HTML, and globals as separate, small follow-ups.
 5. Then consider shared criteria, sensitivity, dealbreakers, and richer UX.
 
 ---
