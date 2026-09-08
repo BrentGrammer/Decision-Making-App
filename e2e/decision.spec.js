@@ -147,3 +147,17 @@ test("warns when a slider is moved with no text", async ({ page }) => {
   await expect(page.locator("#finalResult")).toHaveText(TIE_RESULT);
 });
 
+test("shows a Remove tooltip when hovering over the remove button", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const removeButton = page
+    .getByRole("button", { name: REMOVE_PRO_LABEL })
+    .first();
+  await removeButton.hover();
+
+  const tooltip = removeButton.locator(".remove-tooltip");
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toHaveText("Remove");
+});
+

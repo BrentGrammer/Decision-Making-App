@@ -125,8 +125,8 @@ form {
 
 .sheet-grid {
     display: grid;
-    grid-template-columns: minmax(10rem, 16rem) minmax(16rem, 1fr) minmax(16rem, 1fr);
-    min-width: 52rem;
+    grid-template-columns: minmax(8rem, 11rem) minmax(14rem, 1fr) minmax(14rem, 1fr);
+    min-width: 0;
 }
 
 .sheet-grid > * {
@@ -178,7 +178,7 @@ input[type="text"][aria-invalid="true"] {
 
 .consideration-row {
     display: grid;
-    grid-template-columns: minmax(7rem, 1fr) minmax(8rem, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
     gap: 0.65rem;
     align-items: start;
     padding: 0.75rem;
@@ -215,24 +215,57 @@ input[type="text"][aria-invalid="true"] {
 }
 
 .remove-row {
-    font-family: inherit;
-    font-size: 0.75rem;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    margin-top: 0.2rem;
-    padding: 0.4rem 0.5rem;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    margin-top: 0.4rem;
+    padding: 0;
     border: none;
-    border-radius: var(--radius);
+    border-radius: 50%;
     background: transparent;
     color: var(--color-muted);
     cursor: pointer;
+    flex-shrink: 0;
+}
+
+.remove-row svg {
+    display: block;
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: currentColor;
+    pointer-events: none;
 }
 
 .remove-row:hover,
 .remove-row:focus {
     color: var(--color-error);
-    background: color-mix(in srgb, var(--color-error) 10%, transparent);
+    background: color-mix(in srgb, var(--color-error) 12%, transparent);
+}
+
+.remove-tooltip {
+    display: none;
+    position: absolute;
+    z-index: 2;
+    bottom: calc(100% + 0.35rem);
+    right: 0;
+    padding: 0.3rem 0.55rem;
+    background: var(--color-tooltip);
+    color: var(--color-on-primary);
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-raised);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.remove-row:hover .remove-tooltip,
+.remove-row:focus .remove-tooltip {
+    display: block;
 }
 
 .field-error {
@@ -387,6 +420,7 @@ input[type="text"]:focus {
 }
 
 .hint-text {
+    display: none;
     position: absolute;
     z-index: 2;
     left: 50%;
@@ -401,12 +435,15 @@ input[type="text"]:focus {
     line-height: 1.4;
     border-radius: var(--radius);
     box-shadow: var(--shadow-raised);
-    visibility: hidden;
-    opacity: 0;
 }
 
 .hint:hover .hint-text,
 .hint:focus .hint-text {
-    visibility: visible;
-    opacity: 1;
+    display: block;
+}
+
+.sheet-grid > .col-head:last-child .hint-text {
+    left: auto;
+    right: 0;
+    transform: none;
 }
