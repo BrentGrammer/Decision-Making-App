@@ -1,5 +1,97 @@
 # Decision Making App — Code Review
 
+## Handoff (for the next session)
+
+**When:** 7 September 2026, end of a surgical Category-1 pass.  
+**Start here.** Historical review notes are below; they still describe *why* the old percent formula was wrong. Several “current” sentences in those notes are stale (copy, tests). Trust this handoff and the code.
+
+### Where the project is
+
+Category **1 (critical bugs / invalid math)** is done. The app is still a **static page**: `index.html` + `scripts.js` + `main.css`. No bundler, no `src/`, no ES modules in the app.
+
+Scoring:
+
+```text
+score = sum(filled pro weights) − sum(filled con weights)
+difference = scoreA − scoreB
+```
+
+A row counts only if the adjacent text is non-blank. Empty sliders default to `0`. Result copy:
+
+- Missing names: `RESULT: Enter both decision names first.`
+- Tie: `RESULT: Both decisions are equally good(or bad...).`
+- Lead: `RESULT: Stay is better than Leave by 4 points.`
+
+Decision names live in `#A` / `#B` (`textContent`), not implicit globals. `calculate()` reads those cells.
+
+### How to run
+
+```bash
+npm install   # first clone only
+npm test      # vitest run
+npm run test:watch
+```
+
+Open `index.html` in a browser for the live app (classic `<script src="scripts.js">`).
+
+Tests: `test/empty-rows.test.js` (behavior) + `test/loadApp.js` (jsdom fixture). **13 tests**, all passing at handoff.
+
+### How tests load the app
+
+The page is **not** an ES module. Tests **do not** `import` `scripts.js`. `loadApp()` reads `index.html` / `scripts.js` as text, puts the body in jsdom, `new Function(...)()` the script, and assigns functions onto `globalThis`. Add a new top-level function in `scripts.js` → also list it in `attachGlobals` in `test/loadApp.js`.
+
+`loadApp()` deletes leftover `decisionA` / `decisionB` on `globalThis` so tests do not leak names.
+
+jsdom **inline `onclick`** cannot see those eval’d functions. Drive behavior by calling `globalThis.resetSliders()` / `calculate()` (and `form.reset()` for native form reset). Do not `.click()` the RESET button in tests unless the harness is changed.
+
+RESET: `type="reset"` zeros inputs; `resetSliders()` must set labels to `"0"` (not `.value`), because `onclick` can run **before** the form reset.
+
+### Working agreements
+
+- Surgical changes; one concern per pass. TDD: failing test → confirm red → production code.
+- Test **behavior**, not markup shape (no regex-on-`index.html` tests). A deleted `markup.test.js` was rejected for that reason.
+- No narrating comments in source; names should be enough. Domain words: `decisionA` / `decisionB`, not `nameA`.
+- Do **not** add `src/`, Vite-for-the-app, or a clean-architecture split unless the app grows. Vitest is **test-only**.
+- Combined importance + impact on **one slider** is intentional product design.
+- Modern JS (`const`/`let`, templates, `for...of`) is fine in code we touch. `scripts.js` has no `var` left.
+- Do not add comments that restate the code.
+
+### What is done (Category 1)
+
+Removed unused `scriptstesting.js`. Replaced percent-better with point difference. Empty rows ignored. Reset labels. Ties update `#finalResult` (no `alert`). Names required; `textContent` not `innerHTML`. HTML `head` / `</tr>` fixed. `sliderChange` updates the label **in the same cell**. `const`/`let` throughout `scripts.js`.
+
+### Small leftovers (not Category 1, easy)
+
+- RESET does not clear `#finalResult`.
+- Slider labels still use `onChange` (updates on mouse-up); `oninput` would be live.
+- README still talks about “percentage one decision is better.”
+- `REVIEW.md` body below still has some outdated “current formula” / “weighted points” wording; the **live** sentence is “is better than … by N points.”
+
+### What to do next (Category 2)
+
+Product/modeling, not bugfixes. Highest-value later work:
+
+1. Shared criteria matrix vs independent pro/con lists.
+2. In-page names instead of `prompt()`.
+3. Add/remove rows; show contribution of each row; sensitivity (“would one point flip the winner?”).
+4. Optional later: extract DOM-free scoring `{ text, weight }[]` for unit tests; `src/` / modules only if that extraction happens.
+
+Do not start a framework rewrite as the next move.
+
+### Files that matter
+
+| File | Role |
+|---|---|
+| `index.html` | Page, table, START / Calculate / RESET |
+| `scripts.js` | All app logic (classic globals via `function` declarations) |
+| `main.css` | Minimal table/slider layout |
+| `test/loadApp.js` | jsdom loader + `fillConsideration` / `setDecisionNames` |
+| `test/empty-rows.test.js` | Behavior tests |
+| `package.json` | `vitest` + `jsdom` only |
+| `REVIEW.md` | This review + handoff |
+
+---
+
 Reviewed: September 7, 2026  
 Scope: `index.html`, `scripts.js`, `main.css`, `README.md`  
 Note: `scriptstesting.js` was a second copy of `calculate()` that disagreed on negative-case divisors. It was unused by the app and has been removed.
@@ -18,7 +110,9 @@ is internally consistent. The review’s objection is not “you should have spl
 
 ---
 
-## How the current calculation works
+## How the original (buggy) calculation worked
+
+*(Fixed. Kept as the diagnosis of the old percent formula.)*
 
 1. Collect all sliders in four groups: pros A, cons A, pros B, cons B.
 2. Sum each group.
@@ -52,7 +146,7 @@ These are definite defects. They should be fixed before product/modeling redesig
 ### Calculation
 
 1. **~~“Percent better” is not a valid ratio of net scores.~~ Done.**  
-   Replaced with `difference = resultA − resultB`. The UI reports the leader and `Math.abs(difference)` as weighted points (“leads by a difference of N weighted points”). Empty rows still feed the sums (separate bug).
+   Replaced with `difference = resultA − resultB`. Live copy: `RESULT: {winner} is better than {loser} by {n} points.`
 
 2. **~~Positive and negative branches use different denominators.~~ Done.**  
    Those branches are gone. Sign of the nets no longer changes the comparison method.
@@ -160,39 +254,32 @@ These are not “the current math is wrong.” They are other ways to look at th
 
 12. Live slider labels via `oninput` instead of `onChange` (updates only on mouse-up).
 
-13. Guard Calculate until both names exist; clear or rewrite the result on tie and on reset.
+13. Guard Calculate until both names exist; clear or rewrite the result on tie and on reset.  
+    Names and ties are done. RESET still does not clear `#finalResult`.
 
 14. Persist a decision (localStorage) so it can be revisited.
 
-15. Copy that matches the math: “leads by N weighted points” or “N percentage points on a 0–100 scale,” never an unexplained “N% better.”
+15. Copy that matches the math: never an unexplained “N% better.” Live lead copy is “is better than … by N points.”
 
 16. **~~Add Vitest + jsdom as a test-only harness.~~ Done (no app rewrite).**  
-    The page is still static `index.html` + `scripts.js`. Tests live under `test/`, run with `npm test` / `npm run test:watch`. `test/loadApp.js` injects the classic script into jsdom.
+    See **Handoff**. Tests are behavioral. Do not add source-regex markup tests.
 
-    Characterization tests already cover empty-row weighting. Remaining UI bugs should be TDD’d in this harness (reset has `it.todo`). Extracting a DOM-free `score.js` is still optional later.
-
-    Do not add a second copy of `calculate()` as “tests.” Do not mix a new product bugfix into the same change as harness setup.
-
-17. Declare variables with `let`/`const`; avoid implicit globals.
+17. **~~Declare variables with `let`/`const`; avoid implicit globals.~~ Done** in `scripts.js` (no `var`). Decision names are local, read from the table.
 
 18. **Do not start a clean-architecture / modular rewrite during the critical-bug fixes.**  
-    `calculate()` currently mixes DOM reads, scoring, and result painting. That is messy but expected for a ~100-line draft. A layers/modules/framework split now would hide whether a surgical bug fix actually worked.
-
-    `sumFilledWeights` / `considerationText` still talk to the DOM (skip blank sibling text fields). That was the empty-row bugfix, not a test harness. A later Vitest pass should extract the same rule as a pure function of `{ text, weight }` lists.
-
-    Defer: extra files, bundlers, frameworks, and “business vs presentation” folders. Those pay off after critical bugs are done, if the app grows (tests, more screens, or a criteria-matrix redesign).
+    Category 1 is done; still defer `src/` / bundler until scoring is extracted or the app grows. `sumFilledWeights` still reads the DOM.
 
 ---
 
 ## Recommended order of work
 
-1. ~~Delete or replace `scriptstesting.js`.~~ Removed (unused duplicate, not tests).
-2. ~~Replace the percent formula with net scores + an honest difference.~~ Done (`scripts.js` / result copy in `index.html`; wording is “leads by a difference of N weighted points”).
-3. ~~Fix empty-row weighting and slider defaults.~~ Done (`value="0"`; skip blank pro/con text via `sumFilledWeights` in `scripts.js`).
-4. Critical UI bugs. ~~Reset, ties, names, `textContent`, HTML, slider/label pairing.~~ Done.
-5. ~~Add Vitest + jsdom (test-only; app stays static HTML).~~ Done.
-6. Then consider shared criteria, sensitivity, dealbreakers, and richer UX.
-7. Further architecture (separate UI vs scoring files, bundler for the app itself) only if the app is growing.
+1. ~~Delete or replace `scriptstesting.js`.~~ Removed.
+2. ~~Replace the percent formula with net scores + an honest difference.~~ Done. Copy: “is better than … by N points.”
+3. ~~Empty-row weighting and slider defaults.~~ Done.
+4. ~~Critical UI bugs.~~ Done (reset, ties, names, `textContent`, HTML, slider/label pairing). `scripts.js` modernized (`const`/`let`).
+5. ~~Vitest + jsdom (test-only).~~ Done.
+6. **Next:** Category 2 — shared criteria, UX (`oninput`, in-page names, add/remove rows), optionally DOM-free scoring tests.
+7. Architecture (`src/`, app bundler) only if the app is growing.
 
 ---
 
