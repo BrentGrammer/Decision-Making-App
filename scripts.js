@@ -69,3 +69,9 @@ function calculate() {
     resultEl.textContent =
         `RESULT: ${greaterChoice} is better than ${lesserChoice} by ${Math.abs(difference)} points.`;
 }
+
+for (const slider of document.getElementsByClassName("sliders")) {
+    slider.addEventListener("input", function () {
+        sliderChange(this);
+    });
+}

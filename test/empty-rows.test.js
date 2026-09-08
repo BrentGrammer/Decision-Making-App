@@ -179,4 +179,14 @@ describe("slider labels", () => {
     expect(labelBeside.textContent).toBe("6");
     expect(extra.textContent).toBe("9");
   });
+
+  it("updates Current Value while the slider is being dragged", () => {
+    const slider = document.getElementsByClassName("sliders")[0];
+    const label = slider.parentElement.querySelector(".sliderStatus");
+
+    slider.value = "7";
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+
+    expect(label.textContent).toBe("7");
+  });
 });
