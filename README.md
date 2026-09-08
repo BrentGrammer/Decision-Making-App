@@ -19,3 +19,4 @@ npm run serve
 
 - In-page name fields instead of `prompt()`
 - Add and remove rows; show how much each row contributed
+- Warn when the same pro or con is listed more than once in different words ([AI duplicate detection](docs/ai-duplicate-detection.md))

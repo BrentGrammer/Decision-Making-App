@@ -232,7 +232,7 @@ These are not “the current math is wrong.” They are other ways to look at th
    - Dealbreakers that cannot be averaged away (hard constraints).
 
 4. **Double-counting.**  
-   “Higher salary,” “more disposable income,” and “better finances” may be the same benefit three times.
+   The current sum is correct when extra rows are distinct: several moderate cons should outweigh fewer, higher-weighted ones. The failure case is the same consideration written different ways (“higher salary,” “more disposable income,” “better finances”). That inflates the total without adding new harm or benefit. Do not change the formula for this. A future warning that detects near-duplicate phrasing is specified in [docs/ai-duplicate-detection.md](docs/ai-duplicate-detection.md).
 
 5. **False precision.**  
    Subjective 1–10 ratings do not justify a single dramatic percentage without explaining what the number is.
