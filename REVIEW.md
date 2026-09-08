@@ -87,8 +87,8 @@ These are definite defects. They should be fixed before product/modeling redesig
 10. **Implicit globals.**  
     `decisionA`, `decisionB`, loop index `i` in `sliderChange`, and `spans` in `resetSliders` leak to the global object.
 
-11. **Malformed HTML.**  
-    `<head>` is closed twice; `<title>` and the stylesheet sit outside a proper head. Several `<tr>` elements in the Decision A block are never closed. Browsers recover; the DOM (and thus slider/label pairing) is still fragile.
+11. **~~Malformed HTML.~~ Done.**  
+    Single `<head>` with title and stylesheet. Every `<tr>` has a matching `</tr>` (source checked in `test/markup.test.js`; jsdom would hide this).
 
 12. **Slider labels are paired by global index.**  
     `sliderChange()` matches `getElementsByClassName('sliders')[i]` to `sliderStatus[i]`. That only works while markup order stays aligned.
@@ -189,7 +189,7 @@ These are not “the current math is wrong.” They are other ways to look at th
 1. ~~Delete or replace `scriptstesting.js`.~~ Removed (unused duplicate, not tests).
 2. ~~Replace the percent formula with net scores + an honest difference.~~ Done (`scripts.js` / result copy in `index.html`; wording is “leads by a difference of N weighted points”).
 3. ~~Fix empty-row weighting and slider defaults.~~ Done (`value="0"`; skip blank pro/con text via `sumFilledWeights` in `scripts.js`).
-4. Fix malformed HTML and leftover globals (`sliderChange` index `i`) as separate, small follow-ups — each driven by a Vitest test where the behavior is DOM-checkable. ~~Reset, ties, names, `textContent`.~~ Done.
+4. Fix leftover globals (`sliderChange` index `i`) and slider/label pairing as separate follow-ups. ~~Reset, ties, names, `textContent`, HTML.~~ Done.
 5. ~~Add Vitest + jsdom (test-only; app stays static HTML).~~ Done.
 6. Then consider shared criteria, sensitivity, dealbreakers, and richer UX.
 7. Further architecture (separate UI vs scoring files, bundler for the app itself) only if the app is growing.
