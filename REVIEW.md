@@ -65,8 +65,8 @@ These are definite defects. They should be fixed before product/modeling redesig
 
 ### Input handling that corrupts the score
 
-5. **Empty rows still count.**  
-   Every slider defaults to `value="5"`. `calculate()` sums *all* sliders in each class, whether or not the adjacent text field has a pro/con. Unused rows inject phantom weight. If one option has fewer filled rows, it can be silently penalized or rewarded.
+5. **~~Empty rows still count.~~ Done.**  
+   Sliders default to `0`. `sumFilledWeights()` skips a slider unless the adjacent text field has non-whitespace. Dragging a slider with no pro/con text does not affect the score. Filling text and leaving the slider at 0 contributes 0, which is intentional.
 
 6. **Reset does not restore displayed values.**  
    `resetSliders()` is broken: the loop is commented out and a stray `}` closes the function early. Form reset may snap range inputs back, but the “Current Value” labels can stay stale.
@@ -115,7 +115,7 @@ Then a net of −50 → 0, 0 → 50, +50 → 100. Describe the gap as **percenta
 
 If a 0–100-style *share of entered weight* is wanted later, a bounded alternative is `(scoreA − scoreB) / (prosA + consA + prosB + consB)`. That is still a **normalized margin chosen by the app**, not a literal “percent better,” and it shrinks if the user adds equally rated items to both sides. Prefer honest wording: “A leads by N% of the total weight you entered.”
 
-Also: default empty sliders to 0, and skip rows whose text is blank.
+Also: ~~default empty sliders to 0, and skip rows whose text is blank.~~ Done with this pass.
 
 ---
 
@@ -166,14 +166,19 @@ These are not “the current math is wrong.” They are other ways to look at th
 
 15. Copy that matches the math: “leads by N weighted points” or “N percentage points on a 0–100 scale,” never an unexplained “N% better.”
 
-16. Real automated tests of scoring (empty rows, ties, negatives, zeros, one-sided lists) instead of `scriptstesting.js` as a second copy of production code.
+16. **~~Add Vitest + jsdom as a test-only harness.~~ Done (no app rewrite).**  
+    The page is still static `index.html` + `scripts.js`. Tests live under `test/`, run with `npm test` / `npm run test:watch`. `test/loadApp.js` injects the classic script into jsdom.
+
+    Characterization tests already cover empty-row weighting. Remaining UI bugs should be TDD’d in this harness (reset has `it.todo`). Extracting a DOM-free `score.js` is still optional later.
+
+    Do not add a second copy of `calculate()` as “tests.” Do not mix a new product bugfix into the same change as harness setup.
 
 17. Declare variables with `let`/`const`; avoid implicit globals.
 
 18. **Do not start a clean-architecture / modular rewrite during the critical-bug fixes.**  
     `calculate()` currently mixes DOM reads, scoring, and result painting. That is messy but expected for a ~100-line draft. A layers/modules/framework split now would hide whether a surgical bug fix actually worked.
 
-    When empty-row weighting is implemented, it is reasonable to peel scoring into plain functions **in the same `scripts.js`** (e.g. `scoreDecision(proWeights, conWeights)` and `compareDecisions(scoreA, scoreB)`), so the “which weights count” rules can be tested without the DOM. UI still gathers numbers and writes the result sentence.
+    `sumFilledWeights` / `considerationText` still talk to the DOM (skip blank sibling text fields). That was the empty-row bugfix, not a test harness. A later Vitest pass should extract the same rule as a pure function of `{ text, weight }` lists.
 
     Defer: extra files, bundlers, frameworks, and “business vs presentation” folders. Those pay off after critical bugs are done, if the app grows (tests, more screens, or a criteria-matrix redesign).
 
@@ -183,10 +188,11 @@ These are not “the current math is wrong.” They are other ways to look at th
 
 1. ~~Delete or replace `scriptstesting.js`.~~ Removed (unused duplicate, not tests).
 2. ~~Replace the percent formula with net scores + an honest difference.~~ Done (`scripts.js` / result copy in `index.html`; wording is “leads by a difference of N weighted points”).
-3. Fix empty-row weighting and slider defaults (inputs must match user intent). Optional: extract scoring helpers in `scripts.js` at the same time, not a new architecture.
-4. Fix reset, ties, START/Calculate order, `textContent`, HTML, and globals as separate, small follow-ups.
-5. Then consider shared criteria, sensitivity, dealbreakers, and richer UX.
-6. Architecture (separate modules, tests as a real suite, UI vs scoring files) only after the above, and only if the app is growing.
+3. ~~Fix empty-row weighting and slider defaults.~~ Done (`value="0"`; skip blank pro/con text via `sumFilledWeights` in `scripts.js`).
+4. Fix reset, ties, START/Calculate order, `textContent`, HTML, and globals as separate, small follow-ups — each driven by a Vitest test where the behavior is DOM-checkable.
+5. ~~Add Vitest + jsdom (test-only; app stays static HTML).~~ Done. Empty-row characterization tests pass; reset is `it.todo`.
+6. Then consider shared criteria, sensitivity, dealbreakers, and richer UX.
+7. Further architecture (separate UI vs scoring files, bundler for the app itself) only if the app is growing.
 
 ---
 
