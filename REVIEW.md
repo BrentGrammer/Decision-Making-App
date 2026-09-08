@@ -51,14 +51,14 @@ These are definite defects. They should be fixed before product/modeling redesig
 
 ### Calculation
 
-1. **“Percent better” is not a valid ratio of net scores.**  
-   `resultA / resultB` (or `(greater − lesser) / lesser`) is undefined in meaning when nets can be zero or negative. The output is unbounded, can explode near zero, and is not monotonic.
+1. **~~“Percent better” is not a valid ratio of net scores.~~ Done.**  
+   Replaced with `difference = resultA − resultB`. The UI reports the leader and `Math.abs(difference)` as weighted points (“leads by a difference of N weighted points”). Empty rows still feed the sums (separate bug).
 
-2. **Positive and negative branches use different denominators.**  
-   When both nets are positive, the code divides by the *lesser* net (`scripts.js` around lines 131 and 168). When a net is negative, it divides by the *greater* net’s absolute value (around lines 115–117 and 151–153). The same 5-point gap can therefore mean completely different percentages depending on which side of zero it sits.
+2. **~~Positive and negative branches use different denominators.~~ Done.**  
+   Those branches are gone. Sign of the nets no longer changes the comparison method.
 
-3. **Divide-by-1 when a net is 0 is a unit change, not a fix.**  
-   When `resultB === 0`, the formula becomes `(resultA − 0) / 1 * 100`, i.e. `resultA × 100`. A net of 10 becomes “1000% better.” That is a different scale from every other branch, and it is the README’s Infinity% bug in disguise.
+3. **~~Divide-by-1 when a net is 0 is a unit change, not a fix.~~ Done.**  
+   A net of 0 is a normal score. Leading by 10 vs a net of 0 is reported as 10 weighted points, not 1000%.
 
 4. **~~`scriptstesting.js` disagreed with `scripts.js` on negative cases.~~ Done.**  
    Removed. It was unused and not a test suite. Real tests belong in a later improvement.
@@ -100,10 +100,10 @@ Do **not** keep claiming a relative “% better” from nets. Keep:
 ```text
 scoreA = sum(filled A pro weights) − sum(filled A con weights)
 scoreB = sum(filled B pro weights) − sum(filled B con weights)
-margin = scoreA − scoreB
+difference = scoreA − scoreB
 ```
 
-Report the winner and the **point margin**, e.g. “Option A leads Option B by 12 weighted points.”
+Report the winner and the **point difference**, e.g. “Option A leads Option B by a difference of 12 weighted points.”
 
 Optional 0–100 display if there are five pros and five cons, each 0–10:
 
@@ -170,15 +170,23 @@ These are not “the current math is wrong.” They are other ways to look at th
 
 17. Declare variables with `let`/`const`; avoid implicit globals.
 
+18. **Do not start a clean-architecture / modular rewrite during the critical-bug fixes.**  
+    `calculate()` currently mixes DOM reads, scoring, and result painting. That is messy but expected for a ~100-line draft. A layers/modules/framework split now would hide whether a surgical bug fix actually worked.
+
+    When empty-row weighting is implemented, it is reasonable to peel scoring into plain functions **in the same `scripts.js`** (e.g. `scoreDecision(proWeights, conWeights)` and `compareDecisions(scoreA, scoreB)`), so the “which weights count” rules can be tested without the DOM. UI still gathers numbers and writes the result sentence.
+
+    Defer: extra files, bundlers, frameworks, and “business vs presentation” folders. Those pay off after critical bugs are done, if the app grows (tests, more screens, or a criteria-matrix redesign).
+
 ---
 
 ## Recommended order of work
 
 1. ~~Delete or replace `scriptstesting.js`.~~ Removed (unused duplicate, not tests).
-2. Replace the percent formula with net scores + an honest margin (points or percentage points).
-3. Fix empty-row weighting and slider defaults (inputs must match user intent).
+2. ~~Replace the percent formula with net scores + an honest difference.~~ Done (`scripts.js` / result copy in `index.html`; wording is “leads by a difference of N weighted points”).
+3. Fix empty-row weighting and slider defaults (inputs must match user intent). Optional: extract scoring helpers in `scripts.js` at the same time, not a new architecture.
 4. Fix reset, ties, START/Calculate order, `textContent`, HTML, and globals as separate, small follow-ups.
 5. Then consider shared criteria, sensitivity, dealbreakers, and richer UX.
+6. Architecture (separate modules, tests as a real suite, UI vs scoring files) only after the above, and only if the app is growing.
 
 ---
 

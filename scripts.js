@@ -38,7 +38,7 @@ function resetSliders() {
     }
 //}
 
-//CALCULATE FUNCTION: Called when User clicks calculate button to get result - this function gathers the values of the sliders that the user has adjusted, and then adds them up to get totals, calculates a total value for each decision, and then the percentage of difference between those totals is calculated to give the user the difference of one choice over the other.
+//CALCULATE FUNCTION: Called when User clicks calculate button to get result - this function gathers the values of the sliders that the user has adjusted, and then adds them up to get totals, calculates a net score for each decision (pros minus cons), and reports how many weighted points the leader is ahead.
 
 function calculate() {
     //gather the 4 groups of sliders and assign variables to each group collection
@@ -95,88 +95,21 @@ function calculate() {
 
     var resultA = prosASum - consASum;
     var resultB = prosBSum - consBSum;
+    var difference = resultA - resultB;
 
-//for debugging:
+    console.log(resultA, resultB, difference);
 
-console.log(resultA,resultB);
+    // Net scores are interval-scale: the meaningful comparison is the point difference, not a ratio.
+    // Ties still only alert (result paragraph is left as-is until that bug is fixed separately).
+    if (difference === 0) {
+        alert("RESULT: Both decisions are equally good(or bad...).");
+        return;
+    }
 
-    //test which value is greater, then subtract the lesser value from the greater and divide the sum by the lesser number
-    //multiply that result by 100 to insert into percentage text span.
+    var greaterChoice = difference > 0 ? decisionA : decisionB;
+    var lesserChoice = difference > 0 ? decisionB : decisionA;
 
-    if (resultA > resultB) {
-
-        //IF RESULTS ARE NEGATIVE NUMBERS:
-        if( (resultB < 0) || (resultA < 0 && resultB < 0) ) {
-            var numA = resultA;
-            var numB = resultB;
-
-            var difference = Math.abs(numA - numB);
-            //Math.abs keeps the numbers absolute so that the negative number isn't converted to a positive number by the subtraction operation;
-            var numAPos = Math.abs(numA);
-
-            var differenceSum = (difference / numAPos) * 100;
-            var percentSum = Math.round(differenceSum);
-
-            document.getElementById('greaterChoice').innerHTML = decisionA;
-            document.getElementById('percentage').innerHTML = percentSum;
-            document.getElementById('lesserChoice').innerHTML = decisionB;
-            //IF RESULTS ARE POSITIVE NUMBERS:
-        } else {
-
-           //prevent infinity% bug caused if resultB = 0;
-           //divide the difference by 1 instead of resultB(0);
-              if (resultB === 0){
-                var difference = ((resultA - resultB) / 1) * 100;
-              } else {
-                var difference = ((resultA - resultB) / resultB) * 100;
-              }
-
-
-
-        //round off the number to eliminate decimals
-                var percentSum = Math.round(difference);
-                document.getElementById('greaterChoice').innerHTML = decisionA;
-                document.getElementById('percentage').innerHTML = percentSum;
-                document.getElementById('lesserChoice').innerHTML = decisionB;
-          }
-      //NOW CHECKING IF B > A:
-     } else if (resultB > resultA){
-          //IF RESULTS ARE NEGATIVE NUMBERS:
-            if( (resultA < 0) || (resultA < 0 && resultB < 0) ){
-                var numA = resultA;
-                var numB = resultB;
-          //Math.abs keeps the numbers absolute so that the negative number isn't converted to a positive number by the subtraction operation;
-                var difference = Math.abs(numB - numA);
-          //convert the value of the lesser to positive int for basing percentage difference
-                var numBPos = Math.abs(numB);
-
-                var differenceSum = (difference / numBPos) * 100;
-                var percentSum = Math.round(differenceSum);
-
-                document.getElementById('greaterChoice').innerHTML = decisionB;
-                document.getElementById('percentage').innerHTML = percentSum;
-                document.getElementById('lesserChoice').innerHTML = decisionA;
-
-         } //IF RESULTB IS A POSITIVE NUMBER
-            else {
-
-              //prevents infinity% bug caused if resultA is 0;
-              //divide the difference by 1 instead of resultA(0);
-                 if (resultA === 0){
-                    var difference = ((resultB - resultA) / 1) * 100;
-                 } else {
-                    var difference = ((resultB - resultA) / resultA) * 100;
-                 }
-
-
-                var percentSum = Math.round(difference);
-                document.getElementById('greaterChoice').innerHTML = decisionB;
-                document.getElementById('percentage').innerHTML = percentSum;
-                document.getElementById('lesserChoice').innerHTML = decisionA;
-             }
-
-       } else if (resultA == resultB){
-
-              alert("RESULT: Both decisions are equally good(or bad...).");
-         }
+    document.getElementById('greaterChoice').innerHTML = greaterChoice;
+    document.getElementById('lesserChoice').innerHTML = lesserChoice;
+    document.getElementById('difference').innerHTML = Math.abs(difference);
 }
