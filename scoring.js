@@ -1,3 +1,6 @@
+export const DECISION_NAME_MIN_LENGTH = 1;
+export const DECISION_NAME_MAX_LENGTH = 50;
+
 export function sumFilledWeights(considerations) {
     let total = 0;
     for (const consideration of considerations) {
@@ -23,8 +26,17 @@ export function compareDecisions({
 }) {
     const nameA = String(decisionA).trim();
     const nameB = String(decisionB).trim();
-    if (!nameA || !nameB) {
+    if (
+        nameA.length < DECISION_NAME_MIN_LENGTH ||
+        nameB.length < DECISION_NAME_MIN_LENGTH
+    ) {
         return "RESULT: Enter both decision names first.";
+    }
+    if (
+        nameA.length > DECISION_NAME_MAX_LENGTH ||
+        nameB.length > DECISION_NAME_MAX_LENGTH
+    ) {
+        return "RESULT: Each decision name must be 1–50 characters.";
     }
 
     const difference = netScore(prosA, consA) - netScore(prosB, consB);

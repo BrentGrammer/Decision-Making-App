@@ -59,4 +59,59 @@ describe("compareDecisions", () => {
       }),
     ).toBe("RESULT: Stay is better than Leave by 4 points.");
   });
+
+  it("accepts names of one character", () => {
+    expect(
+      compareDecisions({
+        decisionA: "A",
+        decisionB: "B",
+        prosA: [{ text: "Pay", weight: 8 }],
+        consA: [],
+        prosB: [],
+        consB: [],
+      }),
+    ).toBe("RESULT: A is better than B by 8 points.");
+  });
+
+  it("accepts names of 50 characters", () => {
+    const decisionA = "a".repeat(50);
+    const decisionB = "b".repeat(50);
+
+    expect(
+      compareDecisions({
+        decisionA,
+        decisionB,
+        prosA: [{ text: "Pay", weight: 8 }],
+        consA: [],
+        prosB: [],
+        consB: [],
+      }),
+    ).toBe(`RESULT: ${decisionA} is better than ${decisionB} by 8 points.`);
+  });
+
+  it("does not score when a name is longer than 50 characters", () => {
+    expect(
+      compareDecisions({
+        decisionA: "Stay",
+        decisionB: "x".repeat(51),
+        prosA: [{ text: "Pay", weight: 8 }],
+        consA: [],
+        prosB: [],
+        consB: [],
+      }),
+    ).toBe("RESULT: Each decision name must be 1–50 characters.");
+  });
+
+  it("treats whitespace-only names as missing", () => {
+    expect(
+      compareDecisions({
+        decisionA: "   ",
+        decisionB: "Leave",
+        prosA: [{ text: "Pay", weight: 8 }],
+        consA: [],
+        prosB: [],
+        consB: [],
+      }),
+    ).toBe("RESULT: Enter both decision names first.");
+  });
 });

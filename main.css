@@ -1,6 +1,7 @@
 :root {
     --color-pro: #00695c;
     --color-con: #c45c48;
+    --color-error: #c62828;
     --color-on-primary: #ffffff;
     --color-surface: #eceff1;
     --color-on-surface: #212121;
@@ -156,6 +157,24 @@ tr:first-child th {
     letter-spacing: 0;
     color: var(--color-on-surface);
     background: var(--color-decision);
+}
+
+.decision-name input {
+    font-size: 1.15rem;
+    font-weight: 500;
+}
+
+.decision-name input[aria-invalid="true"] {
+    border-color: var(--color-error);
+}
+
+.field-error {
+    margin: 0.4rem 0 0;
+    font-size: 0.8rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--color-error);
 }
 
 .slider-well {

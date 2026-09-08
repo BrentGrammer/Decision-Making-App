@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { fillConsideration, loadApp, setDecisionNames } from "./loadApp.js";
 
 describe("test harness", () => {
@@ -78,8 +78,25 @@ describe("reset", () => {
     document.querySelector("form").reset();
     globalThis.resetSliders();
 
-    expect(document.getElementById("A").textContent).toBe("");
-    expect(document.getElementById("B").textContent).toBe("");
+    expect(document.getElementById("A").value).toBe("");
+    expect(document.getElementById("B").value).toBe("");
+  });
+
+  it("clears name field errors", () => {
+    globalThis.calculate();
+
+    expect(document.getElementById("A").getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+
+    document.querySelector("form").reset();
+    globalThis.resetSliders();
+
+    expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(
+      "true",
+    );
+    expect(document.getElementById("A-error").textContent).toBe("");
+    expect(document.getElementById("B-error").textContent).toBe("");
   });
 });
 
@@ -130,6 +147,17 @@ describe("decision names", () => {
     expect(result).toBe("RESULT: Enter both decision names first.");
   });
 
+  it("uses names typed into the decision fields", () => {
+    document.getElementById("A").value = "Stay";
+    document.getElementById("B").value = "Leave";
+    fillConsideration("prosA", 0, "Pay", 8);
+    globalThis.calculate();
+
+    expect(document.getElementById("finalResult").textContent).toBe(
+      "RESULT: Stay is better than Leave by 8 points.",
+    );
+  });
+
   it("uses the names from the table, not leftover globals", () => {
     globalThis.decisionA = "Wrong A";
     globalThis.decisionB = "Wrong B";
@@ -142,16 +170,131 @@ describe("decision names", () => {
     );
   });
 
-  it("writes prompt names as text, not HTML", () => {
-    vi.spyOn(window, "prompt")
-      .mockReturnValueOnce("Stay")
-      .mockReturnValueOnce("<img src=x>");
+  it("uses typed names as text, not HTML", () => {
+    setDecisionNames("Stay", "<img src=x>");
+    fillConsideration("prosA", 0, "Pay", 8);
+    globalThis.calculate();
 
-    globalThis.start();
+    expect(document.querySelector("#finalResult img")).toBeNull();
+    expect(document.getElementById("finalResult").textContent).toBe(
+      "RESULT: Stay is better than <img src=x> by 8 points.",
+    );
+  });
 
-    const cellB = document.getElementById("B");
-    expect(cellB.querySelector("img")).toBeNull();
-    expect(cellB.textContent).toBe("<img src=x>");
+  it("accepts names of one character", () => {
+    setDecisionNames("A", "B");
+    fillConsideration("prosA", 0, "Pay", 8);
+    globalThis.calculate();
+
+    expect(document.getElementById("finalResult").textContent).toBe(
+      "RESULT: A is better than B by 8 points.",
+    );
+    expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(
+      "true",
+    );
+    expect(document.getElementById("B").getAttribute("aria-invalid")).not.toBe(
+      "true",
+    );
+  });
+
+  it("accepts names of 50 characters", () => {
+    const decisionA = "a".repeat(50);
+    const decisionB = "b".repeat(50);
+    setDecisionNames(decisionA, decisionB);
+    fillConsideration("prosA", 0, "Pay", 8);
+    globalThis.calculate();
+
+    expect(document.getElementById("finalResult").textContent).toBe(
+      `RESULT: ${decisionA} is better than ${decisionB} by 8 points.`,
+    );
+    expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(
+      "true",
+    );
+  });
+
+  it("shows field errors when names are missing", () => {
+    fillConsideration("prosA", 0, "Pay", 8);
+    globalThis.calculate();
+
+    expect(document.getElementById("A").getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+    expect(document.getElementById("B").getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+    expect(document.getElementById("A-error").hidden).toBe(false);
+    expect(document.getElementById("A-error").textContent).toBe(
+      "Enter a name (1–50 characters).",
+    );
+    expect(document.getElementById("B-error").textContent).toBe(
+      "Enter a name (1–50 characters).",
+    );
+  });
+
+  it("marks only the invalid name", () => {
+    setDecisionNames("Stay", "");
+    fillConsideration("prosA", 0, "Pay", 8);
+    globalThis.calculate();
+
+    expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(
+      "true",
+    );
+    expect(document.getElementById("B").getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+    expect(document.getElementById("B-error").textContent).toBe(
+      "Enter a name (1–50 characters).",
+    );
+  });
+
+  it("treats whitespace-only names as missing", () => {
+    setDecisionNames("   ", "Leave");
+    fillConsideration("prosA", 0, "Pay", 8);
+    globalThis.calculate();
+
+    expect(document.getElementById("A").getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+    expect(document.getElementById("finalResult").textContent).toBe(
+      "RESULT: Enter both decision names first.",
+    );
+  });
+
+  it("shows a field error when a name is longer than 50 characters", () => {
+    setDecisionNames("Stay", "x".repeat(51));
+    fillConsideration("prosA", 0, "Pay", 8);
+    globalThis.calculate();
+
+    expect(document.getElementById("B").getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+    expect(document.getElementById("B-error").hidden).toBe(false);
+    expect(document.getElementById("B-error").textContent).toBe(
+      "Enter a name (1–50 characters).",
+    );
+    expect(document.getElementById("finalResult").textContent).toBe(
+      "RESULT: Each decision name must be 1–50 characters.",
+    );
+  });
+
+  it("shows a field error when a name is left blank", () => {
+    const inputA = document.getElementById("A");
+    inputA.dispatchEvent(new Event("blur", { bubbles: true }));
+
+    expect(inputA.getAttribute("aria-invalid")).toBe("true");
+    expect(document.getElementById("A-error").textContent).toBe(
+      "Enter a name (1–50 characters).",
+    );
+  });
+
+  it("clears the field error when the name becomes valid", () => {
+    const inputA = document.getElementById("A");
+    inputA.dispatchEvent(new Event("blur", { bubbles: true }));
+    inputA.value = "Stay";
+    inputA.dispatchEvent(new Event("input", { bubbles: true }));
+
+    expect(inputA.getAttribute("aria-invalid")).not.toBe("true");
+    expect(document.getElementById("A-error").textContent).toBe("");
   });
 });
 

@@ -21,7 +21,6 @@
     </svg>
     <main class="page">
       <p class="lede">Name both options, list the pros and cons, then calculate which leads and by how many points.</p>
-      <button type="button" class="button" onclick="start()">Start</button>
 
       <form>
           <div class="sheet">
@@ -47,7 +46,10 @@
               </tr>
 
               <tr>
-                  <th rowspan="5" id="A" class="decision-name"></th>
+                  <th rowspan="5" class="decision-name">
+                    <input id="A" type="text" maxlength="50" placeholder="Enter decision" aria-label="Decision A" aria-describedby="A-error" autocomplete="off" />
+                    <p id="A-error" class="field-error" hidden></p>
+                  </th>
                   <td><input type="text" placeholder="Enter a pro"/></td>
                   <td class="slider-well"><input class="sliders prosA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
                   <td><input type="text" placeholder="Enter a con"/></td>
@@ -78,7 +80,10 @@
                   <td class="slider-well"><input class="sliders consA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
               </tr>
               <tr>
-                  <th rowspan="5" id="B" class="decision-name"></th>
+                  <th rowspan="5" class="decision-name">
+                    <input id="B" type="text" maxlength="50" placeholder="Enter decision" aria-label="Decision B" aria-describedby="B-error" autocomplete="off" />
+                    <p id="B-error" class="field-error" hidden></p>
+                  </th>
                   <td><input type="text" placeholder="Enter a pro"/></td>
                   <td class="slider-well"><input class="sliders prosB" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
                   <td><input type="text" placeholder="Enter a con"/></td>

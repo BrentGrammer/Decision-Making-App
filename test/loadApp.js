@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { calculate, initApp, resetSliders, sliderChange, start } from "../scripts.js";
+import { calculate, initApp, resetSliders, sliderChange } from "../scripts.js";
 
 function thisDir() {
   if (import.meta.dirname) {
@@ -32,7 +32,6 @@ export function loadApp() {
   delete globalThis.decisionB;
   document.body.innerHTML = bodyWithoutScripts;
   initApp();
-  globalThis.start = start;
   globalThis.sliderChange = sliderChange;
   globalThis.resetSliders = resetSliders;
   globalThis.calculate = calculate;
@@ -47,6 +46,6 @@ export function fillConsideration(sliderClass, rowIndex, text, weight) {
 }
 
 export function setDecisionNames(decisionA, decisionB) {
-  document.getElementById("A").textContent = decisionA;
-  document.getElementById("B").textContent = decisionB;
+  document.getElementById("A").value = decisionA;
+  document.getElementById("B").value = decisionB;
 }

@@ -1,11 +1,47 @@
-import { compareDecisions } from "./scoring.js";
+import {
+    compareDecisions,
+    DECISION_NAME_MAX_LENGTH,
+    DECISION_NAME_MIN_LENGTH,
+} from "./scoring.js";
 
-function start() {
-    const decisionA = prompt("Enter Decision A:", "") ?? "";
-    const decisionB = prompt("Enter Decision B:", "") ?? "";
+function decisionNameMessage(value) {
+    const name = String(value).trim();
+    if (
+        name.length < DECISION_NAME_MIN_LENGTH ||
+        name.length > DECISION_NAME_MAX_LENGTH
+    ) {
+        return `Enter a name (${DECISION_NAME_MIN_LENGTH}–${DECISION_NAME_MAX_LENGTH} characters).`;
+    }
+    return "";
+}
 
-    document.getElementById("A").textContent = decisionA;
-    document.getElementById("B").textContent = decisionB;
+function setNameValidity(input, message) {
+    const error = document.getElementById(`${input.id}-error`);
+    if (message) {
+        input.setAttribute("aria-invalid", "true");
+        if (error) {
+            error.textContent = message;
+            error.hidden = false;
+        }
+        return;
+    }
+
+    input.removeAttribute("aria-invalid");
+    if (error) {
+        error.textContent = "";
+        error.hidden = true;
+    }
+}
+
+function validateDecisionNameField(input) {
+    setNameValidity(input, decisionNameMessage(input.value));
+}
+
+function validateDecisionNames() {
+    const inputA = document.getElementById("A");
+    const inputB = document.getElementById("B");
+    validateDecisionNameField(inputA);
+    validateDecisionNameField(inputB);
 }
 
 function sliderChange(slider) {
@@ -19,8 +55,12 @@ function resetSliders() {
     for (const label of document.getElementsByClassName("sliderStatus")) {
         label.textContent = "0";
     }
-    document.getElementById("A").textContent = "";
-    document.getElementById("B").textContent = "";
+    const inputA = document.getElementById("A");
+    const inputB = document.getElementById("B");
+    inputA.value = "";
+    inputB.value = "";
+    setNameValidity(inputA, "");
+    setNameValidity(inputB, "");
     document.getElementById("finalResult").textContent = "";
 }
 
@@ -45,9 +85,10 @@ function considerationsFrom(sliders) {
 }
 
 function calculate() {
+    validateDecisionNames();
     document.getElementById("finalResult").textContent = compareDecisions({
-        decisionA: document.getElementById("A").textContent,
-        decisionB: document.getElementById("B").textContent,
+        decisionA: document.getElementById("A").value,
+        decisionB: document.getElementById("B").value,
         prosA: considerationsFrom(document.getElementsByClassName("prosA")),
         consA: considerationsFrom(document.getElementsByClassName("consA")),
         prosB: considerationsFrom(document.getElementsByClassName("prosB")),
@@ -56,7 +97,6 @@ function calculate() {
 }
 
 function initApp() {
-    window.start = start;
     window.sliderChange = sliderChange;
     window.resetSliders = resetSliders;
     window.calculate = calculate;
@@ -66,6 +106,17 @@ function initApp() {
             sliderChange(this);
         });
     }
+
+    for (const input of [document.getElementById("A"), document.getElementById("B")]) {
+        input.addEventListener("blur", function () {
+            validateDecisionNameField(this);
+        });
+        input.addEventListener("input", function () {
+            if (this.getAttribute("aria-invalid") === "true") {
+                validateDecisionNameField(this);
+            }
+        });
+    }
 }
 
-export { start, sliderChange, resetSliders, calculate, initApp };
+export { sliderChange, resetSliders, calculate, initApp };
