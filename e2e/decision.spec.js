@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import {
   BLANK_PRO_ERROR,
+  DECISION_A_LABEL,
+  DECISION_B_LABEL,
   DECISION_NAME_FIELD_ERROR,
   leadResult,
   PRO_PLACEHOLDER,
@@ -11,8 +13,8 @@ import { DECISION_NAME_MAX_LENGTH } from "../js/scoring.js";
 
 test("calculates a lead from named options", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Decision A").fill("Stay");
-  await page.getByLabel("Decision B").fill("Leave");
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Pay");
   await page.locator(".prosA").first().fill("8");
   await page.getByRole("button", { name: "Calculate" }).click();
@@ -25,8 +27,8 @@ test("calculates a lead from named options", async ({ page }) => {
 test("scrolls the result into view after calculate", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 360 });
   await page.goto("/");
-  await page.getByLabel("Decision A").fill("Stay");
-  await page.getByLabel("Decision B").fill("Leave");
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Pay");
   await page.locator(".prosA").first().fill("8");
   await page.getByRole("button", { name: "Calculate" }).click();
@@ -38,7 +40,7 @@ test("shows field errors when names are missing", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Calculate" }).click();
 
-  await expect(page.getByLabel("Decision A")).toHaveAttribute(
+  await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).toHaveAttribute(
     "aria-invalid",
     "true",
   );
@@ -52,9 +54,9 @@ test("clears a name field error when the name becomes valid", async ({
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Calculate" }).click();
-  await page.getByLabel("Decision A").fill("Stay");
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
 
-  await expect(page.getByLabel("Decision A")).not.toHaveAttribute(
+  await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).not.toHaveAttribute(
     "aria-invalid",
     "true",
   );
@@ -63,8 +65,8 @@ test("clears a name field error when the name becomes valid", async ({
 
 test("reset clears names, result, and name errors", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Decision A").fill("Stay");
-  await page.getByLabel("Decision B").fill("Leave");
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Pay");
   await page.locator(".prosA").first().fill("8");
   await page.getByRole("button", { name: "Calculate" }).click();
@@ -74,8 +76,8 @@ test("reset clears names, result, and name errors", async ({ page }) => {
 
   await page.getByRole("button", { name: "Reset" }).click();
 
-  await expect(page.getByLabel("Decision A")).toHaveValue("");
-  await expect(page.getByLabel("Decision B")).toHaveValue("");
+  await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).toHaveValue("");
+  await expect(page.getByLabel(DECISION_B_LABEL, { exact: true })).toHaveValue("");
   await expect(page.locator("#finalResult")).toHaveText("");
   await expect(page.locator("#A-error")).toBeHidden();
 });
@@ -85,10 +87,10 @@ test("does not let a decision name exceed the maximum length", async ({
 }) => {
   await page.goto("/");
   await page
-    .getByLabel("Decision A")
+    .getByLabel(DECISION_A_LABEL, { exact: true })
     .pressSequentially("a".repeat(DECISION_NAME_MAX_LENGTH + 1));
 
-  await expect(page.getByLabel("Decision A")).toHaveValue(
+  await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).toHaveValue(
     "a".repeat(DECISION_NAME_MAX_LENGTH),
   );
 });
@@ -97,8 +99,8 @@ test("adds a pro without adding a con and counts the extra row", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.getByLabel("Decision A").fill("Stay");
-  await page.getByLabel("Decision B").fill("Leave");
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Pay");
   await page.locator(".prosA").first().fill("8");
   await page.getByRole("button", { name: "Add a pro for decision A" }).click();
@@ -114,8 +116,8 @@ test("adds a pro without adding a con and counts the extra row", async ({
 
 test("stops counting a pro after it is removed", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Decision A").fill("Stay");
-  await page.getByLabel("Decision B").fill("Leave");
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Pay");
   await page.locator(".prosA").first().fill("8");
   await page.getByRole("button", { name: "Add a pro for decision A" }).click();
@@ -131,8 +133,8 @@ test("stops counting a pro after it is removed", async ({ page }) => {
 
 test("warns when a slider is moved with no text", async ({ page }) => {
   await page.goto("/");
-  await page.getByLabel("Decision A").fill("Stay");
-  await page.getByLabel("Decision B").fill("Leave");
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.locator(".prosA").first().fill("8");
 
   await expect(page.getByPlaceholder(PRO_PLACEHOLDER).first()).toHaveAttribute(

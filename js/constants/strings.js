@@ -5,6 +5,8 @@ import {
 } from "../scoring.js";
 
 export const DECISION_NAME_FIELD_ERROR = `Enter a name (${DECISION_NAME_MIN_LENGTH}–${DECISION_NAME_MAX_LENGTH} characters).`;
+export const DECISION_A_LABEL = "Decision A";
+export const DECISION_B_LABEL = "Decision B";
 export const PRO_PLACEHOLDER = "Enter a pro";
 export const CON_PLACEHOLDER = "Enter a con";
 export const REMOVE_PRO_LABEL = "Remove this pro";

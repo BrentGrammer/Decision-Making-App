@@ -15,7 +15,8 @@ The app is still a **static page**. `index.html` stays at the repo root (GitHub 
 index.html
 main.css
 js/
-  scripts.js              DOM, initApp, field errors, scroll-into-view
+  scripts.js              Orchestration, initApp, decision name validation, calculate/reset
+  consideration-rows.js   Row templates, add/remove, slider sync, blank-row warning
   scoring.js              DOM-free: weights, name rules, comparison outcome
   constants/strings.js   UI sentences + formatComparison(outcome)
 test/                     Vitest + jsdom
@@ -92,13 +93,15 @@ The hosted GitHub Pages copy may still be the old percent app until redeployed.
 | `index.html` | Page, name fields, table, Calculate / Reset |
 | `js/scoring.js` | Weights, name rules, `{ kind, … }` outcome |
 | `js/constants/strings.js` | UI strings + `formatComparison` |
-| `js/scripts.js` | DOM / `initApp` |
+| `js/consideration-rows.js` | Row templates, add/remove, slider sync, blank warnings |
+| `js/scripts.js` | Orchestration, DOM / `initApp` |
 | `main.css` | Light Material-style layout + tokens |
 | `test/loadApp.js` | jsdom loader + `fillConsideration` / `setDecisionNames` |
 | `test/scoring.test.js` | Scoring outcomes |
 | `test/strings.test.js` | Result sentences |
-| `test/empty-rows.test.js` | Page behavior |
-| `e2e/decision.spec.js` | Browser: names, errors, reset, scroll |
+| `test/empty-rows.test.js` | Page behavior & blank row warnings |
+| `test/rows.test.js` | Add/remove rows behavior |
+| `e2e/decision.spec.js` | Browser: names, errors, reset, scroll, add/remove |
 | `package.json` | `vitest`, `jsdom`, `vite` (serve), `@playwright/test` |
 | `REVIEW.md` | This review + handoff |
 
