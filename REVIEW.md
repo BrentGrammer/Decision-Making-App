@@ -2,17 +2,24 @@
 
 ## Handoff (for the next session)
 
-**When:** 7 September 2026, end of a surgical Category-1 pass.  
-**Start here.** Historical review notes are below; they still describe *why* the old percent formula was wrong. Several “current” sentences in those notes are stale (copy, tests). Trust this handoff and the code.
+**When:** 8 September 2026, after Category 1 leftovers, scoring extract, Vite serve, and a light Material-style UI.  
+**Start here.** Historical review notes are below; they still describe *why* the old percent formula was wrong. Several “current” sentences in those notes are stale. Trust this handoff and the code.
 
 ### Where the project is
 
-Category **1 (critical bugs / invalid math)** is done. The app is still a **static page**: `index.html` + `scripts.js` + `main.css`. No bundler, no `src/`, no ES modules in the app.
+Category **1 (critical bugs / invalid math)** is done. Leftovers from that pass are also done (RESET result + names, live slider labels, README math copy).
 
-Scoring:
+The app is still a **static page**, now with two JS layers:
+
+- `scoring.js` — DOM-free: `{ text, weight }[]` + names → result sentence
+- `scripts.js` — UI: read the table, call `compareDecisions`, write `#finalResult`, `initApp()`
+
+No `src/`, no app bundler. Vite is **dev server only** (`npm run serve`), not a rewrite. The page loads as ES modules; open via that server (or GitHub Pages), not `file://`.
+
+Scoring (unchanged):
 
 ```text
-score = sum(filled pro weights) − sum(filled con weights)
+score = sum(filled pro weights) − sum(filled cons)
 difference = scoreA − scoreB
 ```
 
@@ -22,7 +29,7 @@ A row counts only if the adjacent text is non-blank. Empty sliders default to `0
 - Tie: `RESULT: Both decisions are equally good(or bad...).`
 - Lead: `RESULT: Stay is better than Leave by 4 points.`
 
-Decision names live in `#A` / `#B` (`textContent`), not implicit globals. `calculate()` reads those cells.
+Decision names live in `#A` / `#B` (`textContent`). `resetSliders()` clears names, slider labels (`"0"`), and `#finalResult`. Native `type="reset"` still zeros form inputs.
 
 ### How to run
 
@@ -30,64 +37,58 @@ Decision names live in `#A` / `#B` (`textContent`), not implicit globals. `calcu
 npm install   # first clone only
 npm test      # vitest run
 npm run test:watch
+npm run serve # Vite, usually http://localhost:5173/
 ```
 
-Open `index.html` in a browser for the live app (classic `<script src="scripts.js">`).
-
-Tests: `test/empty-rows.test.js` (behavior) + `test/loadApp.js` (jsdom fixture). **13 tests**, all passing at handoff.
+Tests: `test/scoring.test.js` (plain objects) + `test/empty-rows.test.js` (page via jsdom) + `test/loadApp.js`. **20 tests**, all passing at handoff.
 
 ### How tests load the app
 
-The page is **not** an ES module. Tests **do not** `import` `scripts.js`. `loadApp()` reads `index.html` / `scripts.js` as text, puts the body in jsdom, `new Function(...)()` the script, and assigns functions onto `globalThis`. Add a new top-level function in `scripts.js` → also list it in `attachGlobals` in `test/loadApp.js`.
+`loadApp()` injects the HTML body (scripts stripped), then `import`s `scripts.js` and calls `initApp()`. It assigns `start` / `calculate` / `resetSliders` / `sliderChange` onto `globalThis`. Scoring tests `import` `scoring.js` directly — no DOM.
 
-`loadApp()` deletes leftover `decisionA` / `decisionB` on `globalThis` so tests do not leak names.
+jsdom **inline `onclick`** still cannot see page functions unless they are on `window` (`initApp` does that). Drive behavior by calling `globalThis.resetSliders()` / `calculate()` (and `form.reset()` for native form reset). Do not `.click()` RESET unless the harness is changed.
 
-jsdom **inline `onclick`** cannot see those eval’d functions. Drive behavior by calling `globalThis.resetSliders()` / `calculate()` (and `form.reset()` for native form reset). Do not `.click()` the RESET button in tests unless the harness is changed.
+RESET: `type="reset"` zeros inputs; `resetSliders()` sets labels to `"0"` (not `.value`) because `onclick` can run **before** the form reset. Names and `#finalResult` are not form fields, so they are cleared in `resetSliders()`.
 
-RESET: `type="reset"` zeros inputs; `resetSliders()` must set labels to `"0"` (not `.value`), because `onclick` can run **before** the form reset.
+Slider labels: `input` listeners in `initApp()`, not `onchange`. Tests dispatch `input` (or call `sliderChange`). Readout copy is `Value:` (the number is `.sliderStatus`).
 
 ### Working agreements
 
 - Surgical changes; one concern per pass. TDD: failing test → confirm red → production code.
-- Test **behavior**, not markup shape (no regex-on-`index.html` tests). A deleted `markup.test.js` was rejected for that reason.
-- No narrating comments in source; names should be enough. Domain words: `decisionA` / `decisionB`, not `nameA`.
-- Do **not** add `src/`, Vite-for-the-app, or a clean-architecture split unless the app grows. Vitest is **test-only**.
-- Combined importance + impact on **one slider** is intentional product design.
-- Modern JS (`const`/`let`, templates, `for...of`) is fine in code we touch. `scripts.js` has no `var` left.
-- Do not add comments that restate the code.
+- Test **behavior**, not implementation details (markup, regex-on-source, how a slider is wired).
+- No narrating comments in source. Domain words: `decisionA` / `decisionB`.
+- Do **not** start a framework rewrite. `src/` only if the app grows further. Vite stays serve-only unless a real build is needed for deploy.
+- Combined importance + impact on **one slider** is intentional.
+- CSS: tokens in `:root` (`--color-pro`, `--color-con`, …). Slider/hint color via `--slider` / `--hint` on the element — no `!important`, no duplicated vendor overrides to win specificity. Light theme only. Do not ship a custom cursor image; `cursor: pointer` is the system pointer.
+- Pico / Materialize-the-library were rejected (generic kit look). Custom CSS with a Material-ish bar/elevation is the look. Cons sliders and Cons/Concern info icons share `--color-con`.
+- WebKit vs Firefox range thumbs must stay in **separate** rules (combined prefix selectors get dropped).
 
-### What is done (Category 1)
+### What is done this stretch
 
-Removed unused `scriptstesting.js`. Replaced percent-better with point difference. Empty rows ignored. Reset labels. Ties update `#finalResult` (no `alert`). Names required; `textContent` not `innerHTML`. HTML `head` / `</tr>` fixed. `sliderChange` updates the label **in the same cell**. `const`/`let` throughout `scripts.js`.
-
-### Small leftovers (not Category 1, easy)
-
-- RESET does not clear `#finalResult`.
-- Slider labels still use `onChange` (updates on mouse-up); `oninput` would be live.
-- README still talks about “percentage one decision is better.”
-- `REVIEW.md` body below still has some outdated “current formula” / “weighted points” wording; the **live** sentence is “is better than … by N points.”
+RESET clears result and names. Live slider labels. README matches point-difference math. Scoring extracted. `initApp` + ES modules. Vite `npm run serve`. Light panel UI: app bar, table sheet, inset slider wells, `Value:` readouts, info-icon header tips (original long copy on hover/focus), teal pros / terracotta cons.
 
 ### What to do next (Category 2)
 
-Product/modeling, not bugfixes. Highest-value later work:
+Product/modeling, not bugfixes:
 
 1. Shared criteria matrix vs independent pro/con lists.
 2. In-page names instead of `prompt()`.
 3. Add/remove rows; show contribution of each row; sensitivity (“would one point flip the winner?”).
-4. Optional later: extract DOM-free scoring `{ text, weight }[]` for unit tests; `src/` / modules only if that extraction happens.
 
-Do not start a framework rewrite as the next move.
+The hosted GitHub Pages copy may still be the old percent app until redeployed.
 
 ### Files that matter
 
 | File | Role |
 |---|---|
-| `index.html` | Page, table, START / Calculate / RESET |
-| `scripts.js` | All app logic (classic globals via `function` declarations) |
-| `main.css` | Minimal table/slider layout |
+| `index.html` | Page, table, Start / Calculate / Reset |
+| `scoring.js` | Scoring + result sentence (no DOM) |
+| `scripts.js` | DOM / `initApp` |
+| `main.css` | Light Material-style layout + tokens |
 | `test/loadApp.js` | jsdom loader + `fillConsideration` / `setDecisionNames` |
-| `test/empty-rows.test.js` | Behavior tests |
-| `package.json` | `vitest` + `jsdom` only |
+| `test/scoring.test.js` | Scoring behavior |
+| `test/empty-rows.test.js` | Page behavior |
+| `package.json` | `vitest`, `jsdom`, `vite` (serve) |
 | `REVIEW.md` | This review + handoff |
 
 ---

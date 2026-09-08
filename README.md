@@ -17,6 +17,5 @@ npm run serve
 
 ### Future improvements
 
-- Style the UI and keep sliders inside their cells
 - In-page name fields instead of `prompt()`
 - Add and remove rows; show how much each row contributed
