@@ -76,11 +76,11 @@ These are definite defects. They should be fixed before product/modeling redesig
 7. **~~Ties leave the previous result on screen.~~ Done.**  
    Equal nets write a tie sentence onto `#finalResult` (same wording as the old alert). A later non-tie still rewrites the whole paragraph, so child spans are not required after the first `calculate()`.
 
-8. **Calculate before START uses undefined names.**  
-   `decisionA` / `decisionB` are implicit globals set only in `start()`. Calculating first yields “undefined is N% better than undefined.”
+8. **~~Calculate before START uses undefined names.~~ Done.**  
+   Names come from `#A` / `#B` (`textContent`). Missing either name writes `RESULT: Enter both decision names first.`
 
-9. **Decision names are written with `innerHTML`.**  
-   Prompt text should go into `textContent` (or be escaped). This is an HTML-injection path.
+9. **~~Decision names are written with `innerHTML`.~~ Done.**  
+   `start()` uses `textContent`, so prompt text is not parsed as HTML.
 
 ### Code correctness (will cause wrong or fragile behavior)
 
@@ -189,7 +189,7 @@ These are not “the current math is wrong.” They are other ways to look at th
 1. ~~Delete or replace `scriptstesting.js`.~~ Removed (unused duplicate, not tests).
 2. ~~Replace the percent formula with net scores + an honest difference.~~ Done (`scripts.js` / result copy in `index.html`; wording is “leads by a difference of N weighted points”).
 3. ~~Fix empty-row weighting and slider defaults.~~ Done (`value="0"`; skip blank pro/con text via `sumFilledWeights` in `scripts.js`).
-4. Fix ties, START/Calculate order, `textContent`, HTML, and leftover globals as separate, small follow-ups — each driven by a Vitest test where the behavior is DOM-checkable. ~~Reset.~~ Done.
+4. Fix malformed HTML and leftover globals (`sliderChange` index `i`) as separate, small follow-ups — each driven by a Vitest test where the behavior is DOM-checkable. ~~Reset, ties, names, `textContent`.~~ Done.
 5. ~~Add Vitest + jsdom (test-only; app stays static HTML).~~ Done.
 6. Then consider shared criteria, sensitivity, dealbreakers, and richer UX.
 7. Further architecture (separate UI vs scoring files, bundler for the app itself) only if the app is growing.

@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { fillConsideration, loadApp } from "./loadApp.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fillConsideration, loadApp, setDecisionNames } from "./loadApp.js";
 
 describe("test harness", () => {
   beforeEach(() => {
@@ -76,8 +76,7 @@ describe("reset", () => {
 describe("ties", () => {
   beforeEach(() => {
     loadApp();
-    globalThis.decisionA = "Stay";
-    globalThis.decisionB = "Leave";
+    setDecisionNames("Stay", "Leave");
   });
 
   it("replaces a previous lead with a tie message when scores are equal", () => {
@@ -104,5 +103,44 @@ describe("ties", () => {
     expect(document.getElementById("finalResult").textContent).toBe(
       "RESULT: Stay is better than Leave by 4 points.",
     );
+  });
+});
+
+describe("decision names", () => {
+  beforeEach(() => {
+    loadApp();
+  });
+
+  it("does not treat missing names as undefined", () => {
+    fillConsideration("prosA", 0, "Pay", 8);
+    globalThis.calculate();
+
+    const result = document.getElementById("finalResult").textContent;
+    expect(result).not.toMatch(/undefined/i);
+    expect(result).toBe("RESULT: Enter both decision names first.");
+  });
+
+  it("uses the names from the table, not leftover globals", () => {
+    globalThis.decisionA = "Wrong A";
+    globalThis.decisionB = "Wrong B";
+    setDecisionNames("Stay", "Leave");
+    fillConsideration("prosA", 0, "Pay", 8);
+    globalThis.calculate();
+
+    expect(document.getElementById("finalResult").textContent).toBe(
+      "RESULT: Stay is better than Leave by 8 points.",
+    );
+  });
+
+  it("writes prompt names as text, not HTML", () => {
+    vi.spyOn(window, "prompt")
+      .mockReturnValueOnce("Stay")
+      .mockReturnValueOnce("<img src=x>");
+
+    globalThis.start();
+
+    const cellB = document.getElementById("B");
+    expect(cellB.querySelector("img")).toBeNull();
+    expect(cellB.textContent).toBe("<img src=x>");
   });
 });

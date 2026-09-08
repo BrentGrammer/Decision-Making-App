@@ -1,9 +1,9 @@
 function start() {
-    decisionA = prompt("Enter Decision A:","");
-    decisionB = prompt("Enter Decision B:","");
+    const decisionA = prompt("Enter Decision A:", "") ?? "";
+    const decisionB = prompt("Enter Decision B:", "") ?? "";
 
-    document.getElementById('A').innerHTML = decisionA;
-    document.getElementById('B').innerHTML = decisionB;
+    document.getElementById("A").textContent = decisionA;
+    document.getElementById("B").textContent = decisionB;
 }
 
 function sliderChange (inputObj) {
@@ -54,7 +54,14 @@ function calculate() {
     const resultA = prosASum - consASum;
     const resultB = prosBSum - consBSum;
     const difference = resultA - resultB;
-    const resultEl = document.getElementById('finalResult');
+    const resultEl = document.getElementById("finalResult");
+    const decisionA = document.getElementById("A").textContent.trim();
+    const decisionB = document.getElementById("B").textContent.trim();
+
+    if (!decisionA || !decisionB) {
+        resultEl.textContent = "RESULT: Enter both decision names first.";
+        return;
+    }
 
     if (difference === 0) {
         resultEl.textContent = "RESULT: Both decisions are equally good(or bad...).";

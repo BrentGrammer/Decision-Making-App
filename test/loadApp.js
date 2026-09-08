@@ -38,6 +38,8 @@ globalThis.calculate = calculate;
 `;
 
 export function loadApp() {
+  delete globalThis.decisionA;
+  delete globalThis.decisionB;
   document.body.innerHTML = bodyWithoutScripts;
   new Function(attachGlobals)();
 }
@@ -48,4 +50,9 @@ export function fillConsideration(sliderClass, rowIndex, text, weight) {
     .previousElementSibling.querySelector("input[type='text']");
   textInput.value = text;
   slider.value = String(weight);
+}
+
+export function setDecisionNames(decisionA, decisionB) {
+  document.getElementById("A").textContent = decisionA;
+  document.getElementById("B").textContent = decisionB;
 }
