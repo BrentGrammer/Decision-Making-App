@@ -14,29 +14,27 @@ function sliderChange(slider) {
 }
 
 function resetSliders() {
-    var labels = document.getElementsByClassName('sliderStatus');
-    for (var i = 0; i < labels.length; i++) {
-        labels[i].textContent = "0";
+    for (const label of document.getElementsByClassName("sliderStatus")) {
+        label.textContent = "0";
     }
 }
 
 function considerationText(slider) {
-    var sliderCell = slider.parentElement;
-    var textCell = sliderCell ? sliderCell.previousElementSibling : null;
+    const textCell = slider.parentElement?.previousElementSibling;
     if (!textCell) {
         return "";
     }
-    var input = textCell.querySelector("input[type='text']");
+    const input = textCell.querySelector("input[type='text']");
     return input ? input.value.trim() : "";
 }
 
 function sumFilledWeights(sliders) {
-    var total = 0;
-    for (var i = 0; i < sliders.length; i++) {
-        if (!considerationText(sliders[i])) {
+    let total = 0;
+    for (const slider of sliders) {
+        if (!considerationText(slider)) {
             continue;
         }
-        total += parseInt(sliders[i].value, 10);
+        total += parseInt(slider.value, 10);
     }
     return total;
 }
