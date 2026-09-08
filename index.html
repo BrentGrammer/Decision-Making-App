@@ -1,104 +1,109 @@
 <!doctype html>
-<html>
-  <head></head>
-      <title>DECISION CALCULATOR</title>
-      <link rel="stylesheet" type="text/css" href="main.css"/>
+<html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="color-scheme" content="light">
+      <title>Decision calculator</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+      <link rel="stylesheet" href="main.css">
   </head>
   <body>
-    <!--initiates prompts for user to enter choices-->
-    <p>To Begin, click the START button.</p>
-    <button  onclick="start()">START!</button>
+    <header class="app-bar">
+      <h1>Decision calculator</h1>
+    </header>
+    <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg">
+      <symbol id="icon-info" viewBox="0 0 24 24">
+        <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+      </symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </symbol>
+    </svg>
+    <main class="page">
+      <p class="lede">Name both options, list the pros and cons, then calculate which leads and by how many points.</p>
 
-    <form>
-        <table>
-            <tr>
-                <th>DECISIONS</th>
-                <th>PROS<br>(Benefits, Advantages, Positives)</th>
-                <th>How Important Is This To You?<br>How Much Could This Affect Your Life Positively?<br>(On a scale of 1-10)</th>
-                <th>CONS<br>(Concerns, Worries, Poss. Liabilities)</th>
-                <th>How Much Does This Worry Or Concern You?<br>How Much Could/Would This Affect Your Life Negatively?<br> (On a scale of 1-10)</th>
-            </tr>
+      <form>
+          <div class="sheet sheet-grid">
+              <div class="col-head">Decision</div>
+              <div class="col-head">
+                Pros <button type="button" class="hint" aria-label="About pros">
+                  <svg aria-hidden="true"><use href="#icon-info"/></svg>
+                  <span class="hint-text">Benefits, advantages, positives.</span>
+                </button>
+                <div class="col-head-metric">Importance / positive impact (0–10) <button type="button" class="hint" aria-label="About importance">
+                  <svg aria-hidden="true"><use href="#icon-info"/></svg>
+                  <span class="hint-text">How important is this to you? How much could this affect your life positively? (On a scale of 1–10.)</span>
+                </button></div>
+              </div>
+              <div class="col-head">
+                Cons <button type="button" class="hint hint-con" aria-label="About cons">
+                  <svg aria-hidden="true"><use href="#icon-info"/></svg>
+                  <span class="hint-text">Concerns, worries, possible liabilities.</span>
+                </button>
+                <div class="col-head-metric">Concern / negative impact (0–10) <button type="button" class="hint hint-con" aria-label="About concern">
+                  <svg aria-hidden="true"><use href="#icon-info"/></svg>
+                  <span class="hint-text">How much does this worry or concern you? How much could this affect your life negatively? (On a scale of 1–10.)</span>
+                </button></div>
+              </div>
 
-            <!--ROW 2-6 (Decision A SECTION)-->
-            <tr>
-                <th rowspan="5" id="A"></th>
-                <td><input type="text" placeholder="Enter Pro Here."/></td>
-                <td><input class="sliders prosA" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-                <td><input type="text" placeholder="Enter Con Here."/></td>
-                <td><input class="sliders consA" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-            </tr>
-            <tr>
-                <td><input type="text" placeholder="Enter Pro Here."/></td>
-                <td><input class="sliders prosA" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-                <td><input type="text" placeholder="Enter Con Here."/></td>
-                <td><input class="sliders consA" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
+              <div class="decision-name">
+                <input id="A" type="text" maxlength="50" placeholder="Enter decision" aria-label="Decision A" aria-describedby="A-error" autocomplete="off" />
+                <p id="A-error" class="field-error" hidden></p>
+              </div>
+              <div class="list" data-group="prosA" data-kind="pro">
+                <div class="consideration-rows"></div>
+                <button type="button" class="add-row" data-group="prosA" aria-label="Add a pro for decision A">Add pro</button>
+              </div>
+              <div class="list" data-group="consA" data-kind="con">
+                <div class="consideration-rows"></div>
+                <button type="button" class="add-row" data-group="consA" aria-label="Add a con for decision A">Add con</button>
+              </div>
 
-            </tr>
-            <tr>
-                <td><input type="text" placeholder="Enter Pro Here."/></td>
-                <td><input class="sliders prosA" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-                <td><input type="text" placeholder="Enter Con Here."/></td>
-                <td><input class="sliders consA" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
+              <div class="decision-name">
+                <input id="B" type="text" maxlength="50" placeholder="Enter decision" aria-label="Decision B" aria-describedby="B-error" autocomplete="off" />
+                <p id="B-error" class="field-error" hidden></p>
+              </div>
+              <div class="list" data-group="prosB" data-kind="pro">
+                <div class="consideration-rows"></div>
+                <button type="button" class="add-row" data-group="prosB" aria-label="Add a pro for decision B">Add pro</button>
+              </div>
+              <div class="list" data-group="consB" data-kind="con">
+                <div class="consideration-rows"></div>
+                <button type="button" class="add-row" data-group="consB" aria-label="Add a con for decision B">Add con</button>
+              </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="button" onclick="calculate()">Calculate</button>
+            <button type="reset" class="button button-secondary" onclick="resetSliders()">Reset</button>
+          </div>
+      </form>
 
-            </tr>
-            <tr>
-                <td><input type="text" placeholder="Enter Pro Here."/></td>
-                <td><input class="sliders prosA" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-                <td><input type="text" placeholder="Enter Con Here."/></td>
-                <td><input class="sliders consA" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
+      <template id="consideration-row">
+        <div class="consideration-row">
+          <div class="consideration-text">
+            <input type="text" />
+            <p class="field-error" hidden></p>
+          </div>
+          <div class="slider-well">
+            <input class="sliders" type="range" min="0" max="10" value="0" step="1" />
+            <small class="slider-readout">Value: <span class="sliderStatus">0</span></small>
+          </div>
+          <button type="button" class="remove-row" title="Remove">
+            <svg aria-hidden="true"><use href="#icon-close"/></svg>
+            <span class="remove-tooltip">Remove</span>
+          </button>
+        </div>
+      </template>
 
-            <tr>
-                <td><input type="text" placeholder="Enter Pro Here."/></td>
-                <td><input class="sliders prosA" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-                <td><input type="text" placeholder="Enter Con Here."/></td>
-                <td><input class="sliders consA" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-
-            <!--ROW 7: Begin Decision B section-->
-            <tr>
-                <th rowspan="5" id="B"></th>
-                <td><input type="text" placeholder="Enter Pro Here."/></td>
-                <td><input class="sliders prosB" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-                <td><input type="text" placeholder="Enter Con Here."/></td>
-                <td><input class="sliders consB" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-            </tr>
-            <tr>
-                <td><input type="text" placeholder="Enter Pro Here."/></td>
-                <td><input class="sliders prosB" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-                <td><input type="text" placeholder="Enter Con Here."/></td>
-                <td><input class="sliders consB" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-
-            </tr>
-            <tr>
-                <td><input type="text" placeholder="Enter Pro Here."/></td>
-                <td><input class="sliders prosB" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-                <td><input type="text" placeholder="Enter Con Here."/></td>
-                <td><input class="sliders consB" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-
-            </tr>
-            <tr>
-                <td><input type="text" placeholder="Enter Pro Here."/></td>
-                <td><input class="sliders prosB" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-                <td><input type="text" placeholder="Enter Con Here."/></td>
-                <td><input class="sliders consB" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-
-            </tr>
-            <tr>
-                <td><input type="text" placeholder="Enter Pro Here."/></td>
-                <td><input class="sliders prosB" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-                <td><input type="text" placeholder="Enter Con Here."/></td>
-                <td><input class="sliders consB" type="range" min="0" max="10" value="5" step="1" onChange="sliderChange(this)"/><br />Current Value: <span class="sliderStatus">5</span></td>
-
-            </tr>
-
-        </table>
-        <input type="button" value="Calculate!" onClick="calculate()" />
-        <button type="reset" onclick="resetSliders()">RESET</button>
-    </form>
-
-    <!--FINAL RESULT REPORT TO USER-->
-    <p id="finalResult">RESULT: This choice:(<span id="greaterChoice"></span>) is a <span id="percentage"></span>% better decision than this choice:(<span id="lesserChoice"></span>) </p>
+      <p id="finalResult" class="result" aria-live="polite"></p>
+    </main>
     
-    <!-- link to Javscript code file -->
-    <script src="scripts.js"></script>
+    <script type="module">
+      import { initApp } from "./js/scripts.js";
+      initApp();
+    </script>
   </body>
 </html>

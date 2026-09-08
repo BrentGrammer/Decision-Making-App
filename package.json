@@ -1,0 +1,17 @@
+{
+  "name": "decision-making-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "serve": "vite"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "jsdom": "^26.1.0",
+    "vite": "^7.3.6",
+    "vitest": "^3.2.4"
+  }
+}
