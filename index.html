@@ -21,7 +21,7 @@
     </svg>
     <main class="page">
       <p class="lede">Name both options, list the pros and cons, then calculate which leads and by how many points.</p>
-      <button type="button" onclick="start()">Start</button>
+      <button type="button" class="button" onclick="start()">Start</button>
 
       <form>
           <div class="sheet">
@@ -36,87 +36,87 @@
                     <svg aria-hidden="true"><use href="#icon-info"/></svg>
                     <span class="hint-text">How important is this to you? How much could this affect your life positively? (On a scale of 1–10.)</span>
                   </button></th>
-                  <th>Cons <button type="button" class="hint" aria-label="About cons">
+                  <th>Cons <button type="button" class="hint hint-con" aria-label="About cons">
                     <svg aria-hidden="true"><use href="#icon-info"/></svg>
                     <span class="hint-text">Concerns, worries, possible liabilities.</span>
                   </button></th>
-                  <th>Concern / negative impact (0–10) <button type="button" class="hint" aria-label="About concern">
+                  <th>Concern / negative impact (0–10) <button type="button" class="hint hint-con" aria-label="About concern">
                     <svg aria-hidden="true"><use href="#icon-info"/></svg>
                     <span class="hint-text">How much does this worry or concern you? How much could this affect your life negatively? (On a scale of 1–10.)</span>
                   </button></th>
               </tr>
 
               <tr>
-                  <th rowspan="5" id="A"></th>
+                  <th rowspan="5" id="A" class="decision-name"></th>
                   <td><input type="text" placeholder="Enter a pro"/></td>
-                  <td><input class="sliders prosA" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders prosA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
                   <td><input type="text" placeholder="Enter a con"/></td>
-                  <td><input class="sliders consA" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders consA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
               </tr>
               <tr>
                   <td><input type="text" placeholder="Enter a pro"/></td>
-                  <td><input class="sliders prosA" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders prosA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
                   <td><input type="text" placeholder="Enter a con"/></td>
-                  <td><input class="sliders consA" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders consA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
               </tr>
               <tr>
                   <td><input type="text" placeholder="Enter a pro"/></td>
-                  <td><input class="sliders prosA" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders prosA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
                   <td><input type="text" placeholder="Enter a con"/></td>
-                  <td><input class="sliders consA" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders consA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
               </tr>
               <tr>
                   <td><input type="text" placeholder="Enter a pro"/></td>
-                  <td><input class="sliders prosA" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders prosA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
                   <td><input type="text" placeholder="Enter a con"/></td>
-                  <td><input class="sliders consA" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders consA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
               </tr>
               <tr>
                   <td><input type="text" placeholder="Enter a pro"/></td>
-                  <td><input class="sliders prosA" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders prosA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
                   <td><input type="text" placeholder="Enter a con"/></td>
-                  <td><input class="sliders consA" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders consA" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
               </tr>
               <tr>
-                  <th rowspan="5" id="B"></th>
+                  <th rowspan="5" id="B" class="decision-name"></th>
                   <td><input type="text" placeholder="Enter a pro"/></td>
-                  <td><input class="sliders prosB" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders prosB" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
                   <td><input type="text" placeholder="Enter a con"/></td>
-                  <td><input class="sliders consB" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
-              </tr>
-              <tr>
-                  <td><input type="text" placeholder="Enter a pro"/></td>
-                  <td><input class="sliders prosB" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
-                  <td><input type="text" placeholder="Enter a con"/></td>
-                  <td><input class="sliders consB" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders consB" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
               </tr>
               <tr>
                   <td><input type="text" placeholder="Enter a pro"/></td>
-                  <td><input class="sliders prosB" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders prosB" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
                   <td><input type="text" placeholder="Enter a con"/></td>
-                  <td><input class="sliders consB" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders consB" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
               </tr>
               <tr>
                   <td><input type="text" placeholder="Enter a pro"/></td>
-                  <td><input class="sliders prosB" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders prosB" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
                   <td><input type="text" placeholder="Enter a con"/></td>
-                  <td><input class="sliders consB" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders consB" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
               </tr>
               <tr>
                   <td><input type="text" placeholder="Enter a pro"/></td>
-                  <td><input class="sliders prosB" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders prosB" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
                   <td><input type="text" placeholder="Enter a con"/></td>
-                  <td><input class="sliders consB" type="range" min="0" max="10" value="0" step="1" /><small>Current value: <span class="sliderStatus">0</span></small></td>
+                  <td class="slider-well"><input class="sliders consB" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
+              </tr>
+              <tr>
+                  <td><input type="text" placeholder="Enter a pro"/></td>
+                  <td class="slider-well"><input class="sliders prosB" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
+                  <td><input type="text" placeholder="Enter a con"/></td>
+                  <td class="slider-well"><input class="sliders consB" type="range" min="0" max="10" value="0" step="1" /><small class="slider-readout">Value: <span class="sliderStatus">0</span></small></td>
               </tr>
           </table>
           </div>
           <div class="actions">
-            <button type="button" onclick="calculate()">Calculate</button>
-            <button type="reset" class="secondary" onclick="resetSliders()">Reset</button>
+            <button type="button" class="button" onclick="calculate()">Calculate</button>
+            <button type="reset" class="button button-secondary" onclick="resetSliders()">Reset</button>
           </div>
       </form>
 
-      <p id="finalResult"></p>
+      <p id="finalResult" class="result"></p>
     </main>
     
     <script type="module">
