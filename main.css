@@ -49,14 +49,22 @@ body {
     height: 0;
     overflow: hidden;
 }
-    max-width: 80rem;
-    margin: 0 auto;
-    padding: 1.5rem 1.25rem 3rem;
+
+.page {
+    width: 100%;
+    margin: 0;
+    padding: 1.5rem 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
 }
 
 .lede {
+    margin: 0;
     color: var(--md-muted);
-    max-width: 40rem;
+    max-width: 48rem;
+    font-size: 1.05rem;
     line-height: 1.5;
 }
 
@@ -68,7 +76,7 @@ button {
     text-transform: uppercase;
     border: none;
     border-radius: var(--md-radius);
-    padding: 0.65rem 1.25rem;
+    padding: 0.75rem 1.35rem;
     cursor: pointer;
     background: var(--md-primary);
     color: var(--md-on-primary);
@@ -90,8 +98,16 @@ button.secondary {
     border: 1px solid var(--md-outline);
 }
 
+form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
 .sheet {
-    margin: 1.25rem 0;
+    width: 100%;
+    margin: 0;
     overflow: auto;
     background: var(--md-surface-container);
     border: 1px solid var(--md-outline);
@@ -102,31 +118,31 @@ button.secondary {
 table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.875rem;
+    font-size: 1rem;
 }
 
 th,
 td {
     border: 1px solid var(--md-outline);
-    padding: 0.65rem 0.75rem;
+    padding: 0.85rem 1rem;
     text-align: left;
     vertical-align: middle;
 }
 
 tr:first-child th {
     background: #dfe7ea;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 500;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--md-muted);
     vertical-align: top;
-    line-height: 1.35;
+    line-height: 1.4;
 }
 
 th[id] {
-    min-width: 7rem;
-    font-size: 1rem;
+    min-width: 8rem;
+    font-size: 1.15rem;
     font-weight: 500;
     text-transform: none;
     letter-spacing: 0;
@@ -143,13 +159,13 @@ input[type="text"] {
     width: 100%;
     margin: 0;
     font-family: inherit;
-    font-size: 1rem;
+    font-size: 1.0625rem;
     color: inherit;
     background: var(--md-field);
     border: 1px solid var(--md-outline);
     border-radius: 2px;
     box-shadow: var(--md-inset);
-    padding: 0.5rem 0.65rem;
+    padding: 0.65rem 0.75rem;
 }
 
 input[type="text"]:focus {
@@ -160,6 +176,7 @@ input[type="text"]:focus {
 
 input[type="range"] {
     width: 100%;
+    height: 1.75rem;
     margin: 0;
     accent-color: var(--md-primary);
 }
@@ -177,8 +194,8 @@ td small {
 }
 
 #finalResult {
-    margin-top: 1.5rem;
-    font-size: 1.15rem;
+    margin: 0;
+    font-size: 1.25rem;
     font-weight: 500;
     color: var(--md-primary);
 }
@@ -205,8 +222,8 @@ td small {
 
 .hint svg {
     display: block;
-    width: 1rem;
-    height: 1rem;
+    width: 1.15rem;
+    height: 1.15rem;
     fill: currentColor;
 }
 
