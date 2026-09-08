@@ -7,16 +7,17 @@ The app scores each option as **pros minus cons**, then reports which name leads
 ## Use the App
 
 - Run `npm run serve` (Vite, usually http://localhost:5173/) and open that URL, or visit [the hosted page](https://brentgrammer.github.io/Decision-Making-App/).
-- Click **START!** to name the two decisions, fill rows, then **Calculate!**. **RESET** clears names, inputs, slider labels, and the result.
+- Type each option’s name in the Decision column (1–50 characters), fill rows, then **Calculate**. **RESET** clears names, inputs, slider labels, and the result.
 
 ```bash
 npm install   # first clone only
+npx playwright install chromium   # first clone only, for browser tests
 npm test
+npm run test:e2e
 npm run serve
 ```
 
 ### Future improvements
 
-- In-page name fields instead of `prompt()`
 - Add and remove rows; show how much each row contributed
 - Warn when the same pro or con is listed more than once in different words ([AI duplicate detection](docs/ai-duplicate-detection.md))
