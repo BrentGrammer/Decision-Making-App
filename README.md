@@ -19,5 +19,5 @@ npm run serve
 
 ### Future improvements
 
-- Add and remove rows; show how much each row contributed
+- Show how much each row contributed and sensitivity (“would one point flip the winner?”)
 - Warn when the same pro or con is listed more than once in different words ([AI duplicate detection](docs/ai-duplicate-detection.md))

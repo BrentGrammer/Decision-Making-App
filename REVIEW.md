@@ -2,12 +2,12 @@
 
 ## Handoff (for the next session)
 
-**When:** 8 September 2026, after in-page names, scoring/UI-string split, `js/` layout, Vite serve, Playwright, and a light Material-style UI.
+**When:** 8 September 2026, after in-page names, add/remove independent pro and con rows, blank-row slider warnings, `consideration-rows.js` extraction, scoring/UI-string split, Vite serve, and Playwright tests.
 **Start here.** Historical review notes are below; they still describe *why* the old percent formula was wrong. Several “current” sentences in those notes are stale. Trust this handoff and the code.
 
 ### Where the project is
 
-Category **1 (critical bugs / invalid math)** is done. In-page decision names (no START / `prompt()`) are done.
+Category **1 (critical bugs / invalid math)** is done. In-page decision names (no START / `prompt()`) are done. Independent add/remove pro and con rows with inline blank-text warnings are done.
 
 The app is still a **static page**. `index.html` stays at the repo root (GitHub Pages + Vite serve). App modules live under `js/`. No `src/`, no app bundler. Vite is **dev server only** (`npm run serve`). Open via that server (or GitHub Pages), not `file://`.
 
@@ -33,9 +33,9 @@ score = sum(filled pro weights) − sum(filled cons)
 difference = scoreA − scoreB
 ```
 
-A row counts only if the adjacent text is non-blank. Empty sliders default to `0`. Extra distinct cons still add up (that is intended). Near-duplicate phrasing is a future warning, not a formula change — see `docs/ai-duplicate-detection.md`.
+A row counts only if the adjacent text is non-blank. Empty sliders default to `0`. If a slider is moved (> 0) while text remains blank, inline field validation warns that text is required or the row should be removed (`aria-invalid="true"` and an adjacent `.field-error`). Extra distinct cons still add up (that is intended). Near-duplicate phrasing is a future warning, not a formula change — see `docs/ai-duplicate-detection.md`.
 
-Decision names are inputs `#A` / `#B` (1–50 characters after trim). Invalid names show `#A-error` / `#B-error` and `aria-invalid`. Calculate writes `#finalResult` and `scrollIntoView`s it (`aria-live="polite"`). Native `type="reset"` zeros form fields (including names); `resetSliders()` still sets slider labels to `"0"` and clears the result and name errors.
+Decision names are inputs `#A` / `#B` (1–50 characters after trim). Invalid names show `#A-error` / `#B-error` and `aria-invalid`. Calculate writes `#finalResult` and `scrollIntoView`s it (`aria-live="polite"`). Native `type="reset"` zeros form fields (including names); `resetSliders()` restores default 1-pro/1-con rows, sets slider labels to `"0"`, and clears the result and name errors.
 
 ### How to run
 
@@ -47,7 +47,7 @@ npm run test:e2e                 # Playwright; reuses Vite if already running
 npm run serve                    # Vite, usually http://localhost:5173/
 ```
 
-Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (formatComparison) + `test/empty-rows.test.js` (page via jsdom) + `test/loadApp.js`. Playwright: `e2e/decision.spec.js`. All passing at handoff.
+Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (formatComparison) + `test/empty-rows.test.js` (page behavior & blank warnings via jsdom) + `test/rows.test.js` (add/remove rows) + `test/loadApp.js`. Playwright: `e2e/decision.spec.js`. All passing at handoff.
 
 ### How tests load the app
 
@@ -73,16 +73,15 @@ Slider labels: `input` listeners in `initApp()`, not `onchange`. Tests dispatch 
 
 ### What is done this stretch
 
-In-page names; START / `prompt()` removed. Name validation (min 1 / max 50, field errors, blur + calculate). Calculate scrolls `#finalResult` into view. Scoring outcomes split from UI strings. App modules under `js/`. Vitest + Playwright. Light panel UI (unchanged look): app bar, table sheet, inset slider wells, `Value:` readouts, info-icon header tips, teal pros / terracotta cons.
+In-page names; START / `prompt()` removed. Name validation (min 1 / max 50, field errors, blur + calculate). Calculate scrolls `#finalResult` into view. Scoring outcomes split from UI strings. App modules under `js/` with `consideration-rows.js` extracted. Add/remove independent pro and con rows per decision (no pro/con row pairing). Inline validation warnings when a slider moves without text (`BLANK_PRO_ERROR` / `BLANK_CON_ERROR`). Accessible names and UI text centralized in `js/constants/strings.js`. Vitest + Playwright suites passing. Light panel UI: app bar, grid sheet, inset slider wells, `Value:` readouts, info-icon header tips, teal pros / terracotta cons.
 
 ### What to do next (Category 2)
 
 Product/modeling, not bugfixes:
 
-1. Add/remove pro and con rows (independent lists; do not pair a pro with a con on the same row). Scoring already accepts any length.
-2. Show contribution of each row; sensitivity (“would one point flip the winner?”).
-3. Shared criteria matrix vs independent lists — later, if you want the same questions for both options.
-4. Duplicate-phrasing warning — `docs/ai-duplicate-detection.md` (AI, not this pass).
+1. Show contribution of each row; sensitivity (“would one point flip the winner?”).
+2. Shared criteria matrix vs independent lists — later, if you want the same questions for both options.
+3. Duplicate-phrasing warning — `docs/ai-duplicate-detection.md` (AI, not this pass).
 
 The hosted GitHub Pages copy may still be the old percent app until redeployed.
 
@@ -90,7 +89,7 @@ The hosted GitHub Pages copy may still be the old percent app until redeployed.
 
 | File | Role |
 |---|---|
-| `index.html` | Page, name fields, table, Calculate / Reset |
+| `index.html` | Page, name fields, grid sheet with pro/con lists, Calculate / Reset |
 | `js/scoring.js` | Weights, name rules, `{ kind, … }` outcome |
 | `js/constants/strings.js` | UI strings + `formatComparison` |
 | `js/consideration-rows.js` | Row templates, add/remove, slider sync, blank warnings |
