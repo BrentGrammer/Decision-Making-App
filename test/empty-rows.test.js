@@ -85,6 +85,16 @@ describe("reset", () => {
 
     expect(document.getElementById("finalResult").textContent).toBe("");
   });
+
+  it("clears decision names", () => {
+    setDecisionNames("Stay", "Leave");
+
+    document.querySelector("form").reset();
+    globalThis.resetSliders();
+
+    expect(document.getElementById("A").textContent).toBe("");
+    expect(document.getElementById("B").textContent).toBe("");
+  });
 });
 
 describe("ties", () => {

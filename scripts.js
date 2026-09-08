@@ -17,6 +17,8 @@ function resetSliders() {
     for (const label of document.getElementsByClassName("sliderStatus")) {
         label.textContent = "0";
     }
+    document.getElementById("A").textContent = "";
+    document.getElementById("B").textContent = "";
     document.getElementById("finalResult").textContent = "";
 }
 
