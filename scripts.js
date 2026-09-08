@@ -18,8 +18,10 @@ function sliderChange (inputObj) {
 }
 
 function resetSliders() {
-    spans = document.getElementsByClassName('sliderStatus');
-    console.log(spans);
+    var labels = document.getElementsByClassName('sliderStatus');
+    for (var i = 0; i < labels.length; i++) {
+        labels[i].textContent = "0";
+    }
 }
 
 function considerationText(slider) {

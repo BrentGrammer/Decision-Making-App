@@ -68,8 +68,8 @@ These are definite defects. They should be fixed before product/modeling redesig
 5. **~~Empty rows still count.~~ Done.**  
    Sliders default to `0`. `sumFilledWeights()` skips a slider unless the adjacent text field has non-whitespace. Dragging a slider with no pro/con text does not affect the score. Filling text and leaving the slider at 0 contributes 0, which is intentional.
 
-6. **Reset does not restore displayed values.**  
-   `resetSliders()` is broken: the loop is commented out and a stray `}` closes the function early. Form reset may snap range inputs back, but the “Current Value” labels can stay stale.
+6. **~~Reset does not restore displayed values.~~ Done.**  
+   Native `type="reset"` still zeros the range inputs. `resetSliders()` now sets every `.sliderStatus` to `"0"` (hardcoded to the HTML default, because the click handler can run *before* the form reset, so copying `.value` would leave the old number).
 
 ### Result display and state bugs
 
@@ -189,8 +189,8 @@ These are not “the current math is wrong.” They are other ways to look at th
 1. ~~Delete or replace `scriptstesting.js`.~~ Removed (unused duplicate, not tests).
 2. ~~Replace the percent formula with net scores + an honest difference.~~ Done (`scripts.js` / result copy in `index.html`; wording is “leads by a difference of N weighted points”).
 3. ~~Fix empty-row weighting and slider defaults.~~ Done (`value="0"`; skip blank pro/con text via `sumFilledWeights` in `scripts.js`).
-4. Fix reset, ties, START/Calculate order, `textContent`, HTML, and globals as separate, small follow-ups — each driven by a Vitest test where the behavior is DOM-checkable.
-5. ~~Add Vitest + jsdom (test-only; app stays static HTML).~~ Done. Empty-row characterization tests pass; reset is `it.todo`.
+4. Fix ties, START/Calculate order, `textContent`, HTML, and leftover globals as separate, small follow-ups — each driven by a Vitest test where the behavior is DOM-checkable. ~~Reset.~~ Done.
+5. ~~Add Vitest + jsdom (test-only; app stays static HTML).~~ Done.
 6. Then consider shared criteria, sensitivity, dealbreakers, and richer UX.
 7. Further architecture (separate UI vs scoring files, bundler for the app itself) only if the app is growing.
 

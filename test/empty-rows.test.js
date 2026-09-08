@@ -49,5 +49,26 @@ describe("empty rows do not count", () => {
 });
 
 describe("reset", () => {
-  it.todo("restores slider values and Current Value labels to 0");
+  beforeEach(() => {
+    loadApp();
+  });
+
+  it("restores slider values and Current Value labels to 0", () => {
+    const sliders = document.getElementsByClassName("sliders");
+    const labels = document.getElementsByClassName("sliderStatus");
+
+    sliders[0].value = "8";
+    labels[0].textContent = "8";
+    sliders[3].value = "4";
+    labels[3].textContent = "4";
+
+    document.querySelector("form").reset();
+    globalThis.resetSliders();
+
+    expect(sliders.length).toBe(labels.length);
+    for (let i = 0; i < sliders.length; i++) {
+      expect(sliders[i].value).toBe("0");
+      expect(labels[i].textContent).toBe("0");
+    }
+  });
 });
