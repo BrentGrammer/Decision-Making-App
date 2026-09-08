@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  BLANK_CON_ERROR,
+  BLANK_PRO_ERROR,
   DECISION_NAME_FIELD_ERROR,
   leadResult,
   MISSING_NAMES_RESULT,
@@ -7,7 +9,13 @@ import {
   TIE_RESULT,
 } from "../js/constants/strings.js";
 import { DECISION_NAME_MAX_LENGTH } from "../js/scoring.js";
-import { fillConsideration, loadApp, setDecisionNames } from "./loadApp.js";
+import {
+  considerationFieldError,
+  considerationTextInput,
+  fillConsideration,
+  loadApp,
+  setDecisionNames,
+} from "./loadApp.js";
 
 describe("test harness", () => {
   beforeEach(() => {
@@ -39,6 +47,69 @@ describe("empty rows do not count", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(TIE_RESULT);
+  });
+
+  it("warns that a moved slider with no text will not count", () => {
+    setDecisionNames("Stay", "Leave");
+    document.getElementsByClassName("prosA")[0].value = "10";
+    globalThis.calculate();
+
+    expect(considerationTextInput("prosA", 0).getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+    expect(considerationFieldError("prosA", 0).hidden).toBe(false);
+    expect(considerationFieldError("prosA", 0).textContent).toBe(BLANK_PRO_ERROR);
+    expect(document.getElementById("finalResult").textContent).toBe(TIE_RESULT);
+  });
+
+  it("warns while dragging a slider on a blank pro", () => {
+    const slider = document.getElementsByClassName("prosA")[0];
+    slider.value = "7";
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+
+    expect(considerationTextInput("prosA", 0).getAttribute("aria-invalid")).toBe(
+      "true",
+    );
+    expect(considerationFieldError("prosA", 0).textContent).toBe(BLANK_PRO_ERROR);
+  });
+
+  it("uses con copy for a blank con with a moved slider", () => {
+    const slider = document.getElementsByClassName("consA")[0];
+    slider.value = "4";
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+
+    expect(considerationFieldError("consA", 0).textContent).toBe(BLANK_CON_ERROR);
+  });
+
+  it("clears the warning when the user enters text", () => {
+    const slider = document.getElementsByClassName("prosA")[0];
+    slider.value = "7";
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+
+    const textInput = considerationTextInput("prosA", 0);
+    textInput.value = "Pay";
+    textInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+    expect(textInput.getAttribute("aria-invalid")).not.toBe("true");
+    expect(considerationFieldError("prosA", 0).textContent).toBe("");
+  });
+
+  it("does not warn when the slider is still at 0", () => {
+    globalThis.calculate();
+
+    expect(
+      considerationTextInput("prosA", 0).getAttribute("aria-invalid"),
+    ).not.toBe("true");
+    expect(considerationFieldError("prosA", 0).textContent).toBe("");
+  });
+
+  it("treats whitespace-only text like a blank row", () => {
+    setDecisionNames("Stay", "Leave");
+    fillConsideration("prosA", 0, "   ", 10);
+    globalThis.calculate();
+
+    expect(document.getElementById("finalResult").textContent).toBe(TIE_RESULT);
+    expect(considerationFieldError("prosA", 0).textContent).toBe(BLANK_PRO_ERROR);
   });
 });
 

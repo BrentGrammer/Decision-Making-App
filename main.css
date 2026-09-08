@@ -123,34 +123,36 @@ form {
     box-shadow: var(--shadow-raised), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 1rem;
+.sheet-grid {
+    display: grid;
+    grid-template-columns: minmax(10rem, 16rem) minmax(16rem, 1fr) minmax(16rem, 1fr);
+    min-width: 52rem;
 }
 
-th,
-td {
+.sheet-grid > * {
     border: 1px solid var(--color-outline);
-    padding: 0.85rem 1rem;
-    text-align: left;
-    vertical-align: middle;
+    margin-top: -1px;
+    margin-left: -1px;
 }
 
-thead th,
-tr:first-child th {
+.col-head {
     background: var(--color-header);
     font-size: 0.875rem;
     font-weight: 500;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-muted);
-    vertical-align: top;
+    padding: 0.85rem 1rem;
     line-height: 1.4;
+}
+
+.col-head-metric {
+    margin-top: 0.5rem;
 }
 
 .decision-name {
     min-width: 8rem;
+    padding: 0.85rem 1rem;
     font-size: 1.15rem;
     font-weight: 500;
     text-transform: none;
@@ -164,8 +166,73 @@ tr:first-child th {
     font-weight: 500;
 }
 
-.decision-name input[aria-invalid="true"] {
+input[type="text"][aria-invalid="true"] {
     border-color: var(--color-error);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.consideration-row {
+    display: grid;
+    grid-template-columns: minmax(7rem, 1fr) minmax(8rem, 1fr) auto;
+    gap: 0.65rem;
+    align-items: start;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--color-outline);
+}
+
+.consideration-text {
+    min-width: 0;
+}
+
+.add-row {
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    align-self: start;
+    margin: 0.65rem 0.75rem 0.85rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--color-outline);
+    border-radius: var(--radius);
+    background: var(--color-panel);
+    color: var(--color-pro);
+    cursor: pointer;
+}
+
+.add-row:hover,
+.add-row:focus {
+    background: var(--color-header);
+}
+
+.list[data-kind="con"] .add-row {
+    color: var(--color-con);
+}
+
+.remove-row {
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-top: 0.2rem;
+    padding: 0.4rem 0.5rem;
+    border: none;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--color-muted);
+    cursor: pointer;
+}
+
+.remove-row:hover,
+.remove-row:focus {
+    color: var(--color-error);
+    background: color-mix(in srgb, var(--color-error) 10%, transparent);
 }
 
 .field-error {
@@ -180,6 +247,8 @@ tr:first-child th {
 .slider-well {
     background: var(--color-well);
     box-shadow: var(--shadow-inset);
+    padding: 0.5rem 0.65rem;
+    border-radius: 2px;
 }
 
 input[type="text"] {
@@ -212,8 +281,7 @@ input[type="text"]:focus {
     cursor: pointer;
 }
 
-.consA,
-.consB {
+.sliders[data-kind="con"] {
     --slider: var(--color-con);
 }
 

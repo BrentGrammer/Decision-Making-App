@@ -40,12 +40,39 @@ export function loadApp() {
   globalThis.calculate = calculate;
 }
 
+function considerationTextCell(sliderClass, rowIndex) {
+  const slider = document.getElementsByClassName(sliderClass)[rowIndex];
+  return slider.parentElement.previousElementSibling;
+}
+
 export function fillConsideration(sliderClass, rowIndex, text, weight) {
   const slider = document.getElementsByClassName(sliderClass)[rowIndex];
-  const textInput = slider.parentElement
-    .previousElementSibling.querySelector("input[type='text']");
+  const textInput = considerationTextCell(sliderClass, rowIndex).querySelector(
+    "input[type='text']",
+  );
   textInput.value = text;
   slider.value = String(weight);
+}
+
+export function addConsideration(group) {
+  document.querySelector(`.add-row[data-group="${group}"]`).click();
+}
+
+export function removeConsideration(sliderClass, rowIndex) {
+  const slider = document.getElementsByClassName(sliderClass)[rowIndex];
+  slider.closest(".consideration-row").querySelector(".remove-row").click();
+}
+
+export function considerationTextInput(sliderClass, rowIndex) {
+  return considerationTextCell(sliderClass, rowIndex).querySelector(
+    "input[type='text']",
+  );
+}
+
+export function considerationFieldError(sliderClass, rowIndex) {
+  return considerationTextCell(sliderClass, rowIndex).querySelector(
+    ".field-error",
+  );
 }
 
 export function setDecisionNames(decisionA, decisionB) {

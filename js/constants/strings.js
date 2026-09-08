@@ -5,6 +5,12 @@ import {
 } from "../scoring.js";
 
 export const DECISION_NAME_FIELD_ERROR = `Enter a name (${DECISION_NAME_MIN_LENGTH}–${DECISION_NAME_MAX_LENGTH} characters).`;
+export const PRO_PLACEHOLDER = "Enter a pro";
+export const CON_PLACEHOLDER = "Enter a con";
+export const REMOVE_PRO_LABEL = "Remove this pro";
+export const REMOVE_CON_LABEL = "Remove this con";
+export const BLANK_PRO_ERROR = "Enter a pro, or remove this row.";
+export const BLANK_CON_ERROR = "Enter a con, or remove this row.";
 
 export const MISSING_NAMES_RESULT = "RESULT: Enter both decision names first.";
 export const TIE_RESULT = "RESULT: Both decisions are equally good(or bad...).";
