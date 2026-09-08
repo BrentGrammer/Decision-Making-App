@@ -219,9 +219,10 @@ input[type="text"][aria-invalid="true"] {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    align-self: start;
     width: 2rem;
     height: 2rem;
-    margin-top: 0.4rem;
+    margin-top: 0;
     padding: 0;
     border: none;
     border-radius: 50%;
@@ -233,8 +234,8 @@ input[type="text"][aria-invalid="true"] {
 
 .remove-row svg {
     display: block;
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 1.5rem;
+    height: 1.5rem;
     fill: currentColor;
     pointer-events: none;
 }
