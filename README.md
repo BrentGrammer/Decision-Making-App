@@ -1,5 +1,7 @@
 # DECISION MAKING APP
 
+[TRY IT OUT](https://brentgrammer.github.io/Decision-Making-App/)
+
 Compare two options by listing pros and cons and rating each one from 0–10. Each rating is both how important that consideration is and how much it would affect you. Empty rows are ignored.
 
 The app scores each option as **pros minus cons**, then reports which name leads and by how many points (not a percentage). A tie, or missing names, is stated in plain language.
