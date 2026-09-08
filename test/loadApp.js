@@ -15,7 +15,6 @@ function thisDir() {
 const root = path.resolve(thisDir(), "..");
 
 const html = readFileSync(path.join(root, "index.html"), "utf8");
-export const pageSource = html;
 const appScript = readFileSync(path.join(root, "scripts.js"), "utf8");
 
 const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);

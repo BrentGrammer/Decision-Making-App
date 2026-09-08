@@ -6,14 +6,10 @@ function start() {
     document.getElementById("B").textContent = decisionB;
 }
 
-function sliderChange (inputObj) {
-    var spans = document.getElementsByClassName('sliderStatus');
-    var sliders = document.getElementsByClassName('sliders');
-
-    for (i = 0; i < sliders.length; i++) {
-        if(inputObj == sliders[i]) {
-            spans[i].innerHTML = inputObj.value;
-        }
+function sliderChange(slider) {
+    const label = slider.parentElement.querySelector(".sliderStatus");
+    if (label) {
+        label.textContent = slider.value;
     }
 }
 

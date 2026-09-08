@@ -144,3 +144,25 @@ describe("decision names", () => {
     expect(cellB.textContent).toBe("<img src=x>");
   });
 });
+
+describe("slider labels", () => {
+  beforeEach(() => {
+    loadApp();
+  });
+
+  it("updates Current Value beside the slider that moved", () => {
+    const extra = document.createElement("span");
+    extra.className = "sliderStatus";
+    extra.textContent = "9";
+    document.body.prepend(extra);
+
+    const slider = document.getElementsByClassName("sliders")[2];
+    const labelBeside = slider.parentElement.querySelector(".sliderStatus");
+
+    slider.value = "6";
+    globalThis.sliderChange(slider);
+
+    expect(labelBeside.textContent).toBe("6");
+    expect(extra.textContent).toBe("9");
+  });
+});

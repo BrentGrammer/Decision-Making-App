@@ -85,13 +85,13 @@ These are definite defects. They should be fixed before product/modeling redesig
 ### Code correctness (will cause wrong or fragile behavior)
 
 10. **Implicit globals.**  
-    `decisionA`, `decisionB`, loop index `i` in `sliderChange`, and `spans` in `resetSliders` leak to the global object.
+    `decisionA` / `decisionB` as assignable globals are gone. `sliderChange` no longer leaks `i`.
 
 11. **~~Malformed HTML.~~ Done.**  
-    Single `<head>` with title and stylesheet. Every `<tr>` has a matching `</tr>` (source checked in `test/markup.test.js`; jsdom would hide this).
+    Single `<head>` with title and stylesheet; table rows closed. (Do not lock this with source-regex tests; that is markup shape, not behavior.)
 
-12. **Slider labels are paired by global index.**  
-    `sliderChange()` matches `getElementsByClassName('sliders')[i]` to `sliderStatus[i]`. That only works while markup order stays aligned.
+12. **~~Slider labels are paired by global index.~~ Done.**  
+    `sliderChange` updates the `.sliderStatus` in the same cell as the slider that moved.
 
 ### Immediate calculation replacement (keep the weighted pro/con model)
 
@@ -189,7 +189,7 @@ These are not “the current math is wrong.” They are other ways to look at th
 1. ~~Delete or replace `scriptstesting.js`.~~ Removed (unused duplicate, not tests).
 2. ~~Replace the percent formula with net scores + an honest difference.~~ Done (`scripts.js` / result copy in `index.html`; wording is “leads by a difference of N weighted points”).
 3. ~~Fix empty-row weighting and slider defaults.~~ Done (`value="0"`; skip blank pro/con text via `sumFilledWeights` in `scripts.js`).
-4. Fix leftover globals (`sliderChange` index `i`) and slider/label pairing as separate follow-ups. ~~Reset, ties, names, `textContent`, HTML.~~ Done.
+4. Critical UI bugs. ~~Reset, ties, names, `textContent`, HTML, slider/label pairing.~~ Done.
 5. ~~Add Vitest + jsdom (test-only; app stays static HTML).~~ Done.
 6. Then consider shared criteria, sensitivity, dealbreakers, and richer UX.
 7. Further architecture (separate UI vs scoring files, bundler for the app itself) only if the app is growing.
