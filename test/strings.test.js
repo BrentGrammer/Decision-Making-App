@@ -3,25 +3,11 @@ import {
   contributorsResult,
   formatComparison,
   leadResult,
-  MISSING_NAMES_RESULT,
-  NAME_LENGTH_RESULT,
   TIE_RESULT,
 } from "../js/constants/strings.js";
 import { KIND } from "../js/scoring.js";
 
 describe("formatComparison", () => {
-  it("formats missing names", () => {
-    expect(formatComparison({ kind: KIND.missingNames })).toEqual([
-      MISSING_NAMES_RESULT,
-    ]);
-  });
-
-  it("formats a name that is too long", () => {
-    expect(formatComparison({ kind: KIND.nameLength })).toEqual([
-      NAME_LENGTH_RESULT,
-    ]);
-  });
-
   it("formats a tie", () => {
     expect(formatComparison({ kind: KIND.tie })).toEqual([TIE_RESULT]);
   });

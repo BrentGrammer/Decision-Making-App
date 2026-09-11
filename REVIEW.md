@@ -24,7 +24,7 @@ e2e/                      Playwright (Chromium)
 docs/                     future-feature notes
 ```
 
-Scoring returns a **structured outcome** (`KIND.missingNames` | `nameLength` | `tie` | `lead` | `disqualified`). `formatComparison` in `js/constants/strings.js` turns that into an **array of result lines**; `#finalResult` holds one `<p class="result-line">` per line. Length limits (`DECISION_NAME_MIN_LENGTH` / `MAX`) stay in `scoring.js`. Tests import UI strings from `constants/strings.js` — do not hardcode those sentences in tests.
+Scoring returns a **structured outcome** (`KIND.tie` | `lead` | `disqualified`). `formatComparison` in `js/constants/strings.js` turns that into an **array of result lines**; `#finalResult` holds one `<p class="result-line">` per line. Length limits (`DECISION_NAME_MIN_LENGTH` / `MAX`) stay in `scoring.js`. Tests import UI strings from `constants/strings.js` — do not hardcode those sentences in tests.
 
 Scoring math. Every filled rating passes through the selected model's transform `w(r)` before it is summed:
 
@@ -42,7 +42,9 @@ Dealbreaker short-circuits before any of that: a filled con rated 10 disqualifie
 
 `marginPercent` reports the lead as a share of every point entered — a measure of decisiveness chosen by the app. Keep the result copy describing it that way; reporting it as a percent one decision beats another is the bug this review was written about. See [`docs/model-refinement.md`](docs/model-refinement.md) for the full plan and decisions log.
 
-A row counts only if the adjacent text is non-blank. Empty sliders default to `0`. If a slider is moved (> 0) while text remains blank, inline field validation warns that text is required or the row should be removed (`aria-invalid="true"` and an adjacent `.field-error`). Extra distinct cons still add up (that is intended). Near-duplicate phrasing is a future warning, not a formula change — see `docs/ai-duplicate-detection.md`.
+A row counts only if the adjacent text is non-blank. Empty sliders default to `0`. If a slider is moved (> 0) while text remains blank, inline field validation warns that text is required or the row should be removed (`aria-invalid="true"` and an adjacent `.field-error`). Calculate now **refuses to run** on a decision table it cannot score, clearing `#finalResult` and opening the `#validation-dialog` `<dialog>` instead. `decisionTableValidationErrors()` collects every reason, in page order, and the dialog shows one `<p class="validation-error">` per reason: a missing or over-long decision name (`DECISION_NAME_VALIDATION_ERROR` / `DECISION_NAME_LENGTH_VALIDATION_ERROR`), rows that carry a rating with no text (`CONSIDERATION_ROW_VALIDATION_ERROR`, counted by `validateConsiderationRows()`), and nothing rated at all (`EMPTY_TABLE_VALIDATION_ERROR`, from the DOM-free `hasRatedRows()` in `scoring.js`). Emptiness is reported only when no row is rated-but-unnamed, since naming that row resolves both. The dialog closes on its dismiss button and on the next successful Calculate. Inline field errors still appear as before; the dialog is what makes the refusal unmissable. jsdom does not implement `showModal`, so the open/close helpers fall back to the `open` property — the real modal path is only exercised by Playwright.
+
+Decision-name validation lives in the UI only. `compareDecisions` no longer checks names — the `missingNames` and `nameLength` kinds, their result strings and their `formatComparison` branches were deleted once the dialog took over, because the UI blocks before scoring is ever called and unreachable code drifts. The rule itself is still single-sourced in `scoring.js` (`DECISION_NAME_MIN_LENGTH` / `MAX`, `isValidDecisionName`), which the UI imports. `compareDecisions` now trusts its caller to pass names it has already validated. Extra distinct cons still add up (that is intended). Near-duplicate phrasing is a future warning, not a formula change — see `docs/ai-duplicate-detection.md`.
 
 Decision names are inputs `#A` / `#B` (1–50 characters after trim). Invalid names show `#A-error` / `#B-error` and `aria-invalid`. Calculate writes `#finalResult` and `scrollIntoView`s it (`aria-live="polite"`). Native `type="reset"` zeros form fields (including names); `resetSliders()` restores default 1-pro/1-con rows, sets slider labels to `"0"`, and clears the result and name errors.
 
@@ -56,7 +58,7 @@ npm run test:e2e                 # Playwright; reuses Vite if already running
 npm run serve                    # Vite, usually http://localhost:5173/
 ```
 
-Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (formatComparison) + `test/empty-rows.test.js` (page behavior & blank warnings via jsdom) + `test/rows.test.js` (add/remove rows) + `test/model-select.test.js` (dropdown, hints, chosen model applies on Calculate) + `test/result-display.test.js` (multi-line result block) + `test/loadApp.js`. 124 unit tests, all passing at handoff. Playwright (`e2e/decision.spec.js`) has **never been run** — see "What to do next".
+Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (formatComparison) + `test/empty-rows.test.js` (page behavior & blank warnings via jsdom) + `test/rows.test.js` (add/remove rows) + `test/model-select.test.js` (dropdown, hints, chosen model applies on Calculate) + `test/result-display.test.js` (multi-line result block) + `test/validation.test.js` (Calculate blocked: missing names, unnamed rated rows, nothing rated) + `test/loadApp.js`. 137 unit tests, all passing at handoff. Playwright (`e2e/decision.spec.js`) has **never been run** — see "What to do next".
 
 ### How tests load the app
 
@@ -84,7 +86,7 @@ Slider labels: `input` listeners in `initApp()`, not `onchange`. Tests dispatch 
 
 Selectable scoring models (Linear, Squared, Cubed, Doubling, Dealbreaker) behind a "Try a different model" dropdown with a per-model hint. Normalized margin on the result. Contributor line naming the rows that drove the verdict and the rows opposing it. Dealbreaker veto with the `disqualified` outcome. Result is now multi-line. 124 Vitest tests pass.
 
-Earlier stretch: in-page names; START / `prompt()` removed. Name validation (min 1 / max 50, field errors, blur + calculate). Calculate scrolls `#finalResult` into view. Scoring outcomes split from UI strings. App modules under `js/` with `consideration-rows.js` extracted. Add/remove independent pro and con rows per decision (no pro/con row pairing). Inline validation warnings when a slider moves without text (`BLANK_PRO_ERROR` / `BLANK_CON_ERROR`). Accessible names and UI text centralized in `js/constants/strings.js`. Vitest + Playwright suites passing. Light panel UI: app bar, grid sheet, inset slider wells, `Value:` readouts, info-icon header tips, teal pros / terracotta cons.
+Earlier stretch: in-page names; START / `prompt()` removed. Name validation (min 1 / max 50, field errors, blur + calculate). Calculate scrolls `#finalResult` into view. Scoring outcomes split from UI strings. App modules under `js/` with `consideration-rows.js` extracted. Add/remove independent pro and con rows per decision (no pro/con row pairing). Inline validation warnings when a slider moves without text (`BLANK_PRO_ERROR` / `BLANK_CON_ERROR`). Accessible names and UI text centralized in `js/constants/strings.js`. Vitest + Playwright suites passing. Light panel UI: app bar, grid decision table, inset slider wells, `Value:` readouts, info-icon header tips, teal pros / terracotta cons.
 
 ### What to do next (Category 2)
 
@@ -101,7 +103,7 @@ The hosted GitHub Pages copy may still be the old percent app until redeployed.
 
 | File | Role |
 |---|---|
-| `index.html` | Page, name fields, grid sheet with pro/con lists, Calculate / Reset |
+| `index.html` | Page, name fields, grid decision table with pro/con lists, Calculate / Reset |
 | `js/scoring.js` | Weights, name rules, `{ kind, … }` outcome |
 | `js/constants/strings.js` | UI strings + `formatComparison` |
 | `js/consideration-rows.js` | Row templates, add/remove, slider sync, blank warnings |
@@ -113,6 +115,7 @@ The hosted GitHub Pages copy may still be the old percent app until redeployed.
 | `test/empty-rows.test.js` | Page behavior & blank row warnings |
 | `test/rows.test.js` | Add/remove rows behavior |
 | `test/model-select.test.js` | Model dropdown, hint swapping, model applies on Calculate |
+| `test/validation.test.js` | Calculate blocked: missing names, unnamed rated rows, nothing rated |
 | `test/result-display.test.js` | Multi-line result block |
 | `e2e/decision.spec.js` | Browser: names, errors, reset, scroll, add/remove, model dropdown (unrun) |
 | `package.json` | `vitest`, `jsdom`, `vite` (serve), `@playwright/test` |

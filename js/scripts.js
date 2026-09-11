@@ -1,15 +1,24 @@
 import {
     compareDecisions,
+    DECISION_NAME_MAX_LENGTH,
     DEFAULT_MODEL_ID,
+    hasRatedRows,
     isValidDecisionName,
     MODELS,
     resolveModel,
+    trimmedDecisionName,
 } from "./scoring.js";
 import {
     DECISION_NAME_FIELD_ERROR,
     formatComparison,
     CONCERN_HINT,
     DEALBREAKER_CONCERN_HINT,
+    VALIDATION_ERROR_DISMISS,
+    EMPTY_TABLE_VALIDATION_ERROR,
+    DECISION_NAME_LENGTH_VALIDATION_ERROR,
+    DECISION_NAME_VALIDATION_ERROR,
+    VALIDATION_ERROR_TITLE,
+    CONSIDERATION_ROW_VALIDATION_ERROR,
     MODEL_HINTS,
     MODEL_LABELS,
 } from "./constants/strings.js";
@@ -116,19 +125,103 @@ function resetSliders() {
     showResultLines([]);
 }
 
+function validationDialog() {
+    return document.getElementById("validation-dialog");
+}
+
+function fillValidationDialog() {
+    const dialog = validationDialog();
+    dialog.querySelector(".dialog-title").textContent = VALIDATION_ERROR_TITLE;
+    dialog.querySelector(".dialog-dismiss").textContent = VALIDATION_ERROR_DISMISS;
+}
+
+function showValidationErrors(messages) {
+    validationDialog()
+        .querySelector(".validation-errors")
+        .replaceChildren(
+            ...messages.map((message) => {
+                const paragraph = document.createElement("p");
+                paragraph.className = "validation-error";
+                paragraph.textContent = message;
+                return paragraph;
+            }),
+        );
+}
+
+function decisionNameValidationErrors() {
+    const names = [
+        document.getElementById("A").value,
+        document.getElementById("B").value,
+    ];
+    const validationErrors = [];
+    if (!names.every((name) => isValidDecisionName(name))) {
+        validationErrors.push(
+            names.some(
+                (name) =>
+                    trimmedDecisionName(name).length > DECISION_NAME_MAX_LENGTH,
+            )
+                ? DECISION_NAME_LENGTH_VALIDATION_ERROR
+                : DECISION_NAME_VALIDATION_ERROR,
+        );
+    }
+    return validationErrors;
+}
+
+function decisionTableValidationErrors(considerations, uncountedRows) {
+    const validationErrors = decisionNameValidationErrors();
+    if (uncountedRows > 0) {
+        validationErrors.push(CONSIDERATION_ROW_VALIDATION_ERROR);
+    } else if (!hasRatedRows(considerations)) {
+        validationErrors.push(EMPTY_TABLE_VALIDATION_ERROR);
+    }
+    return validationErrors;
+}
+
+function openValidationDialog() {
+    const dialog = validationDialog();
+    if (typeof dialog.showModal === "function") {
+        dialog.showModal();
+        return;
+    }
+    dialog.open = true;
+}
+
+function closeValidationDialog() {
+    const dialog = validationDialog();
+    if (typeof dialog.close === "function") {
+        dialog.close();
+        return;
+    }
+    dialog.open = false;
+}
+
 function calculate() {
     validateDecisionNames();
-    validateConsiderationRows();
+    const uncountedRows = validateConsiderationRows();
+    const considerations = {
+        prosA: getConsiderations(CONSIDERATION_GROUPS.prosA.id),
+        consA: getConsiderations(CONSIDERATION_GROUPS.consA.id),
+        prosB: getConsiderations(CONSIDERATION_GROUPS.prosB.id),
+        consB: getConsiderations(CONSIDERATION_GROUPS.consB.id),
+    };
+    const validationErrors = decisionTableValidationErrors(
+        considerations,
+        uncountedRows,
+    );
+    if (validationErrors.length > 0) {
+        showResultLines([]);
+        showValidationErrors(validationErrors);
+        openValidationDialog();
+        return;
+    }
+    closeValidationDialog();
     const result = document.getElementById("finalResult");
     showResultLines(
         formatComparison(
             compareDecisions({
                 decisionA: document.getElementById("A").value,
                 decisionB: document.getElementById("B").value,
-                prosA: getConsiderations(CONSIDERATION_GROUPS.prosA.id),
-                consA: getConsiderations(CONSIDERATION_GROUPS.consA.id),
-                prosB: getConsiderations(CONSIDERATION_GROUPS.prosB.id),
-                consB: getConsiderations(CONSIDERATION_GROUPS.consB.id),
+                ...considerations,
                 model: selectedModel(),
             }),
         ),
@@ -177,6 +270,11 @@ function initApp() {
     restoreDefaultRows();
     fillModelOptions();
     modelSelect().addEventListener("change", showModelHint);
+
+    fillValidationDialog();
+    validationDialog()
+        .querySelector(".dialog-dismiss")
+        .addEventListener("click", closeValidationDialog);
 
     for (const input of [document.getElementById("A"), document.getElementById("B")]) {
         input.addEventListener("blur", function () {

@@ -1,16 +1,21 @@
 import { expect, test } from "@playwright/test";
 import {
   BLANK_PRO_ERROR,
+  CON_PLACEHOLDER,
   DECISION_A_LABEL,
   DECISION_B_LABEL,
   DECISION_NAME_FIELD_ERROR,
   leadResult,
   MODEL_HINTS,
   MODEL_LABELS,
+  VALIDATION_ERROR_DISMISS,
+  EMPTY_TABLE_VALIDATION_ERROR,
+  DECISION_NAME_VALIDATION_ERROR,
+  CONSIDERATION_ROW_VALIDATION_ERROR,
+  VALIDATION_ERROR_TITLE,
   PRO_PLACEHOLDER,
   REMOVE_PRO_LABEL,
   SCORING_MODEL_LABEL,
-  TIE_RESULT,
 } from "../js/constants/strings.js";
 import { DECISION_NAME_MAX_LENGTH, MODELS } from "../js/scoring.js";
 
@@ -53,6 +58,9 @@ test("shows field errors when names are missing", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Calculate" }).click();
 
+  await expect(page.getByText(DECISION_NAME_VALIDATION_ERROR)).toBeVisible();
+  await page.getByRole("button", { name: VALIDATION_ERROR_DISMISS }).click();
+
   await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).toHaveAttribute(
     "aria-invalid",
     "true",
@@ -67,6 +75,7 @@ test("clears a name field error when the name becomes valid", async ({
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Calculate" }).click();
+  await page.getByRole("button", { name: VALIDATION_ERROR_DISMISS }).click();
   await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
 
   await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).not.toHaveAttribute(
@@ -161,7 +170,32 @@ test("warns when a slider is moved with no text", async ({ page }) => {
   await expect(page.getByText(BLANK_PRO_ERROR)).toBeVisible();
 
   await page.getByRole("button", { name: "Calculate" }).click();
-  await expect(page.locator("#finalResult")).toHaveText(TIE_RESULT);
+  await expect(page.getByText(VALIDATION_ERROR_TITLE)).toBeVisible();
+  await expect(page.locator("#finalResult")).toBeEmpty();
+});
+
+test("blocks the calculation until an unnamed rated row is fixed", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await useLinearScoring(page);
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Near family");
+  await page.locator(".prosA").first().fill("8");
+  await page.locator(".consB").first().fill("5");
+
+  await page.getByRole("button", { name: "Calculate" }).click();
+  await expect(page.getByText(CONSIDERATION_ROW_VALIDATION_ERROR)).toBeVisible();
+
+  await page.getByRole("button", { name: VALIDATION_ERROR_DISMISS }).click();
+  await expect(page.getByText(CONSIDERATION_ROW_VALIDATION_ERROR)).toBeHidden();
+
+  await page.getByPlaceholder(CON_PLACEHOLDER).last().fill("Long commute");
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  await expect(page.getByText(CONSIDERATION_ROW_VALIDATION_ERROR)).toBeHidden();
+  await expect(page.locator("#finalResult")).not.toBeEmpty();
 });
 
 test("does not show remove when a list has one pro", async ({ page }) => {
@@ -187,7 +221,7 @@ test("shows a Remove tooltip when hovering over the remove button", async ({
   await expect(tooltip).toHaveText("Remove");
 });
 
-test("calculating again scores the same sheet with the newly chosen model", async ({
+test("calculating again scores the same decision table with the newly chosen model", async ({
   page,
 }) => {
   await page.goto("/");
@@ -235,4 +269,23 @@ test("explains the selected scoring model", async ({ page }) => {
   await expect(page.locator("#model-hint")).toHaveText(
     MODEL_HINTS[MODELS.dealbreaker.id],
   );
+});
+
+test("refuses to calculate an empty decision table", async ({ page }) => {
+  await page.goto("/");
+  await useLinearScoring(page);
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  await expect(page.getByText(EMPTY_TABLE_VALIDATION_ERROR)).toBeVisible();
+  await expect(page.locator("#finalResult")).toBeEmpty();
+
+  await page.getByRole("button", { name: VALIDATION_ERROR_DISMISS }).click();
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Near family");
+  await page.locator(".prosA").first().fill("8");
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  await expect(page.getByText(EMPTY_TABLE_VALIDATION_ERROR)).toBeHidden();
+  await expect(page.locator("#finalResult")).not.toBeEmpty();
 });

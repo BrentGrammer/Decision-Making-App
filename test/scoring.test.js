@@ -57,19 +57,6 @@ describe("isValidDecisionName", () => {
 });
 
 describe("compareDecisions", () => {
-  it("does not treat missing names as undefined", () => {
-    const result = compareDecisions({
-      decisionA: "",
-      decisionB: "",
-      prosA: [{ text: "Pay", weight: 8 }],
-      consA: [],
-      prosB: [],
-      consB: [],
-    });
-
-    expect(result).toEqual({ kind: KIND.missingNames });
-  });
-
   it("reports a tie when the nets are equal", () => {
     expect(
       compareDecisions({
@@ -144,19 +131,6 @@ describe("compareDecisions", () => {
       loser: decisionB,
       points: 8,
     });
-  });
-
-  it("does not score when a name is longer than the maximum", () => {
-    expect(
-      compareDecisions({
-        decisionA: "Stay",
-        decisionB: "x".repeat(DECISION_NAME_MAX_LENGTH + 1),
-        prosA: [{ text: "Pay", weight: 8 }],
-        consA: [],
-        prosB: [],
-        consB: [],
-      }),
-    ).toEqual({ kind: KIND.nameLength });
   });
 
   describe("scoring models", () => {
@@ -346,7 +320,7 @@ describe("compareDecisions", () => {
   describe("margin", () => {
     const linear = MODELS.linear.id;
 
-    it("reads a three point lead as large on a small sheet", () => {
+    it("reads a three point lead as large on a small decision table", () => {
       expect(
         compareDecisions({
           decisionA: "Stay",
@@ -360,7 +334,7 @@ describe("compareDecisions", () => {
       ).toBe(43);
     });
 
-    it("reads the same three point lead as small on a crowded sheet", () => {
+    it("reads the same three point lead as small on a crowded decision table", () => {
       expect(
         compareDecisions({
           decisionA: "Stay",
@@ -434,7 +408,7 @@ describe("compareDecisions", () => {
     });
 
     it("measures the margin in the chosen model's units", () => {
-      const sheet = {
+      const table = {
         decisionA: "Stay",
         decisionB: "Leave",
         prosA: [{ text: "Stable team", weight: 10 }],
@@ -447,9 +421,9 @@ describe("compareDecisions", () => {
       };
 
       expect(
-        compareDecisions({ ...sheet, model: MODELS.squared.id }).marginPercent,
+        compareDecisions({ ...table, model: MODELS.squared.id }).marginPercent,
       ).not.toBe(
-        compareDecisions({ ...sheet, model: linear }).marginPercent,
+        compareDecisions({ ...table, model: linear }).marginPercent,
       );
     });
 
@@ -467,7 +441,7 @@ describe("compareDecisions", () => {
       ).toEqual({ kind: KIND.tie });
     });
 
-    it("calls an empty sheet a tie rather than dividing by nothing", () => {
+    it("calls an empty decision table a tie rather than dividing by nothing", () => {
       expect(
         compareDecisions({
           decisionA: "Stay",
@@ -482,18 +456,6 @@ describe("compareDecisions", () => {
     });
   });
 
-  it("treats whitespace-only names as missing", () => {
-    expect(
-      compareDecisions({
-        decisionA: "   ",
-        decisionB: "Leave",
-        prosA: [{ text: "Pay", weight: 8 }],
-        consA: [],
-        prosB: [],
-        consB: [],
-      }),
-    ).toEqual({ kind: KIND.missingNames });
-  });
 });
 
 describe("contributors", () => {
@@ -652,7 +614,7 @@ describe("contributors", () => {
   });
 
   it("swaps which rows drive the result when the model changes the winner", () => {
-    const sheet = {
+    const table = {
       decisionA: "Stay",
       decisionB: "Leave",
       prosA: [{ text: "Stable team", weight: 10 }],
@@ -666,10 +628,10 @@ describe("contributors", () => {
     };
 
     expect(
-      compareDecisions({ ...sheet, model: linear }).contributors.against,
+      compareDecisions({ ...table, model: linear }).contributors.against,
     ).toEqual([{ text: "Stable team", rating: 10, option: "Stay" }]);
     expect(
-      compareDecisions({ ...sheet, model: MODELS.squared.id }).contributors
+      compareDecisions({ ...table, model: MODELS.squared.id }).contributors
         .toward,
     ).toEqual([{ text: "Stable team", rating: 10, option: "Stay" }]);
   });

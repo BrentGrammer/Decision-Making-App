@@ -4,8 +4,8 @@ import {
   BLANK_PRO_ERROR,
   DECISION_NAME_FIELD_ERROR,
   leadResult,
-  MISSING_NAMES_RESULT,
-  NAME_LENGTH_RESULT,
+  DECISION_NAME_LENGTH_VALIDATION_ERROR,
+  DECISION_NAME_VALIDATION_ERROR,
   TIE_RESULT,
 } from "../js/constants/strings.js";
 import { DECISION_NAME_MAX_LENGTH, MODELS } from "../js/scoring.js";
@@ -13,7 +13,10 @@ import {
   considerationFieldError,
   considerationTextInput,
   fillConsideration,
+  validationDialog,
+  validationErrorMessages,
   loadApp,
+  resultLines,
   setDecisionNames,
   verdictLine,
   selectScoringModel,
@@ -45,12 +48,13 @@ describe("empty rows do not count", () => {
     selectScoringModel(MODELS.linear.id);
   });
 
-  it("does not let a blank row change the result", () => {
+  it("does not calculate while a blank row carries a rating", () => {
     setDecisionNames("Stay", "Leave");
     document.getElementsByClassName("prosA")[0].value = "10";
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(TIE_RESULT);
+    expect(validationDialog().open).toBe(true);
+    expect(resultLines()).toEqual([]);
   });
 
   it("warns that a moved slider with no text will not count", () => {
@@ -63,7 +67,7 @@ describe("empty rows do not count", () => {
     );
     expect(considerationFieldError("prosA", 0).hidden).toBe(false);
     expect(considerationFieldError("prosA", 0).textContent).toBe(BLANK_PRO_ERROR);
-    expect(document.getElementById("finalResult").textContent).toBe(TIE_RESULT);
+    expect(validationDialog().open).toBe(true);
   });
 
   it("warns while dragging a slider on a blank pro", () => {
@@ -112,7 +116,7 @@ describe("empty rows do not count", () => {
     fillConsideration("prosA", 0, "   ", 10);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(TIE_RESULT);
+    expect(validationDialog().open).toBe(true);
     expect(considerationFieldError("prosA", 0).textContent).toBe(BLANK_PRO_ERROR);
   });
 });
@@ -227,9 +231,8 @@ describe("decision names", () => {
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
-    const result = document.getElementById("finalResult").textContent;
-    expect(result).not.toMatch(/undefined/i);
-    expect(result).toBe(MISSING_NAMES_RESULT);
+    expect(validationDialog().textContent).not.toMatch(/undefined/i);
+    expect(validationErrorMessages()).toContain(DECISION_NAME_VALIDATION_ERROR);
   });
 
   it("uses names typed into the decision fields", () => {
@@ -351,9 +354,7 @@ describe("decision names", () => {
     expect(document.getElementById("A").getAttribute("aria-invalid")).toBe(
       "true",
     );
-    expect(document.getElementById("finalResult").textContent).toBe(
-      MISSING_NAMES_RESULT,
-    );
+    expect(validationErrorMessages()).toContain(DECISION_NAME_VALIDATION_ERROR);
   });
 
   it("shows a field error when a name is longer than the maximum", () => {
@@ -368,8 +369,8 @@ describe("decision names", () => {
     expect(document.getElementById("B-error").textContent).toBe(
       DECISION_NAME_FIELD_ERROR,
     );
-    expect(document.getElementById("finalResult").textContent).toBe(
-      NAME_LENGTH_RESULT,
+    expect(validationErrorMessages()).toContain(
+      DECISION_NAME_LENGTH_VALIDATION_ERROR,
     );
   });
 

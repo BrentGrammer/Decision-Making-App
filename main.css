@@ -114,7 +114,7 @@ form {
     gap: 1.25rem;
 }
 
-.sheet {
+.decision-table {
     width: 100%;
     overflow: auto;
     background: var(--color-panel);
@@ -123,13 +123,13 @@ form {
     box-shadow: var(--shadow-raised), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-.sheet-grid {
+.decision-table-grid {
     display: grid;
     grid-template-columns: minmax(8rem, 11rem) minmax(14rem, 1fr) minmax(14rem, 1fr);
     min-width: 0;
 }
 
-.sheet-grid > * {
+.decision-table-grid > * {
     border: 1px solid var(--color-outline);
     margin-top: -1px;
     margin-left: -1px;
@@ -493,8 +493,40 @@ input[type="text"]:focus {
     display: block;
 }
 
-.sheet-grid > .col-head:last-child .hint-text {
+.decision-table-grid > .col-head:last-child .hint-text {
     left: auto;
     right: 0;
     transform: none;
+}
+
+.dialog {
+    max-width: 26rem;
+    padding: 1.5rem;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--color-panel);
+    color: var(--color-on-surface);
+    box-shadow: var(--shadow-raised);
+}
+
+.dialog::backdrop {
+    background: rgba(38, 50, 56, 0.45);
+}
+
+.dialog-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
+    color: var(--color-error);
+}
+
+.validation-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.validation-error {
+    margin: 0;
+    color: var(--color-on-surface);
 }

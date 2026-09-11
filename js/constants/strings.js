@@ -38,14 +38,22 @@ export const MODEL_HINTS = Object.freeze({
         "A con rated 10 for concern rules that option out entirely. Otherwise every point counts the same.",
 });
 
+export const VALIDATION_ERROR_TITLE = "Nothing was calculated";
+export const DECISION_NAME_VALIDATION_ERROR =
+    "Both decisions need a name before they can be compared. Name them at the top of the decision table.";
+export const DECISION_NAME_LENGTH_VALIDATION_ERROR = `Each decision name must be ${DECISION_NAME_MIN_LENGTH}–${DECISION_NAME_MAX_LENGTH} characters.`;
+export const CONSIDERATION_ROW_VALIDATION_ERROR =
+    "Some rows have a rating but no text, so they cannot be counted. Enter the missing pro or con, or remove the row.";
+export const EMPTY_TABLE_VALIDATION_ERROR =
+    "Nothing has been rated yet. Enter a pro or con and rate it above 0.";
+export const VALIDATION_ERROR_DISMISS = "Back to the decision table";
+
 export const CONCERN_HINT =
     "How much does this worry or concern you? How much could this affect your life negatively? (On a scale of 1–10.)";
 export const DEALBREAKER_CONCERN_HINT =
     "How unacceptable is this? Rate a con 10 only if it rules the option out entirely. (On a scale of 1–10.)";
 
-export const MISSING_NAMES_RESULT = "RESULT: Enter both decision names first.";
 export const TIE_RESULT = "RESULT: Both decisions are equally good(or bad...).";
-export const NAME_LENGTH_RESULT = `RESULT: Each decision name must be ${DECISION_NAME_MIN_LENGTH}–${DECISION_NAME_MAX_LENGTH} characters.`;
 
 export function leadResult(winner, loser, points, marginPercent) {
     return `RESULT: ${winner} leads ${loser} by ${Math.abs(points)} points — ${marginPercent}% of all points entered.`;
@@ -83,10 +91,6 @@ export function contributorsResult(winner, loser, { toward, against }) {
 
 export function formatComparison(outcome) {
     switch (outcome.kind) {
-        case KIND.missingNames:
-            return [MISSING_NAMES_RESULT];
-        case KIND.nameLength:
-            return [NAME_LENGTH_RESULT];
         case KIND.tie:
             return [TIE_RESULT];
         case KIND.disqualified:

@@ -85,6 +85,16 @@ export function considerationFieldError(sliderClass, rowIndex) {
   );
 }
 
+export function validationDialog() {
+  return document.getElementById("validation-dialog");
+}
+
+export function validationErrorMessages() {
+  return [
+    ...validationDialog().querySelectorAll(".validation-error"),
+  ].map((line) => line.textContent);
+}
+
 export function selectScoringModel(id) {
   const select = document.getElementById("model");
   select.value = id;

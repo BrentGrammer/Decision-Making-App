@@ -31,7 +31,8 @@ A result reports:
 ## Use the App
 
 - Run `npm run serve` (Vite, usually http://localhost:5173/) and open that URL, or visit [the hosted page](https://brentgrammer.github.io/Decision-Making-App/).
-- Type each option’s name in the Decision column (1–50 characters), fill rows, then **Calculate**. **RESET** clears names, inputs, slider labels, and the result, and returns the model to Squared.
+- Type each option’s name in the Decision column (1–50 characters), fill rows, then **Calculate**. Calculate stops and says what is wrong, rather than scoring a decision table it cannot read, when a decision has no name, when a row carries a rating but no text (a row only counts once it has text), or when nothing has been rated yet. 
+- **RESET** clears names, inputs, slider labels, and the result, and returns the model to Squared.
 
 ```bash
 npm install   # first clone only

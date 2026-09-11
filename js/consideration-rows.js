@@ -96,12 +96,17 @@ export function validateConsiderationRow(slider) {
         slider,
         hasUncountedWeight ? blankConsiderationMessage(slider) : "",
     );
+    return hasUncountedWeight;
 }
 
 export function validateConsiderationRows() {
+    let uncounted = 0;
     for (const slider of document.getElementsByClassName("sliders")) {
-        validateConsiderationRow(slider);
+        if (validateConsiderationRow(slider)) {
+            uncounted += 1;
+        }
     }
+    return uncounted;
 }
 
 export function addConsiderationRow(group, { focus = true } = {}) {

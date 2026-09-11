@@ -2,8 +2,6 @@ export const DECISION_NAME_MIN_LENGTH = 1;
 export const DECISION_NAME_MAX_LENGTH = 50;
 
 export const KIND = Object.freeze({
-    missingNames: "missingNames",
-    nameLength: "nameLength",
     tie: "tie",
     lead: "lead",
     disqualified: "disqualified",
@@ -65,6 +63,12 @@ export function sumFilledWeights(
         total += transform(parseInt(consideration.weight, 10));
     }
     return total;
+}
+
+export function hasRatedRows({ prosA, consA, prosB, consB }) {
+    return [prosA, consA, prosB, consB].some(
+        (considerations) => sumFilledWeights(considerations) > 0,
+    );
 }
 
 function findDealbreakers(cons) {
@@ -134,18 +138,6 @@ export function compareDecisions({
 }) {
     const nameA = trimmedDecisionName(decisionA);
     const nameB = trimmedDecisionName(decisionB);
-    if (
-        nameA.length < DECISION_NAME_MIN_LENGTH ||
-        nameB.length < DECISION_NAME_MIN_LENGTH
-    ) {
-        return { kind: KIND.missingNames };
-    }
-    if (
-        nameA.length > DECISION_NAME_MAX_LENGTH ||
-        nameB.length > DECISION_NAME_MAX_LENGTH
-    ) {
-        return { kind: KIND.nameLength };
-    }
 
     const { transform, veto } = resolveModel(model);
     if (veto) {
