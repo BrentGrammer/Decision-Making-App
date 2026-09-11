@@ -69,6 +69,10 @@ export function resultLines() {
   );
 }
 
+export function contributorsCaption() {
+  return document.querySelector("#finalResult .contributors-caption");
+}
+
 export function contributorGroups() {
   return [...document.querySelectorAll("#finalResult .contributor-group")].map(
     (group) => ({

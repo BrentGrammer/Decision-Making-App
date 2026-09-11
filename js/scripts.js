@@ -11,6 +11,9 @@ import {
 import {
     CONSIDERATION_TYPE_LABELS,
     CONTRIBUTOR_COLUMN_LABELS,
+    CONTRIBUTORS_CAPTION,
+    CONTRIBUTORS_HINT,
+    CONTRIBUTORS_HINT_LABEL,
     DECISION_NAME_FIELD_ERROR,
     formatComparison,
     RESULT_BLOCK,
@@ -123,10 +126,38 @@ function contributorColumnHeaders() {
     return head;
 }
 
+function contributorsHint() {
+    const hint = document.createElement("button");
+    hint.type = "button";
+    hint.className = "hint";
+    hint.setAttribute("aria-label", CONTRIBUTORS_HINT_LABEL);
+
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("aria-hidden", "true");
+    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", "#icon-info");
+    icon.append(use);
+
+    const text = document.createElement("span");
+    text.className = "hint-text";
+    text.textContent = CONTRIBUTORS_HINT;
+
+    hint.append(icon, text);
+    return hint;
+}
+
+function contributorsCaption() {
+    const caption = document.createElement("caption");
+    caption.className = "contributors-caption";
+    caption.append(CONTRIBUTORS_CAPTION, contributorsHint());
+    return caption;
+}
+
 function contributorsTable({ groups }) {
     const table = document.createElement("table");
     table.className = "contributors";
     table.append(
+        contributorsCaption(),
         contributorColumnHeaders(),
         ...groups.map(contributorGroup),
     );

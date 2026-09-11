@@ -50,6 +50,8 @@ Example block, as shipped:
 ```text
 RESULT: Stay leads Leave by 7 points — 23% of all points entered.
 
+Top contributors (?)
+
 IN FAVOR OF STAY
 Stay     pro   Stable team       10
 Leave    con   Long commute       8
@@ -85,9 +87,9 @@ Last worked 11 September 2026, on branch `feature/model-refinement`. 124 unit te
 
 5. **Dealbreaker veto.** `compareDecisions` reads the model's `veto` flag and short-circuits before any scoring: a filled con rated `DEALBREAKER_RATING` (10) rules that option out. One option ruled out returns `{ kind: "disqualified", winner, loser, dealbreakers }` — no points, margin, or contributors. Both ruled out, or neither, falls through to the ordinary comparison. Pros are never vetoes, and blank rows rated 10 do not count. The concern column's hint (`#concern-hint` in `index.html`) swaps to `DEALBREAKER_CONCERN_HINT` whenever the selected model vetoes, driven off the flag rather than the model id.
 
-6. **Contributors as a table.** The sentence in §2 item 4 was replaced after it shipped, because it had to name up to six rows, two decisions and their ratings in one breath, and it never said which column a row was typed under. `formatComparison` now returns tagged blocks — `{ kind: RESULT_BLOCK.line, text }` and `{ kind: RESULT_BLOCK.contributors, groups }` — which `js/scripts.js` renders as a `<p class="result-line">` and a `<table class="contributors">`. Each group is headed `In favor of {decision}`, the winner's first, the loser's only when something favours it, and each row prints the decision it was typed under, `pro`/`con`, the text, and the user's own rating. Contributors carry a `type` from the new `CONSIDERATION_TYPE` in `scoring.js` to make the third column possible. Ties and vetoes stay a single line with no table.
+6. **Contributors as a table.** The sentence in §2 item 4 was replaced after it shipped, because it had to name up to six rows, two decisions and their ratings in one breath, and it never said which column a row was typed under. `formatComparison` now returns tagged blocks — `{ kind: RESULT_BLOCK.line, text }` and `{ kind: RESULT_BLOCK.contributors, groups }` — which `js/scripts.js` renders as a `<p class="result-line">` and a `<table class="contributors">`. The table is captioned "Top contributors" with an info-icon tooltip explaining it, since a table that arrives with only two group headings does not say what it is counting. Each group is headed `In favor of {decision}`, the winner's first, the loser's only when something favours it, and each row prints the decision it was typed under, `pro`/`con`, the text, and the user's own rating. Contributors carry a `type` from the new `CONSIDERATION_TYPE` in `scoring.js` to make the third column possible. Ties and vetoes stay a single line with no table.
 
-7. **Docs.** README gained "Scoring models" and "Reading the result" sections, with both example blocks copied from real program output. `docs/ai-duplicate-detection.md` no longer claims several moderate cons outweigh fewer higher-rated ones; it now says the answer depends on the selected model. `REVIEW.md` handoff rewritten for this stretch, with the unrun Playwright suite as the next task.
+7. **Docs.** README gained "Scoring models" and "Reading the result" sections. `docs/ai-duplicate-detection.md` no longer claims several moderate cons outweigh fewer higher-rated ones; it now says the answer depends on the selected model. `REVIEW.md` handoff rewritten for this stretch, with the unrun Playwright suite as the next task.
 
 ### Left
 

@@ -445,7 +445,24 @@ input[type="text"]:focus {
     color: var(--color-on-surface);
     font-size: 0.95rem;
     text-align: left;
-    overflow: hidden;
+}
+
+.contributors-caption {
+    caption-side: top;
+    padding-bottom: 0.4rem;
+    color: var(--color-on-surface);
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: left;
+}
+
+.contributors-caption .hint-text {
+    left: 0;
+    transform: none;
+}
+
+.contributor-group:first-of-type .contributor-heading th {
+    border-radius: var(--radius) var(--radius) 0 0;
 }
 
 .contributor-columns {

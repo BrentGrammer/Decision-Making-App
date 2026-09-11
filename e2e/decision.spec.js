@@ -4,6 +4,9 @@ import {
   CON_PLACEHOLDER,
   DECISION_A_LABEL,
   DECISION_B_LABEL,
+  CONTRIBUTORS_CAPTION,
+  CONTRIBUTORS_HINT,
+  CONTRIBUTORS_HINT_LABEL,
   DECISION_NAME_FIELD_ERROR,
   inFavorOf,
   leadResult,
@@ -315,6 +318,9 @@ test("tables the rows in favor of each decision", async ({
   await page.getByRole("button", { name: "Calculate" }).click();
 
   await expect(contributorGroups(page)).toHaveCount(2);
+  await expect(page.locator(".contributors-caption")).toContainText(
+    CONTRIBUTORS_CAPTION,
+  );
 
   const towardStay = contributorGroups(page).first();
   await expect(towardStay.locator(".contributor-heading")).toHaveText(
@@ -333,4 +339,24 @@ test("tables the rows in favor of each decision", async ({
   await expect(towardLeave.locator(".contributor-text")).toHaveText([
     "Higher salary",
   ]);
+});
+
+test("explains the contributors table on hover", async ({ page }) => {
+  await page.goto("/");
+  await useLinearScoring(page);
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Stable team");
+  await page.locator(".prosA").first().fill("7");
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  const hint = page.getByRole("button", { name: CONTRIBUTORS_HINT_LABEL });
+  const hintText = hint.locator(".hint-text");
+
+  await expect(hintText).toBeHidden();
+
+  await hint.hover();
+
+  await expect(hintText).toBeVisible();
+  await expect(hintText).toHaveText(CONTRIBUTORS_HINT);
 });

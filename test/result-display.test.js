@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   contributorGroups,
+  contributorsCaption,
   fillConsideration,
   loadApp,
   resultLines,
@@ -10,6 +11,9 @@ import {
 import { CONSIDERATION_TYPE, MODELS } from "../js/scoring.js";
 import {
   CONSIDERATION_TYPE_LABELS,
+  CONTRIBUTORS_CAPTION,
+  CONTRIBUTORS_HINT,
+  CONTRIBUTORS_HINT_LABEL,
   inFavorOf,
 } from "../js/constants/strings.js";
 
@@ -76,6 +80,25 @@ describe("the contributors table", () => {
     loadApp();
     selectScoringModel(MODELS.linear.id);
     setDecisionNames("Stay", "Leave");
+  });
+
+  it("labels what the table is", () => {
+    fillOnePerSide();
+    globalThis.calculate();
+
+    expect(contributorsCaption().textContent).toContain(CONTRIBUTORS_CAPTION);
+  });
+
+  it("explains the table in a hint on the label", () => {
+    fillOnePerSide();
+    globalThis.calculate();
+
+    const hint = contributorsCaption().querySelector(".hint");
+
+    expect(hint.getAttribute("aria-label")).toBe(CONTRIBUTORS_HINT_LABEL);
+    expect(hint.querySelector(".hint-text").textContent).toBe(
+      CONTRIBUTORS_HINT,
+    );
   });
 
   it("groups the rows under a heading per decision", () => {
