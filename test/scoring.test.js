@@ -3,6 +3,7 @@ import {
   compareDecisions,
   DECISION_NAME_MAX_LENGTH,
   DECISION_NAME_MIN_LENGTH,
+  CONSIDERATION_TYPE,
   isValidDecisionName,
   KIND,
   MODELS,
@@ -461,7 +462,7 @@ describe("compareDecisions", () => {
 describe("contributors", () => {
   const linear = MODELS.linear.id;
 
-  it("names the winner's own pros as driving its lead", () => {
+  it("counts the winner's own pros in favor of the winner", () => {
     const { contributors } = compareDecisions({
       decisionA: "Stay",
       decisionB: "Leave",
@@ -472,12 +473,12 @@ describe("contributors", () => {
       model: linear,
     });
 
-    expect(contributors.toward).toEqual([
+    expect(contributors.toward).toMatchObject([
       { text: "Stable team", rating: 10, option: "Stay" },
     ]);
   });
 
-  it("counts the loser's cons as pushing toward the winner", () => {
+  it("counts the loser's cons in favor of the winner", () => {
     const { contributors } = compareDecisions({
       decisionA: "Stay",
       decisionB: "Leave",
@@ -488,13 +489,13 @@ describe("contributors", () => {
       model: linear,
     });
 
-    expect(contributors.toward).toEqual([
+    expect(contributors.toward).toMatchObject([
       { text: "Long commute", rating: 8, option: "Leave" },
       { text: "Stable team", rating: 4, option: "Stay" },
     ]);
   });
 
-  it("names the rows pulling the other way, whichever option they belong to", () => {
+  it("names the rows in favor of the loser, whichever option they belong to", () => {
     const { contributors } = compareDecisions({
       decisionA: "Stay",
       decisionB: "Leave",
@@ -505,13 +506,13 @@ describe("contributors", () => {
       model: linear,
     });
 
-    expect(contributors.against).toEqual([
+    expect(contributors.against).toMatchObject([
       { text: "Higher salary", rating: 5, option: "Leave" },
       { text: "Small flat", rating: 2, option: "Stay" },
     ]);
   });
 
-  it("has nothing pulling the other way when every row favours the winner", () => {
+  it("has nothing in favor of the loser when every row favours the winner", () => {
     const { contributors } = compareDecisions({
       decisionA: "Stay",
       decisionB: "Leave",
@@ -525,7 +526,7 @@ describe("contributors", () => {
     expect(contributors.against).toEqual([]);
   });
 
-  it("lists no more than the three strongest rows behind the winner", () => {
+  it("lists no more than the three strongest rows in favor of the winner", () => {
     const { contributors } = compareDecisions({
       decisionA: "Stay",
       decisionB: "Leave",
@@ -548,7 +549,7 @@ describe("contributors", () => {
     ]);
   });
 
-  it("lists no more than the three strongest rows pulling the other way", () => {
+  it("lists no more than the three strongest rows in favor of the loser", () => {
     const { contributors } = compareDecisions({
       decisionA: "Stay",
       decisionB: "Leave",
@@ -589,7 +590,7 @@ describe("contributors", () => {
       model: linear,
     });
 
-    expect(contributors.toward).toEqual([
+    expect(contributors.toward).toMatchObject([
       { text: "Stable team", rating: 6, option: "Stay" },
     ]);
   });
@@ -608,12 +609,56 @@ describe("contributors", () => {
       model: linear,
     });
 
-    expect(contributors.toward).toEqual([
+    expect(contributors.toward).toMatchObject([
       { text: "Stable team", rating: 6, option: "Stay" },
     ]);
   });
 
-  it("swaps which rows drive the result when the model changes the winner", () => {
+  it("says whether a row in favor of the winner is a pro or a con", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [{ text: "Stable team", weight: 6 }],
+      consA: [],
+      prosB: [],
+      consB: [{ text: "Long commute", weight: 8 }],
+      model: linear,
+    });
+
+    expect(contributors.toward).toEqual([
+      {
+        text: "Long commute",
+        rating: 8,
+        option: "Leave",
+        type: CONSIDERATION_TYPE.con,
+      },
+      {
+        text: "Stable team",
+        rating: 6,
+        option: "Stay",
+        type: CONSIDERATION_TYPE.pro,
+      },
+    ]);
+  });
+
+  it("says whether a row in favor of the loser is a pro or a con", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [{ text: "Stable team", weight: 10 }],
+      consA: [{ text: "Small flat", weight: 2 }],
+      prosB: [{ text: "Higher salary", weight: 5 }],
+      consB: [],
+      model: linear,
+    });
+
+    expect(contributors.against.map(({ text, type }) => ({ text, type }))).toEqual([
+      { text: "Higher salary", type: CONSIDERATION_TYPE.pro },
+      { text: "Small flat", type: CONSIDERATION_TYPE.con },
+    ]);
+  });
+
+  it("moves a row to the other decision when the model changes the winner", () => {
     const table = {
       decisionA: "Stay",
       decisionB: "Leave",
@@ -629,11 +674,11 @@ describe("contributors", () => {
 
     expect(
       compareDecisions({ ...table, model: linear }).contributors.against,
-    ).toEqual([{ text: "Stable team", rating: 10, option: "Stay" }]);
+    ).toMatchObject([{ text: "Stable team", rating: 10, option: "Stay" }]);
     expect(
       compareDecisions({ ...table, model: MODELS.squared.id }).contributors
         .toward,
-    ).toEqual([{ text: "Stable team", rating: 10, option: "Stay" }]);
+    ).toMatchObject([{ text: "Stable team", rating: 10, option: "Stay" }]);
   });
 });
 

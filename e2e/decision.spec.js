@@ -5,6 +5,7 @@ import {
   DECISION_A_LABEL,
   DECISION_B_LABEL,
   DECISION_NAME_FIELD_ERROR,
+  inFavorOf,
   leadResult,
   MODEL_HINTS,
   MODEL_LABELS,
@@ -18,6 +19,14 @@ import {
   SCORING_MODEL_LABEL,
 } from "../js/constants/strings.js";
 import { DECISION_NAME_MAX_LENGTH, MODELS } from "../js/scoring.js";
+
+function verdict(page) {
+  return page.locator("#finalResult .result-line");
+}
+
+function contributorGroups(page) {
+  return page.locator("#finalResult .contributor-group");
+}
 
 // Point totals below are linear sums, so these tests choose Linear and stay
 // about rows and names rather than about the scoring curve.
@@ -36,7 +45,7 @@ test("calculates a lead from named options", async ({ page }) => {
   await page.locator(".prosA").first().fill("8");
   await page.getByRole("button", { name: "Calculate" }).click();
 
-  await expect(page.locator("#finalResult")).toHaveText(
+  await expect(verdict(page)).toHaveText(
     leadResult("Stay", "Leave", 8, 100),
   );
 });
@@ -93,7 +102,7 @@ test("reset clears names, result, and name errors", async ({ page }) => {
   await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Pay");
   await page.locator(".prosA").first().fill("8");
   await page.getByRole("button", { name: "Calculate" }).click();
-  await expect(page.locator("#finalResult")).toHaveText(
+  await expect(verdict(page)).toHaveText(
     leadResult("Stay", "Leave", 8, 100),
   );
 
@@ -133,7 +142,7 @@ test("adds a pro without adding a con and counts the extra row", async ({
   await page.getByRole("button", { name: "Calculate" }).click();
 
   await expect(page.locator(".consA")).toHaveCount(1);
-  await expect(page.locator("#finalResult")).toHaveText(
+  await expect(verdict(page)).toHaveText(
     leadResult("Stay", "Leave", 11, 100),
   );
 });
@@ -151,7 +160,7 @@ test("stops counting a pro after it is removed", async ({ page }) => {
   await page.getByRole("button", { name: REMOVE_PRO_LABEL }).nth(1).click();
   await page.getByRole("button", { name: "Calculate" }).click();
 
-  await expect(page.locator("#finalResult")).toHaveText(
+  await expect(verdict(page)).toHaveText(
     leadResult("Stay", "Leave", 8, 100),
   );
 });
@@ -181,7 +190,7 @@ test("blocks the calculation until an unnamed rated row is fixed", async ({
   await useLinearScoring(page);
   await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
   await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
-  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Near family");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Stable team");
   await page.locator(".prosA").first().fill("8");
   await page.locator(".consB").first().fill("5");
 
@@ -239,17 +248,17 @@ test("calculating again scores the same decision table with the newly chosen mod
   await page.getByRole("button", { name: "Calculate" }).click();
 
   // Squared is the default, and weighs the one 10 (100) above three 4s (48).
-  await expect(page.locator("#finalResult")).toContainText("Stay is better");
+  await expect(verdict(page)).toHaveText(leadResult("Stay", "Leave", 52, 35));
 
   await page.getByLabel(SCORING_MODEL_LABEL).selectOption(MODELS.linear.id);
 
   // The result stands until the user asks for it again.
-  await expect(page.locator("#finalResult")).toContainText("Stay is better");
+  await expect(verdict(page)).toHaveText(leadResult("Stay", "Leave", 52, 35));
 
   await page.getByRole("button", { name: "Calculate" }).click();
 
   // Linear counts every point the same, so three 4s (12) now outweigh the 10.
-  await expect(page.locator("#finalResult")).toContainText("Leave is better");
+  await expect(verdict(page)).toHaveText(leadResult("Leave", "Stay", 2, 9));
 });
 
 test("explains the selected scoring model", async ({ page }) => {
@@ -282,10 +291,46 @@ test("refuses to calculate an empty decision table", async ({ page }) => {
   await expect(page.locator("#finalResult")).toBeEmpty();
 
   await page.getByRole("button", { name: VALIDATION_ERROR_DISMISS }).click();
-  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Near family");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Stable team");
   await page.locator(".prosA").first().fill("8");
   await page.getByRole("button", { name: "Calculate" }).click();
 
   await expect(page.getByText(EMPTY_TABLE_VALIDATION_ERROR)).toBeHidden();
   await expect(page.locator("#finalResult")).not.toBeEmpty();
+});
+
+test("tables the rows in favor of each decision", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await useLinearScoring(page);
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Stable team");
+  await page.locator(".prosA").first().fill("7");
+  await page.getByPlaceholder(CON_PLACEHOLDER).nth(1).fill("Long commute");
+  await page.locator(".consB").first().fill("5");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).nth(1).fill("Higher salary");
+  await page.locator(".prosB").first().fill("4");
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  await expect(contributorGroups(page)).toHaveCount(2);
+
+  const towardStay = contributorGroups(page).first();
+  await expect(towardStay.locator(".contributor-heading")).toHaveText(
+    inFavorOf("Stay"),
+  );
+  await expect(towardStay.locator(".contributor-text")).toHaveText([
+    "Stable team",
+    "Long commute",
+  ]);
+  await expect(towardStay.locator(".contributor-rating")).toHaveText(["7", "5"]);
+
+  const towardLeave = contributorGroups(page).nth(1);
+  await expect(towardLeave.locator(".contributor-heading")).toHaveText(
+    inFavorOf("Leave"),
+  );
+  await expect(towardLeave.locator(".contributor-text")).toHaveText([
+    "Higher salary",
+  ]);
 });

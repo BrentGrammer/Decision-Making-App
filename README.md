@@ -4,7 +4,7 @@
 
 Compare two options by listing pros and cons and rating each one from 0–10. Each rating is both how important that consideration is and how much it would affect you. Empty rows are ignored.
 
-The app scores each option as **pros minus cons**, then reports which decision leads, by how many points, and what drove the result. A tie, or missing names, is stated in plain language.
+The app scores each option as **pros minus cons**, then reports which decision leads, by how many points, and which considerations favour each decision. A tie, or missing names, is stated in plain language.
 
 ## Scoring models
 
@@ -22,11 +22,9 @@ The **Try a different model** dropdown sets how much a high rating outweighs sev
 
 ## Reading the result
 
-A result reports:
+A result is a verdict line followed by a table of the considerations that favour each decision.
 
-- **Which decision leads, and by how many points**
-- **The margin** — that point lead as a share of total points, rounded to a percent. It says how decisive the lead is: 3 points out of 6 is more significant, 3 out of 200 is a coin flip.
-- **What drove it** — the three rows pushing hardest toward the winner, and the three pushing hardest the other way.
+The verdict line reports **which decision leads, by how many points**, and **the margin** — that point lead as a share of total points, rounded to a percent. The margin says how decisive the lead is: 3 points out of 6 is more significant, 3 out of 200 is a coin flip.
 
 ## Use the App
 

@@ -2,7 +2,7 @@
 
 ## Handoff (for the next session)
 
-**When:** 11 September 2026, after selectable scoring models, the normalized margin, the contributor line, and the Dealbreaker veto. (Previous handoff: 8 September 2026 — in-page names, add/remove independent pro and con rows, blank-row slider warnings, `consideration-rows.js` extraction, scoring/UI-string split, Vite serve, Playwright tests.)
+**When:** 11 September 2026, after selectable scoring models, the normalized margin, the contributors table, and the Dealbreaker veto. (Previous handoff: 8 September 2026 — in-page names, add/remove independent pro and con rows, blank-row slider warnings, `consideration-rows.js` extraction, scoring/UI-string split, Vite serve, Playwright tests.)
 **Start here.** The review notes below are kept for the diagnosis of *why* the old percent formula was wrong. Every sentence in them that described current behavior has been brought up to the code as of this handoff; items already shipped are struck through or marked Done. Where a note and the code ever disagree, the code wins.
 
 ### Where the project is
@@ -24,7 +24,7 @@ e2e/                      Playwright (Chromium)
 docs/                     future-feature notes
 ```
 
-Scoring returns a **structured outcome** (`KIND.tie` | `lead` | `disqualified`). `formatComparison` in `js/constants/strings.js` turns that into an **array of result lines**; `#finalResult` holds one `<p class="result-line">` per line. Length limits (`DECISION_NAME_MIN_LENGTH` / `MAX`) stay in `scoring.js`. Tests import UI strings from `constants/strings.js` — do not hardcode those sentences in tests.
+Scoring returns a **structured outcome** (`KIND.tie` | `lead` | `disqualified`). `formatComparison` in `js/constants/strings.js` turns that into an **array of result blocks**, each tagged with a `RESULT_BLOCK` kind: `line` carries `text`, `contributors` carries `groups`. `js/scripts.js` renders `line` as `<p class="result-line">` and `contributors` as `<table class="contributors">` inside `#finalResult`. Adding a third kind of block means a new `RESULT_BLOCK` entry and a branch in `resultBlock`, not a rewritten sentence. Length limits (`DECISION_NAME_MIN_LENGTH` / `MAX`) stay in `scoring.js`. Tests import UI strings from `constants/strings.js` — do not hardcode those sentences in tests.
 
 Scoring math. Every filled rating passes through the selected model's transform `w(r)` before it is summed:
 
@@ -36,7 +36,9 @@ margin     = |difference| / sum(w(every filled rating, both options))
 
 The `MODELS` registry in `scoring.js` holds each model's `id`, `transform`, and (Dealbreaker only) `veto: true`. `resolveModel` falls back to `DEFAULT_MODEL_ID` (Squared) for an unknown or missing id. The dropdown holds its choice in memory only, and a model change applies on the next Calculate.
 
-A `lead` outcome carries `points`, `marginPercent`, and `contributors: { toward, against }` — up to three rows a side, each `{ text, rating, option }` carrying the user's own 0–10 rating. Every transform is monotone, so the list keeps the same order under every model; switching models changes which decision wins, moving rows between `toward` and `against`.
+A `lead` outcome carries `points`, `marginPercent`, and `contributors: { toward, against }` — up to three rows a side, each `{ text, rating, option, type }`, carrying the user's own 0–10 rating and whether the row is a `CONSIDERATION_TYPE.pro` or `.con`. Every transform is monotone, so the list keeps the same order under every model; switching models changes which decision wins, moving rows between `toward` and `against`.
+
+The contributors table shows those rows grouped by the decision they favour, headed `In favor of {decision}` (`inFavorOf` in `constants/strings.js`) — the winner's group first, the loser's group only when something favours it. A row favours a decision by being one of its pros or one of the other option's cons, so each row prints four cells: the decision it was typed under, `pro`/`con`, the text, and the rating. The column headers are in a `<thead class="contributor-columns">` that CSS hides visually, so the table reads as the sketch while screen readers still get column names. Ties and Dealbreaker vetoes are a single line with no table.
 
 Dealbreaker short-circuits before any of that: a filled con rated 10 disqualifies its option and returns `disqualified`, carrying only the winner, the loser, and the cons that ruled it out. Both options vetoed, or neither, falls through to the ordinary comparison. Only cons can veto. The concern column's hint (`#concern-hint`) swaps wording whenever the selected model carries the `veto` flag.
 
@@ -58,7 +60,7 @@ npm run test:e2e                 # Playwright; reuses Vite if already running
 npm run serve                    # Vite, usually http://localhost:5173/
 ```
 
-Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (formatComparison) + `test/empty-rows.test.js` (page behavior & blank warnings via jsdom) + `test/rows.test.js` (add/remove rows) + `test/model-select.test.js` (dropdown, hints, chosen model applies on Calculate) + `test/result-display.test.js` (multi-line result block) + `test/validation.test.js` (Calculate blocked: missing names, unnamed rated rows, nothing rated) + `test/loadApp.js`. 137 unit tests, all passing at handoff. Playwright (`e2e/decision.spec.js`) has **never been run** — see "What to do next".
+Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (formatComparison blocks) + `test/empty-rows.test.js` (page behavior & blank warnings via jsdom) + `test/rows.test.js` (add/remove rows) + `test/model-select.test.js` (dropdown, hints, chosen model applies on Calculate) + `test/result-display.test.js` (verdict line + contributors table) + `test/validation.test.js` (Calculate blocked: missing names, unnamed rated rows, nothing rated) + `test/loadApp.js`. 144 unit tests, all passing at handoff. Playwright (`e2e/decision.spec.js`) has **never been run** — see "What to do next".
 
 ### How tests load the app
 
@@ -84,7 +86,7 @@ Slider labels: `input` listeners in `initApp()`, not `onchange`. Tests dispatch 
 
 ### What is done this stretch
 
-Selectable scoring models (Linear, Squared, Cubed, Doubling, Dealbreaker) behind a "Try a different model" dropdown with a per-model hint. Normalized margin on the result. Contributor line naming the rows that drove the verdict and the rows opposing it. Dealbreaker veto with the `disqualified` outcome. Result is now multi-line. 124 Vitest tests pass.
+Selectable scoring models (Linear, Squared, Cubed, Doubling, Dealbreaker) behind a "Try a different model" dropdown with a per-model hint. Normalized margin on the result. Dealbreaker veto with the `disqualified` outcome. The rows that decided it are a table grouped `In favor of {decision}` rather than a sentence — the sentence had to name six rows, two decisions and their ratings in one breath, and the table also resolves which column a row was typed under. `formatComparison` returns tagged blocks instead of strings to make that possible, and helper assertions read `contributorGroups()` from `test/loadApp.js`. 144 Vitest tests pass.
 
 Earlier stretch: in-page names; START / `prompt()` removed. Name validation (min 1 / max 50, field errors, blur + calculate). Calculate scrolls `#finalResult` into view. Scoring outcomes split from UI strings. App modules under `js/` with `consideration-rows.js` extracted. Add/remove independent pro and con rows per decision (no pro/con row pairing). Inline validation warnings when a slider moves without text (`BLANK_PRO_ERROR` / `BLANK_CON_ERROR`). Accessible names and UI text centralized in `js/constants/strings.js`. Vitest + Playwright suites passing. Light panel UI: app bar, grid decision table, inset slider wells, `Value:` readouts, info-icon header tips, teal pros / terracotta cons.
 
@@ -116,8 +118,8 @@ The hosted GitHub Pages copy may still be the old percent app until redeployed.
 | `test/rows.test.js` | Add/remove rows behavior |
 | `test/model-select.test.js` | Model dropdown, hint swapping, model applies on Calculate |
 | `test/validation.test.js` | Calculate blocked: missing names, unnamed rated rows, nothing rated |
-| `test/result-display.test.js` | Multi-line result block |
-| `e2e/decision.spec.js` | Browser: names, errors, reset, scroll, add/remove, model dropdown (unrun) |
+| `test/result-display.test.js` | Verdict line and the contributors table |
+| `e2e/decision.spec.js` | Browser: names, errors, reset, scroll, add/remove, model dropdown, contributors table (unrun) |
 | `package.json` | `vitest`, `jsdom`, `vite` (serve), `@playwright/test` |
 | `REVIEW.md` | This review + handoff |
 

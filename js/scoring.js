@@ -9,6 +9,11 @@ export const KIND = Object.freeze({
 
 export const DEALBREAKER_RATING = 10;
 
+export const CONSIDERATION_TYPE = Object.freeze({
+    pro: "pro",
+    con: "con",
+});
+
 export function trimmedDecisionName(value) {
     return String(value ?? "").trim();
 }
@@ -88,7 +93,7 @@ function netScore(pros, cons, transform) {
 
 const MAX_CONTRIBUTORS_PER_SIDE = 3;
 
-function filledRows(considerations, option, sign, transform) {
+function filledRows(considerations, option, type, sign, transform) {
     const rows = [];
     for (const consideration of considerations) {
         const text = String(consideration.text ?? "").trim();
@@ -100,13 +105,13 @@ function filledRows(considerations, option, sign, transform) {
         if (favorsWinnerBy === 0) {
             continue;
         }
-        rows.push({ text, rating, option, favorsWinnerBy });
+        rows.push({ text, rating, option, type, favorsWinnerBy });
     }
     return rows;
 }
 
-function extractContributor({ text, rating, option }) {
-    return { text, rating, option };
+function extractContributor({ text, rating, option, type }) {
+    return { text, rating, option, type };
 }
 
 function findStrongestContributors(rows) {
@@ -179,10 +184,10 @@ export function compareDecisions({
     const loser = aLeads ? nameB : nameA;
     const towardA = aLeads ? 1 : -1;
     const rows = [
-        ...filledRows(prosA, nameA, towardA, transform),
-        ...filledRows(consA, nameA, -towardA, transform),
-        ...filledRows(prosB, nameB, -towardA, transform),
-        ...filledRows(consB, nameB, towardA, transform),
+        ...filledRows(prosA, nameA, CONSIDERATION_TYPE.pro, towardA, transform),
+        ...filledRows(consA, nameA, CONSIDERATION_TYPE.con, -towardA, transform),
+        ...filledRows(prosB, nameB, CONSIDERATION_TYPE.pro, -towardA, transform),
+        ...filledRows(consB, nameB, CONSIDERATION_TYPE.con, towardA, transform),
     ];
 
     return {

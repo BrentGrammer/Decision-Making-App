@@ -69,6 +69,20 @@ export function resultLines() {
   );
 }
 
+export function contributorGroups() {
+  return [...document.querySelectorAll("#finalResult .contributor-group")].map(
+    (group) => ({
+      heading: group.querySelector(".contributor-heading").textContent,
+      rows: [...group.querySelectorAll(".contributor-row")].map((row) => ({
+        option: row.querySelector(".contributor-option").textContent,
+        type: row.querySelector(".contributor-type").textContent,
+        text: row.querySelector(".contributor-text").textContent,
+        rating: row.querySelector(".contributor-rating").textContent,
+      })),
+    }),
+  );
+}
+
 export function verdictLine() {
   return resultLines()[0];
 }

@@ -9,8 +9,11 @@ import {
     trimmedDecisionName,
 } from "./scoring.js";
 import {
+    CONSIDERATION_TYPE_LABELS,
+    CONTRIBUTOR_COLUMN_LABELS,
     DECISION_NAME_FIELD_ERROR,
     formatComparison,
+    RESULT_BLOCK,
     CONCERN_HINT,
     DEALBREAKER_CONCERN_HINT,
     VALIDATION_ERROR_DISMISS,
@@ -64,16 +67,89 @@ function fillModelOptions() {
     showModelHint();
 }
 
-function showResultLines(lines) {
-    const result = document.getElementById("finalResult");
-    result.replaceChildren(
-        ...lines.map((line) => {
-            const paragraph = document.createElement("p");
-            paragraph.className = "result-line";
-            paragraph.textContent = line;
-            return paragraph;
+const CONTRIBUTOR_COLUMNS = ["option", "type", "text", "rating"];
+
+function contributorCell(row, column) {
+    const cell = document.createElement("td");
+    cell.className = `contributor-${column}`;
+    cell.textContent =
+        column === "type" ? CONSIDERATION_TYPE_LABELS[row.type] : row[column];
+    if (column === "type") {
+        cell.dataset.type = row.type;
+    }
+    return cell;
+}
+
+function contributorRow(row) {
+    const tableRow = document.createElement("tr");
+    tableRow.className = "contributor-row";
+    tableRow.append(
+        ...CONTRIBUTOR_COLUMNS.map((column) => contributorCell(row, column)),
+    );
+    return tableRow;
+}
+
+function contributorHeading(heading) {
+    const tableRow = document.createElement("tr");
+    tableRow.className = "contributor-heading";
+    const cell = document.createElement("th");
+    cell.colSpan = CONTRIBUTOR_COLUMNS.length;
+    cell.scope = "rowgroup";
+    cell.textContent = heading;
+    tableRow.append(cell);
+    return tableRow;
+}
+
+function contributorGroup({ heading, rows }) {
+    const body = document.createElement("tbody");
+    body.className = "contributor-group";
+    body.append(contributorHeading(heading), ...rows.map(contributorRow));
+    return body;
+}
+
+function contributorColumnHeaders() {
+    const head = document.createElement("thead");
+    head.className = "contributor-columns";
+    const tableRow = document.createElement("tr");
+    tableRow.append(
+        ...CONTRIBUTOR_COLUMNS.map((column) => {
+            const cell = document.createElement("th");
+            cell.scope = "col";
+            cell.textContent = CONTRIBUTOR_COLUMN_LABELS[column];
+            return cell;
         }),
     );
+    head.append(tableRow);
+    return head;
+}
+
+function contributorsTable({ groups }) {
+    const table = document.createElement("table");
+    table.className = "contributors";
+    table.append(
+        contributorColumnHeaders(),
+        ...groups.map(contributorGroup),
+    );
+    return table;
+}
+
+function resultLine({ text }) {
+    const paragraph = document.createElement("p");
+    paragraph.className = "result-line";
+    paragraph.textContent = text;
+    return paragraph;
+}
+
+function resultBlock(block) {
+    return block.kind === RESULT_BLOCK.contributors
+        ? contributorsTable(block)
+        : resultLine(block);
+}
+
+function showResult(blocks) {
+    document
+        .getElementById("finalResult")
+        .replaceChildren(...blocks.map(resultBlock));
 }
 
 function decisionNameMessage(value) {
@@ -122,7 +198,7 @@ function resetSliders() {
     setNameValidity(inputB, "");
     modelSelect().value = DEFAULT_MODEL_ID;
     showModelHint();
-    showResultLines([]);
+    showResult([]);
 }
 
 function validationDialog() {
@@ -209,14 +285,14 @@ function calculate() {
         uncountedRows,
     );
     if (validationErrors.length > 0) {
-        showResultLines([]);
+        showResult([]);
         showValidationErrors(validationErrors);
         openValidationDialog();
         return;
     }
     closeValidationDialog();
     const result = document.getElementById("finalResult");
-    showResultLines(
+    showResult(
         formatComparison(
             compareDecisions({
                 decisionA: document.getElementById("A").value,

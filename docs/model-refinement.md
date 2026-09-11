@@ -42,17 +42,23 @@ Every field is shown wherever it applies. More information is better than less.
 1. **Winner and loser.**
 2. **Raw point lead**, in the selected model's units.
 3. **Margin.** `|lead| / Σ w(every filled row, both options)`, rounded to a whole percent. Bounded 0–100% under every curve; 100% only when the winner is all pros and the loser all cons. Total is 0 only when nothing is filled, which is already a tie. This is a normalized margin chosen by the app, not "% better."
-4. **Contributors.** Each row contributes `±w(r)` toward the winner. Show the top 2–3 rows pushing toward the winner and the single strongest row pushing the other way, with the user's ratings (not transformed weights): *"Most of Stay's lead comes from 'near family' (10) and Leave's 'long commute' (8). Pulling the other way: Leave's 'higher salary' (9)."*
+4. **Contributors.** Each row contributes `±w(r)` toward the winner. Show the top 2–3 rows pushing toward the winner and the single strongest row pushing the other way, with the user's ratings (not transformed weights). (Shipped as a sentence, then replaced by a grouped table — see **Where this stands** item 6.)
 5. **Veto outcome** (Dealbreaker only): *"Leave is disqualified by 'would have to sell the house' (10)."*
 
-Example block:
+Example block, as shipped:
 
 ```text
-RESULT: Stay leads Leave by 7 points — 23% of the total weight.
-Most of Stay's lead comes from "near family" (10) and Leave's "long commute" (8). Pulling the other way: Leave's "higher salary" (9).
+RESULT: Stay leads Leave by 7 points — 23% of all points entered.
+
+IN FAVOR OF STAY
+Stay     pro   Stable team       10
+Leave    con   Long commute       8
+
+IN FAVOR OF LEAVE
+Leave    pro   Higher salary      9
 ```
 
-Under nonlinear models the point lead is in squared or cubed units nobody can picture. The contributor list is the only output in the user's own 0–10 ratings, so it is what makes switching models understandable: change the model and see which rows now decide it.
+Under nonlinear models the point lead is in squared or cubed units nobody can picture. The contributors table is the only output in the user's own 0–10 ratings, so it is what makes switching models understandable: change the model and see which rows now decide it.
 
 **Cut: the flip check.** Earlier drafts of this plan added a "smallest flip" sentence (*"Would tie if 'long commute' were rated 8 instead of 6"*) and, from it, **Close call** / **Decisive** labels. Both are cut. The idea was sound — it is the only honest read on whether a verdict is fragile — but it needed a brute-force search over every filled row × 11 values, a tie-break rule for when several rows are equally cheap to flip, its own vocabulary, and a sentence that took several attempts to explain in plain English. That is most of the remaining complexity for the smaller half of the payoff; contributors answer "why did this win," which is what people actually want. The cost of cutting: the margin percent can read as comfortable when the result is in fact one notch from flipping (two rows, 5 vs 4 — an 11% margin that a single notch ties). Accepted. The flip check is self-contained and nothing else depends on it, so it can return later if the result block turns out to hide fragility.
 
@@ -79,7 +85,9 @@ Last worked 11 September 2026, on branch `feature/model-refinement`. 124 unit te
 
 5. **Dealbreaker veto.** `compareDecisions` reads the model's `veto` flag and short-circuits before any scoring: a filled con rated `DEALBREAKER_RATING` (10) rules that option out. One option ruled out returns `{ kind: "disqualified", winner, loser, dealbreakers }` — no points, margin, or contributors. Both ruled out, or neither, falls through to the ordinary comparison. Pros are never vetoes, and blank rows rated 10 do not count. The concern column's hint (`#concern-hint` in `index.html`) swaps to `DEALBREAKER_CONCERN_HINT` whenever the selected model vetoes, driven off the flag rather than the model id.
 
-6. **Docs.** README gained "Scoring models" and "Reading the result" sections, with both example blocks copied from real program output. `docs/ai-duplicate-detection.md` no longer claims several moderate cons outweigh fewer higher-rated ones; it now says the answer depends on the selected model. `REVIEW.md` handoff rewritten for this stretch, with the unrun Playwright suite as the next task.
+6. **Contributors as a table.** The sentence in §2 item 4 was replaced after it shipped, because it had to name up to six rows, two decisions and their ratings in one breath, and it never said which column a row was typed under. `formatComparison` now returns tagged blocks — `{ kind: RESULT_BLOCK.line, text }` and `{ kind: RESULT_BLOCK.contributors, groups }` — which `js/scripts.js` renders as a `<p class="result-line">` and a `<table class="contributors">`. Each group is headed `In favor of {decision}`, the winner's first, the loser's only when something favours it, and each row prints the decision it was typed under, `pro`/`con`, the text, and the user's own rating. Contributors carry a `type` from the new `CONSIDERATION_TYPE` in `scoring.js` to make the third column possible. Ties and vetoes stay a single line with no table.
+
+7. **Docs.** README gained "Scoring models" and "Reading the result" sections, with both example blocks copied from real program output. `docs/ai-duplicate-detection.md` no longer claims several moderate cons outweigh fewer higher-rated ones; it now says the answer depends on the selected model. `REVIEW.md` handoff rewritten for this stretch, with the unrun Playwright suite as the next task.
 
 ### Left
 
@@ -117,6 +125,7 @@ Small steps, each one reviewable on its own.
 - Changing the model does not recalculate; the showing result stands until the user clicks Calculate again.
 - Raw point lead stays visible wherever it exists.
 - No `localStorage`; model choice lives in memory.
+- Contributors are a table grouped "In favor of {decision}", not a sentence. Both group headings take the same form, so neither side reads as the app's own verdict.
 - Later, optional: a "compare all models" table (winner and label per model).
 
 ---

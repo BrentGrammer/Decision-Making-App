@@ -1,4 +1,5 @@
 import {
+    CONSIDERATION_TYPE,
     DECISION_NAME_MAX_LENGTH,
     DECISION_NAME_MIN_LENGTH,
     KIND,
@@ -59,19 +60,11 @@ export function leadResult(winner, loser, points, marginPercent) {
     return `RESULT: ${winner} leads ${loser} by ${Math.abs(points)} points — ${marginPercent}% of all points entered.`;
 }
 
-function formatContributor(contributor) {
-    return `${contributor.option}'s "${contributor.text}" (${contributor.rating})`;
-}
-
 function joinWithAnd(phrases) {
     if (phrases.length < 2) {
         return phrases.join("");
     }
     return `${phrases.slice(0, -1).join(", ")} and ${phrases[phrases.length - 1]}`;
-}
-
-function formatContributorList(contributors) {
-    return joinWithAnd(contributors.map(formatContributor));
 }
 
 export function disqualifiedResult(winner, loser, dealbreakers) {
@@ -81,35 +74,66 @@ export function disqualifiedResult(winner, loser, dealbreakers) {
     return `RESULT: ${winner} wins. ${loser} is disqualified by ${ruledOutBy}.`;
 }
 
-export function contributorsResult(winner, loser, { toward, against }) {
-    const lead = `Most of ${winner}'s lead comes from ${formatContributorList(toward)}.`;
-    if (against.length === 0) {
-        return lead;
-    }
-    return `${lead} In favor of ${loser}: ${formatContributorList(against)}.`;
+export const RESULT_BLOCK = Object.freeze({
+    line: "line",
+    contributors: "contributors",
+});
+
+export const CONTRIBUTOR_COLUMN_LABELS = Object.freeze({
+    option: "Decision",
+    type: "Pro or con",
+    text: "Consideration",
+    rating: "Rating",
+});
+
+export const CONSIDERATION_TYPE_LABELS = Object.freeze({
+    [CONSIDERATION_TYPE.pro]: "pro",
+    [CONSIDERATION_TYPE.con]: "con",
+});
+
+export function inFavorOf(decision) {
+    return `In favor of ${decision}`;
+}
+
+function resultLine(text) {
+    return { kind: RESULT_BLOCK.line, text };
+}
+
+export function contributorsBlock(winner, loser, { toward, against }) {
+    return {
+        kind: RESULT_BLOCK.contributors,
+        groups: [
+            { heading: inFavorOf(winner), rows: toward },
+            { heading: inFavorOf(loser), rows: against },
+        ].filter((group) => group.rows.length > 0),
+    };
 }
 
 export function formatComparison(outcome) {
     switch (outcome.kind) {
         case KIND.tie:
-            return [TIE_RESULT];
+            return [resultLine(TIE_RESULT)];
         case KIND.disqualified:
             return [
-                disqualifiedResult(
-                    outcome.winner,
-                    outcome.loser,
-                    outcome.dealbreakers,
+                resultLine(
+                    disqualifiedResult(
+                        outcome.winner,
+                        outcome.loser,
+                        outcome.dealbreakers,
+                    ),
                 ),
             ];
         case KIND.lead:
             return [
-                leadResult(
-                    outcome.winner,
-                    outcome.loser,
-                    outcome.points,
-                    outcome.marginPercent,
+                resultLine(
+                    leadResult(
+                        outcome.winner,
+                        outcome.loser,
+                        outcome.points,
+                        outcome.marginPercent,
+                    ),
                 ),
-                contributorsResult(
+                contributorsBlock(
                     outcome.winner,
                     outcome.loser,
                     outcome.contributors,
