@@ -75,6 +75,12 @@ export function considerationFieldError(sliderClass, rowIndex) {
   );
 }
 
+export function selectScoringModel(id) {
+  const select = document.getElementById("model");
+  select.value = id;
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
 export function setDecisionNames(decisionA, decisionB) {
   document.getElementById("A").value = decisionA;
   document.getElementById("B").value = decisionB;

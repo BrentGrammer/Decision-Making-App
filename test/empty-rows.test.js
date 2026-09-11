@@ -8,18 +8,20 @@ import {
   NAME_LENGTH_RESULT,
   TIE_RESULT,
 } from "../js/constants/strings.js";
-import { DECISION_NAME_MAX_LENGTH } from "../js/scoring.js";
+import { DECISION_NAME_MAX_LENGTH, MODELS } from "../js/scoring.js";
 import {
   considerationFieldError,
   considerationTextInput,
   fillConsideration,
   loadApp,
   setDecisionNames,
+  selectScoringModel,
 } from "./loadApp.js";
 
 describe("test harness", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
   it("loads the page script onto window", () => {
@@ -39,6 +41,7 @@ describe("test harness", () => {
 describe("empty rows do not count", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
   it("does not let a blank row change the result", () => {
@@ -116,6 +119,7 @@ describe("empty rows do not count", () => {
 describe("reset", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
   it("restores slider values and Current Value labels to 0", () => {
@@ -182,6 +186,7 @@ describe("reset", () => {
 describe("ties", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
     setDecisionNames("Stay", "Leave");
   });
 
@@ -214,6 +219,7 @@ describe("ties", () => {
 describe("decision names", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
   it("does not treat missing names as undefined", () => {
@@ -390,6 +396,7 @@ describe("decision names", () => {
 describe("slider labels", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
   it("updates Current Value beside the slider that moved", () => {

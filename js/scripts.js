@@ -1,10 +1,14 @@
 import {
     compareDecisions,
+    DEFAULT_MODEL_ID,
     isValidDecisionName,
+    MODELS,
 } from "./scoring.js";
 import {
     DECISION_NAME_FIELD_ERROR,
     formatComparison,
+    MODEL_HINTS,
+    MODEL_LABELS,
 } from "./constants/strings.js";
 import {
     addConsiderationRow,
@@ -16,6 +20,32 @@ import {
     validateConsiderationRow,
     validateConsiderationRows,
 } from "./consideration-rows.js";
+
+function modelSelect() {
+    return document.getElementById("model");
+}
+
+function selectedModel() {
+    return modelSelect().value;
+}
+
+function showModelHint() {
+    document.getElementById("model-hint").textContent =
+        MODEL_HINTS[selectedModel()];
+}
+
+function fillModelOptions() {
+    const select = modelSelect();
+    select.replaceChildren();
+    for (const model of Object.values(MODELS)) {
+        const option = document.createElement("option");
+        option.value = model.id;
+        option.textContent = MODEL_LABELS[model.id];
+        select.append(option);
+    }
+    select.value = DEFAULT_MODEL_ID;
+    showModelHint();
+}
 
 function decisionNameMessage(value) {
     return isValidDecisionName(value) ? "" : DECISION_NAME_FIELD_ERROR;
@@ -61,6 +91,8 @@ function resetSliders() {
     inputB.value = "";
     setNameValidity(inputA, "");
     setNameValidity(inputB, "");
+    modelSelect().value = DEFAULT_MODEL_ID;
+    showModelHint();
     document.getElementById("finalResult").textContent = "";
 }
 
@@ -76,6 +108,7 @@ function calculate() {
             consA: getConsiderations(CONSIDERATION_GROUPS.consA.id),
             prosB: getConsiderations(CONSIDERATION_GROUPS.prosB.id),
             consB: getConsiderations(CONSIDERATION_GROUPS.consB.id),
+            model: selectedModel(),
         }),
     );
     result.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -120,6 +153,8 @@ function initApp() {
     form.addEventListener("click", onFormClick);
 
     restoreDefaultRows();
+    fillModelOptions();
+    modelSelect().addEventListener("change", showModelHint);
 
     for (const input of [document.getElementById("A"), document.getElementById("B")]) {
         input.addEventListener("blur", function () {

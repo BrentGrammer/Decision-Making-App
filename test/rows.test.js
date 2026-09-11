@@ -1,16 +1,19 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { leadResult } from "../js/constants/strings.js";
+import { MODELS } from "../js/scoring.js";
 import {
   addConsideration,
   fillConsideration,
   loadApp,
   removeConsideration,
   setDecisionNames,
+  selectScoringModel,
 } from "./loadApp.js";
 
 describe("add and remove rows", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
   it("adds a pro without adding a con", () => {

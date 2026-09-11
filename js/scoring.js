@@ -44,7 +44,7 @@ export const MODELS = Object.freeze({
     }),
 });
 
-export const DEFAULT_MODEL_ID = MODELS.linear.id;
+export const DEFAULT_MODEL_ID = MODELS.squared.id;
 
 export function resolveModel(id) {
     return MODELS[id] ?? MODELS[DEFAULT_MODEL_ID];

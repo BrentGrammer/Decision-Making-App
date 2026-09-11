@@ -92,6 +92,7 @@ describe("compareDecisions", () => {
         consA: [],
         prosB: [{ text: "Growth", weight: 5 }],
         consB: [],
+        model: MODELS.linear.id,
       }),
     ).toEqual({
       kind: KIND.lead,
@@ -113,6 +114,7 @@ describe("compareDecisions", () => {
         consA: [],
         prosB: [],
         consB: [],
+        model: MODELS.linear.id,
       }),
     ).toEqual({
       kind: KIND.lead,
@@ -134,6 +136,7 @@ describe("compareDecisions", () => {
         consA: [],
         prosB: [],
         consB: [],
+        model: MODELS.linear.id,
       }),
     ).toEqual({
       kind: KIND.lead,
@@ -309,21 +312,6 @@ describe("compareDecisions", () => {
           model: MODELS.squared.id,
         }),
       ).toEqual({ kind: KIND.tie });
-    });
-
-    it("scores dealbreaker like linear for now", () => {
-      const args = {
-        decisionA: "Stay",
-        decisionB: "Leave",
-        prosA: [{ text: "Near family", weight: 7 }],
-        consA: [{ text: "Small flat", weight: 10 }],
-        prosB: [{ text: "Higher salary", weight: 5 }],
-        consB: [],
-      };
-
-      expect(
-        compareDecisions({ ...args, model: MODELS.dealbreaker.id }),
-      ).toEqual(compareDecisions({ ...args, model: MODELS.linear.id }));
     });
 
     it("scores an unknown model id the same as none at all", () => {

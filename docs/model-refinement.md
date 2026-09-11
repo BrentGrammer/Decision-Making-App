@@ -23,11 +23,11 @@ lead = netA − netB
 
 | Model | `w(r)` | Hint shown beside the dropdown |
 |---|---|---|
-| Linear | `r` | Every point counts the same. A 10 equals two 5s. |
-| Squared (default) | `r²` | Big items weigh more. A 10 equals four 5s. |
-| Cubed | `r³` | Big items dominate. A 10 equals eight 5s. |
-| Doubling | `2^r`, with `w(0) = 0` | The biggest item almost always decides. A 10 equals two 9s or thirty-two 5s. |
-| Dealbreaker | `r`, plus veto rule | A 10 on a con is a veto. Otherwise every point counts the same. |
+| Linear | `r` | Every point counts the same: one 10 counts as much as two 5s. |
+| Squared (default) | `r²` | Your highest importance and concern scores count for more: one 10 counts as much as four 5s. |
+| Cubed | `r³` | Your highest importance and concern scores count for much more: one 10 counts as much as eight 5s. |
+| Doubling | `2^r`, with `w(0) = 0` | The single highest importance or concern score almost always decides: one 10 counts as much as two 9s, or thirty-two 5s. |
+| Dealbreaker | `r`, plus veto rule | A con you rate 10 for concern rules that option out entirely. Otherwise every point counts the same. |
 
 **Dealbreaker veto rule.** A con rated 10 disqualifies that option. One option vetoed: the other wins; outcome kind `disqualified`; no margin, flip, or contributors (it is not a margin). Both vetoed, or neither: fall through to the plain linear comparison. A pro rated 10 is **not** a veto against the other option. If something is truly required, express it as a dealbreaker con on the option that lacks it ("not remote" rated 10). The veto exists only in this model; in every other model a 10 con is a heavy weight that can still be outweighed.
 

@@ -76,8 +76,15 @@
               </div>
           </div>
           <div class="actions">
-            <button type="button" class="button" onclick="calculate()">Calculate</button>
-            <button type="reset" class="button button-secondary" onclick="resetSliders()">Reset</button>
+            <div class="model-choice">
+              <label for="model">Try a different model</label>
+              <select id="model" aria-describedby="model-hint"></select>
+              <p id="model-hint" class="model-hint"></p>
+            </div>
+            <div class="action-buttons">
+              <button type="button" class="button" onclick="calculate()">Calculate</button>
+              <button type="reset" class="button button-secondary" onclick="resetSliders()">Reset</button>
+            </div>
           </div>
       </form>
 
