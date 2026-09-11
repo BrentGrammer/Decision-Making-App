@@ -319,8 +319,7 @@ These are not "the current math is wrong." They are other ways to look at the pr
 5. ~~Vitest + jsdom (test-only).~~ Done.
 6. ~~Category 2 UX — `oninput`, in-page names, add/remove rows, DOM-free scoring tests.~~ Done.
 7. ~~Scoring models, normalized margin, contributors, Dealbreaker veto.~~ Done — see `docs/model-refinement.md`.
-8. **Next:** run the Playwright suite (it has never executed), then the remaining Category 2 items above.
-9. Architecture (`src/`, app bundler) only if deploy needs a real build.
+8. Architecture (`src/`, app bundler) only if deploy needs a real build.
 
 ---
 

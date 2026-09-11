@@ -1,0 +1,48 @@
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.load-status,
+.load-error {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+.load-error {
+    color: var(--color-error);
+}
+
+.model-choice {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    max-width: 28rem;
+}
+
+.model-choice label {
+    font-weight: 500;
+}
+
+.model-choice select {
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--color-outline);
+    border-radius: 0.4rem;
+    background: var(--color-surface);
+    color: inherit;
+    font: inherit;
+}
+
+.model-hint {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+}

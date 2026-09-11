@@ -1,0 +1,109 @@
+.result {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0;
+    scroll-margin-bottom: 1.5rem;
+    color: var(--color-pro);
+}
+
+.result-line {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+.contributors {
+    width: 100%;
+    max-width: 44rem;
+    margin-top: 0.5rem;
+    border-collapse: collapse;
+    background: var(--color-panel);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    color: var(--color-on-surface);
+    font-size: 0.95rem;
+    text-align: left;
+}
+
+.contributors-caption {
+    caption-side: top;
+    padding-bottom: 0.4rem;
+    color: var(--color-on-surface);
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: left;
+}
+
+.contributors-caption .hint-text {
+    left: 0;
+    transform: none;
+}
+
+.contributor-group:first-of-type .contributor-heading th {
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.contributor-columns {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.contributor-heading th {
+    padding: 0.6rem 0.75rem 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    background: var(--color-header);
+}
+
+.contributor-group + .contributor-group .contributor-heading th {
+    border-top: 1px solid var(--color-outline);
+}
+
+.contributor-row td {
+    padding: 0.45rem 0.75rem;
+    border-top: 1px solid var(--color-track);
+}
+
+.contributor-option {
+    white-space: nowrap;
+    color: var(--color-muted);
+}
+
+.contributor-type {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    color: var(--color-pro);
+}
+
+.contributor-type[data-type="con"] {
+    color: var(--color-con);
+}
+
+.contributor-text {
+    width: 100%;
+}
+
+.contributor-rating {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+.contributor-share {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-muted);
+}

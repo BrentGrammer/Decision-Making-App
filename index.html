@@ -8,7 +8,7 @@
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
-      <link rel="stylesheet" href="main.css">
+      <link rel="stylesheet" href="css/main.css">
   </head>
   <body>
     <header class="app-bar">
@@ -101,7 +101,7 @@
           </div>
           <div class="slider-well">
             <input class="sliders" type="range" min="0" max="10" value="0" step="1" />
-            <label class="slider-readout">Value: <input class="sliderStatus" type="number" inputmode="numeric" min="0" max="10" step="1" value="0" /></label>
+            <label class="slider-readout"><span class="slider-readout-label">Value: </span><input class="sliderStatus" type="number" inputmode="numeric" min="0" max="10" step="1" value="0" aria-label="Value" /></label>
           </div>
           <button type="button" class="remove-row" title="Remove">
             <svg aria-hidden="true"><use href="#icon-close"/></svg>

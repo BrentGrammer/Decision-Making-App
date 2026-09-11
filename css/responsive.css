@@ -1,0 +1,14 @@
+@media (max-width: 40rem) {
+    .contributors {
+        font-size: 0.9rem;
+    }
+
+    .contributor-row td,
+    .contributor-heading th {
+        padding-inline: 0.5rem;
+    }
+
+    .slider-readout-label {
+        display: none;
+    }
+}
