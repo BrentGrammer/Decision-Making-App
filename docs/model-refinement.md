@@ -33,7 +33,7 @@ lead = netA − netB
 
 In Dealbreaker mode the con-slider hint should say that 10 means "unacceptable," not "very important."
 
-**Behavior.** Dropdown sits in the actions row beside Calculate, hint beneath it. Default is Squared. Changing the model recalculates immediately if a result is already showing. Selection is held in memory only; no `localStorage`.
+**Behavior.** Dropdown sits in the actions row beside Calculate, labelled "Try a different model," hint beneath it. Default is Squared. Changing the model swaps the hint but leaves any showing result alone — the user can browse models without losing the result they are reading, and the new model is applied on the next Calculate. Selection is held in memory only; no `localStorage`.
 
 ## 2. Result contents
 
@@ -65,12 +65,26 @@ Under nonlinear models the point lead is in squared or cubed units nobody can pi
 - Tests — `test/scoring.test.js`: per-model scoring, including one 10 vs three 4s flipping between Linear (4s win, 12 > 10) and Squared (10 wins, 100 > 48); veto cases (one side, both sides, neither); flip search; contributors. `test/strings.test.js`: new sentences. One Playwright test: switch models, result changes.
 - Docs — README scoring section. `docs/ai-duplicate-detection.md` line 8 ("several moderate cons should outweigh fewer cons weighted higher") is now true only for Linear and must be reworded. `REVIEW.md` handoff.
 
+## How this gets built
+
+Small steps, each one reviewable on its own.
+
+**Test-driven.** Write the test first, run it, confirm it fails for the right reason, then write the production code that makes it pass.
+
+**Tests assert observable behavior, not implementation.** A test drives the app the way a user does — fill the sheet, choose a model, calculate, read the result — or calls a public function and checks its outcome. No asserting on the shape of the `MODELS` registry, on a transform in isolation, or on anything else a refactor could rename without changing what the app does. Where a test's subject is not the thing under change (a row-counting test that happens to sum points), pin the unrelated variable explicitly so its arithmetic stays about its own subject.
+
+**No shims, no backwards compatibility, no transitional scaffolding.** This is an update, not a migration. The app is allowed to be inconsistent between steps — a hint that describes behavior landing two steps later is fine and needs no caveat.
+
+**Never assert on what used to be true or will be true later.** No "scores like linear for now," no "does not yet veto." A test states what the app does today; when behavior arrives, its test arrives with it.
+
 ## Decisions log
 
 - Percent is a normalized margin, never "% better."
 - Label boundaries: only Close call (flip distance 1) and Decisive (unflippable by one rating). No middle bands.
 - Dealbreaker: cons only. No must-have pro veto.
 - Default model: Squared.
+- Dropdown label is "Try a different model."
+- Changing the model does not recalculate; the showing result stands until the user clicks Calculate again.
 - Raw point lead stays visible wherever it exists.
 - No `localStorage`; model choice lives in memory.
 - Later, optional: a "compare all models" table (winner and label per model).
