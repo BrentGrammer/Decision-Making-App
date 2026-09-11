@@ -59,7 +59,20 @@ describe("formatComparison", () => {
     ]);
   });
 
-  it("states the margin as a share of the weight entered, not as being better", () => {
+  it("names the winner as the better decision", () => {
+    const [verdict] = formatComparison({
+      kind: KIND.lead,
+      winner: "Stay",
+      loser: "Leave",
+      points: 7,
+      marginPercent: 23,
+      contributors: { toward: [stableTeam], against: [] },
+    });
+
+    expect(verdict.text).toContain("Stay is better than Leave");
+  });
+
+  it("never attaches the margin percent to the claim of being better", () => {
     const [verdict] = formatComparison({
       kind: KIND.lead,
       winner: "Stay",
@@ -70,7 +83,12 @@ describe("formatComparison", () => {
     });
 
     expect(verdict.text).toContain("23%");
-    expect(verdict.text).not.toContain("better");
+    expect(verdict.text).toContain("of all points entered");
+    for (const sentence of verdict.text.split(". ")) {
+      expect(
+        sentence.includes("better") && sentence.includes("%"),
+      ).toBe(false);
+    }
   });
 
   it("formats a disqualified option as a single line", () => {

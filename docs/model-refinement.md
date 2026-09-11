@@ -81,7 +81,7 @@ Last worked 11 September 2026, on branch `feature/model-refinement`. 124 unit te
 
 1. **Scoring models.** `MODELS` registry in `js/scoring.js` (`id`, `transform`, and `veto: true` on Dealbreaker), `DEFAULT_MODEL_ID`, `resolveModel` (unknown or missing id falls back to the default rather than throwing), and `compareDecisions({ ..., model })`. `sumFilledWeights` takes a transform.
 2. **Model dropdown.** Labelled "Try a different model" in the actions row, options built from the registry so labels have one source of truth, hint beneath it from `MODEL_HINTS`. Default Squared. Changing the model swaps the hint only; the new model applies on the next Calculate. Memory only, no `localStorage`.
-3. **Margin.** `marginPercent` on the `lead` outcome. Wording settled as *"— 23% of all points entered."* and staying that way. `formatComparison` now returns an **array of lines**, and `#finalResult` is a `<div>` holding one `<p class="result-line">` per line — so a later step adds a line rather than rewriting a sentence. `showResultLines([])` clears it.
+3. **Margin.** `marginPercent` on the `lead` outcome. Wording is *"That gap is 23% of all points entered."*, kept in its own sentence so the percent is never adjacent to the claim that one decision is better. `formatComparison` now returns an **array of lines**, and `#finalResult` is a `<div>` holding one `<p class="result-line">` per line — so a later step adds a line rather than rewriting a sentence. `showResultLines([])` clears it.
 
 4. **Contributors.** `contributors: { toward, against }` on the `lead` outcome — up to the three rows pushing hardest toward the winner and up to the three pushing hardest the other way. (§2 specified one row against; three a side was chosen instead, since the opposing case is what someone second-guessing a verdict most wants to see. Past three a side the sentence stops reading, so showing every row would need a list or table rather than a sentence.) Each entry is `{ text, rating, option }`, carrying the user's own 0–10 rating. Rows with no text, and rows whose weight is 0, are left out. `contributorsResult` renders the second line, attributing a row to the loser by name and leaving the winner's own rows bare ("Most of Stay's lead comes from \"near family\" (10) and Leave's \"long commute\" (8). Pulling the other way: Leave's \"higher salary\" (9)."). DOM tests that are not about the result block now read `verdictLine()` from `test/loadApp.js` instead of the whole `#finalResult` text.
 
@@ -126,7 +126,7 @@ Small steps, each one reviewable on its own.
 
 ## Decisions log
 
-- Percent is a normalized margin, never "% better."
+- Percent is a normalized margin, never "% better." The verdict does say one decision "is better than" the other by N points — a difference is valid on an interval scale — but that claim and the percent live in separate sentences, guarded by a test.
 - Cut the flip check and the Close call / Decisive labels — complexity outweighed the payoff. See §2.
 - Dealbreaker: cons only. No must-have pro veto.
 - Default model: Squared.
