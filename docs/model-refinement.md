@@ -1,6 +1,6 @@
 # Model refinement plan
 
-**Status:** in progress. Agreed 11 September 2026; steps 1–3 built the same day. See **Where this stands** below before picking it up.
+**Status:** complete. Agreed and built 11 September 2026; all five sections shipped. Kept as the decisions log and the record of what was deliberately cut. See **Where this stands** for the loose ends.
 
 ## Why
 
@@ -24,16 +24,16 @@ lead = netA − netB
 | Model | `w(r)` | Hint shown beside the dropdown |
 |---|---|---|
 | Linear | `r` | Every point counts the same: one 10 counts as much as two 5s. |
-| Squared (default) | `r²` | Your highest importance and concern scores count for more: one 10 counts as much as four 5s. |
-| Cubed | `r³` | Your highest importance and concern scores count for much more: one 10 counts as much as eight 5s. |
-| Doubling | `2^r`, with `w(0) = 0` | The single highest importance or concern score almost always decides: one 10 counts as much as two 9s, or thirty-two 5s. |
-| Dealbreaker | `r`, plus veto rule | A con you rate 10 for concern rules that option out entirely. Otherwise every point counts the same. |
+| Squared (default) | `r²` | The highest importance and concern ratings count for more: one 10 counts as much as four 5s. |
+| Cubed | `r³` | The highest importance and concern ratings count for much more: one 10 counts as much as eight 5s. |
+| Doubling | `2^r`, with `w(0) = 0` | The single highest importance or concern rating almost always decides: one 10 counts as much as two 9s, or thirty-two 5s. |
+| Dealbreaker | `r`, plus veto rule | A con rated 10 for concern rules that option out entirely. Otherwise every point counts the same. |
 
 **Dealbreaker veto rule.** A con rated 10 disqualifies that option. One option vetoed: the other wins; outcome kind `disqualified`; no margin, flip, or contributors (it is not a margin). Both vetoed, or neither: fall through to the plain linear comparison. A pro rated 10 is **not** a veto against the other option. If something is truly required, express it as a dealbreaker con on the option that lacks it ("not remote" rated 10). The veto exists only in this model; in every other model a 10 con is a heavy weight that can still be outweighed.
 
 In Dealbreaker mode the con-slider hint should say that 10 means "unacceptable," not "very important."
 
-**Behavior.** Dropdown sits in the actions row beside Calculate, labelled "Try a different model," hint beneath it. Default is Squared. Changing the model swaps the hint but leaves any showing result alone — the user can browse models without losing the result they are reading, and the new model is applied on the next Calculate. Selection is held in memory only; no `localStorage`.
+**Behavior.** Dropdown sits in the actions row immediately right of Calculate and Reset, labelled "Try a different model," hint beneath it. Hints are written impersonally — "The highest importance and concern ratings count for more," never "your" ratings. Default is Squared. Changing the model swaps the hint but leaves any showing result alone — the user can browse models without losing the result they are reading, and the new model is applied on the next Calculate. Selection is held in memory only; no `localStorage`.
 
 ## 2. Result contents
 
@@ -67,7 +67,7 @@ Under nonlinear models the point lead is in squared or cubed units nobody can pi
 
 ## Where this stands
 
-Last worked 11 September 2026, on branch `feature/model-refinement`. 124 unit tests pass (`npx vitest run`).
+Last worked 11 September 2026, on branch `feature/model-refinement`. 124 unit tests pass across six files (`npx vitest run`).
 
 ### Done
 
@@ -89,8 +89,6 @@ Nothing in this plan. Outstanding work is listed in `REVIEW.md` under "What to d
 
 - **Playwright is unverified.** The e2e specs for the dropdown were written but never run: chromium will not download in the dev sandbox. Run `npx playwright install chromium && npx playwright test` before trusting `e2e/decision.spec.js`.
 - **Contributor ranking does not move between models.** Every transform is monotone increasing, so the rows rank in the same order under Linear, Squared, Cubed and Doubling; only the *winner* can change, which flips a row between `toward` and `against`. §2's claim that switching models shows "which rows now decide it" is therefore true only in that weaker sense. Worth knowing before designing anything else around contributors.
-- **Slider readouts say "Value: 8"**, which matches neither column header ("Importance / positive impact", "Concern / negative impact") nor the model hints, which now use the words *importance* and *concern*. Renaming the readouts would tie the vocabulary together. Not started.
-
 ### Conventions in force
 
 Tests pin their own subject: DOM tests about rows, names, or reset select Linear explicitly (`selectScoringModel` in `test/loadApp.js`) so their arithmetic does not silently re-base when the default model changes. Outcome tests that care about the winner use `toMatchObject`, not `toEqual`, so adding a field to the outcome does not break them.
@@ -115,7 +113,7 @@ Small steps, each one reviewable on its own.
 - Cut the flip check and the Close call / Decisive labels — complexity outweighed the payoff. See §2.
 - Dealbreaker: cons only. No must-have pro veto.
 - Default model: Squared.
-- Dropdown label is "Try a different model."
+- Dropdown label is "Try a different model," placed to the right of Calculate and Reset so the two things a user clicks together sit together.
 - Changing the model does not recalculate; the showing result stands until the user clicks Calculate again.
 - Raw point lead stays visible wherever it exists.
 - No `localStorage`; model choice lives in memory.

@@ -1,6 +1,6 @@
 # Feature: warn on duplicate considerations
 
-**Status:** future. Not in the current Category 2 pass (in-page names, add/remove rows).  
+**Status:** future. Not started; not part of the shipped Category 2 work (in-page names, add/remove rows) or the model-refinement pass.  
 **Related:** [REVIEW.md](../REVIEW.md) Category 2, double-counting.
 
 ## Problem

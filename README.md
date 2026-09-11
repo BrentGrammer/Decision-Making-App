@@ -31,7 +31,7 @@ A result reports:
 ## Use the App
 
 - Run `npm run serve` (Vite, usually http://localhost:5173/) and open that URL, or visit [the hosted page](https://brentgrammer.github.io/Decision-Making-App/).
-- Type each option’s name in the Decision column (1–50 characters), fill rows, then **Calculate**. **RESET** clears names, inputs, slider labels, and the result.
+- Type each option’s name in the Decision column (1–50 characters), fill rows, then **Calculate**. **RESET** clears names, inputs, slider labels, and the result, and returns the model to Squared.
 
 ```bash
 npm install   # first clone only

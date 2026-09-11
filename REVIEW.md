@@ -3,7 +3,7 @@
 ## Handoff (for the next session)
 
 **When:** 11 September 2026, after selectable scoring models, the normalized margin, the contributor line, and the Dealbreaker veto. (Previous handoff: 8 September 2026 — in-page names, add/remove independent pro and con rows, blank-row slider warnings, `consideration-rows.js` extraction, scoring/UI-string split, Vite serve, Playwright tests.)
-**Start here.** Historical review notes are below; they still describe *why* the old percent formula was wrong. Several "current" sentences in those notes are stale. Trust this handoff and the code.
+**Start here.** The review notes below are kept for the diagnosis of *why* the old percent formula was wrong. Every sentence in them that described current behavior has been brought up to the code as of this handoff; items already shipped are struck through or marked Done. Where a note and the code ever disagree, the code wins.
 
 ### Where the project is
 
@@ -56,7 +56,7 @@ npm run test:e2e                 # Playwright; reuses Vite if already running
 npm run serve                    # Vite, usually http://localhost:5173/
 ```
 
-Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (formatComparison) + `test/empty-rows.test.js` (page behavior & blank warnings via jsdom) + `test/rows.test.js` (add/remove rows) + `test/loadApp.js`. Playwright: `e2e/decision.spec.js`. All passing at handoff.
+Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (formatComparison) + `test/empty-rows.test.js` (page behavior & blank warnings via jsdom) + `test/rows.test.js` (add/remove rows) + `test/model-select.test.js` (dropdown, hints, chosen model applies on Calculate) + `test/result-display.test.js` (multi-line result block) + `test/loadApp.js`. 124 unit tests, all passing at handoff. Playwright (`e2e/decision.spec.js`) has **never been run** — see "What to do next".
 
 ### How tests load the app
 
@@ -92,9 +92,8 @@ Product/modeling, not bugfixes:
 
 1. **Run the Playwright suite.** The e2e specs covering the model dropdown have never executed; Chromium would not download in the dev sandbox. Run `npx playwright install chromium && npx playwright test` before trusting `e2e/decision.spec.js`.
 2. Sensitivity ("would one point flip the winner?"). Deliberately cut from the model-refinement pass; see the reasoning in `docs/model-refinement.md` §2.
-3. Slider readouts still say `Value: 8`, matching neither the column headers ("Importance / positive impact", "Concern / negative impact") nor the model hints, which say *importance* and *concern*.
-4. Shared criteria matrix vs independent lists — later, if you want the same questions for both options.
-5. Duplicate-phrasing warning — `docs/ai-duplicate-detection.md` (AI, not this pass).
+3. Shared criteria matrix vs independent lists — later, if you want the same questions for both options.
+4. Duplicate-phrasing warning — `docs/ai-duplicate-detection.md` (AI, not this pass).
 
 The hosted GitHub Pages copy may still be the old percent app until redeployed.
 
@@ -113,7 +112,9 @@ The hosted GitHub Pages copy may still be the old percent app until redeployed.
 | `test/strings.test.js` | Result sentences |
 | `test/empty-rows.test.js` | Page behavior & blank row warnings |
 | `test/rows.test.js` | Add/remove rows behavior |
-| `e2e/decision.spec.js` | Browser: names, errors, reset, scroll, add/remove |
+| `test/model-select.test.js` | Model dropdown, hint swapping, model applies on Calculate |
+| `test/result-display.test.js` | Multi-line result block |
+| `e2e/decision.spec.js` | Browser: names, errors, reset, scroll, add/remove, model dropdown (unrun) |
 | `package.json` | `vitest`, `jsdom`, `vite` (serve), `@playwright/test` |
 | `REVIEW.md` | This review + handoff |
 
@@ -174,7 +175,7 @@ These are definite defects. They should be fixed before product/modeling redesig
 ### Calculation
 
 1. **~~"Percent better" is not a valid ratio of net scores.~~ Done.**  
-   Replaced with `difference = resultA − resultB`. Live copy: `RESULT: {winner} is better than {loser} by {n} points.`
+   Replaced with `difference = resultA − resultB`. Live copy: `RESULT: {winner} leads {loser} by {n} points — {m}% of all points entered.`, plus a contributor line.
 
 2. **~~Positive and negative branches use different denominators.~~ Done.**  
    Those branches are gone. Sign of the nets no longer changes the comparison method.
@@ -199,10 +200,10 @@ These are definite defects. They should be fixed before product/modeling redesig
    Equal nets write a tie sentence onto `#finalResult` (same wording as the old alert). A later non-tie still rewrites the whole paragraph, so child spans are not required after the first `calculate()`.
 
 8. **~~Calculate before START uses undefined names.~~ Done.**  
-   Names come from `#A` / `#B` (`textContent`). Missing either name writes `RESULT: Enter both decision names first.`
+   START and `prompt()` are gone. Names are the `#A` / `#B` inputs, read with `.value`. Missing either name writes `RESULT: Enter both decision names first.`
 
 9. **~~Decision names are written with `innerHTML`.~~ Done.**  
-   `start()` uses `textContent`, so prompt text is not parsed as HTML.
+   Names are never injected as markup; they are input values, and the result is written as text.
 
 ### Code correctness (will cause wrong or fragile behavior)
 
@@ -216,6 +217,8 @@ These are definite defects. They should be fixed before product/modeling redesig
     `sliderChange` updates the `.sliderStatus` in the same cell as the slider that moved.
 
 ### Immediate calculation replacement (keep the weighted pro/con model)
+
+*(Superseded. This was the recommendation at review time; it shipped, and the model-refinement pass then added selectable transforms, the normalized margin, contributors and the Dealbreaker veto on top. The rule that survives is the first line: never claim a relative "% better" from nets.)*
 
 Do **not** keep claiming a relative "% better" from nets. Keep:
 
@@ -259,12 +262,12 @@ These are not "the current math is wrong." They are other ways to look at the pr
    - Dealbreakers that cannot be averaged away (hard constraints).
 
 4. **Double-counting.**  
-   The current sum is correct when extra rows are distinct: several moderate cons should outweigh fewer, higher-weighted ones. The failure case is the same consideration written different ways ("higher salary," "more disposable income," "better finances"). That inflates the total without adding new harm or benefit. Do not change the formula for this. A future warning that detects near-duplicate phrasing is specified in [docs/ai-duplicate-detection.md](docs/ai-duplicate-detection.md).
+   The current sum is correct when extra rows are distinct. How far several moderate cons go toward outweighing fewer, higher-rated ones now depends on the selected scoring model — point for point under Linear, progressively less under Squared, Cubed and Doubling. The failure case is the same consideration written different ways ("higher salary," "more disposable income," "better finances"). That inflates the total without adding new harm or benefit. Do not change the formula for this. A future warning that detects near-duplicate phrasing is specified in [docs/ai-duplicate-detection.md](docs/ai-duplicate-detection.md).
 
 5. **False precision.**  
    Subjective 1–10 ratings do not justify a single dramatic percentage without explaining what the number is.
 
-6. **Sensitivity.**  
+6. **Sensitivity.** Still open, but **deliberately cut** from the model-refinement pass — the reasoning is in `docs/model-refinement.md` §2.  
    Show whether changing one rating by a point flips the winner. A small lead that reverses easily is more useful than a confident-looking number.
 
 7. **Show the work.**  
@@ -276,18 +279,18 @@ These are not "the current math is wrong." They are other ways to look at the pr
 
 9. Style and layout (already in the README): table density, slider width, visual hierarchy, mobile.
 
-10. Replace `prompt()` with in-page name fields.
+10. **~~Replace `prompt()` with in-page name fields.~~ Done.**
 
-11. Add/remove pro and con rows instead of a fixed five.
+11. **~~Add/remove pro and con rows instead of a fixed five.~~ Done**, independently per list.
 
-12. Live slider labels via `oninput` instead of `onChange` (updates only on mouse-up).
+12. **~~Live slider labels via `oninput` instead of `onChange`.~~ Done** — an `input` listener in `initApp()`.
 
-13. Guard Calculate until both names exist; clear or rewrite the result on tie and on reset.  
-    Names and ties are done. RESET still does not clear `#finalResult`.
+13. **~~Guard Calculate until both names exist; clear or rewrite the result on tie and on reset.~~ Done.**  
+    Names, ties, and reset are all done: `resetSliders()` calls `showResultLines([])`, which empties `#finalResult`.
 
 14. Persist a decision (localStorage) so it can be revisited.
 
-15. Copy that matches the math: never an unexplained "N% better." Live lead copy is "is better than … by N points."
+15. **In force.** Copy that matches the math: never an unexplained "N% better." Live lead copy is "leads … by N points — M% of all points entered," and the margin is described as a share of the points entered, never as one decision being M% better.
 
 16. **~~Add Vitest + jsdom as a test-only harness.~~ Done (no app rewrite).**  
     See **Handoff**. Tests are behavioral. Do not add source-regex markup tests.
@@ -295,7 +298,7 @@ These are not "the current math is wrong." They are other ways to look at the pr
 17. **~~Declare variables with `let`/`const`; avoid implicit globals.~~ Done** in `scripts.js` (no `var`). Decision names are local, read from the table.
 
 18. **Do not start a clean-architecture / modular rewrite during the critical-bug fixes.**  
-    Category 1 is done; still defer `src/` / bundler until scoring is extracted or the app grows. `sumFilledWeights` still reads the DOM.
+    Still in force: defer `src/` / an app bundler until deploy needs a real build. Scoring is already extracted — `js/scoring.js` is DOM-free and `sumFilledWeights` takes plain rows plus a transform.
 
 ---
 
@@ -306,8 +309,10 @@ These are not "the current math is wrong." They are other ways to look at the pr
 3. ~~Empty-row weighting and slider defaults.~~ Done.
 4. ~~Critical UI bugs.~~ Done (reset, ties, names, `textContent`, HTML, slider/label pairing). `scripts.js` modernized (`const`/`let`).
 5. ~~Vitest + jsdom (test-only).~~ Done.
-6. **Next:** Category 2 — shared criteria, UX (`oninput`, in-page names, add/remove rows), optionally DOM-free scoring tests.
-7. Architecture (`src/`, app bundler) only if the app is growing.
+6. ~~Category 2 UX — `oninput`, in-page names, add/remove rows, DOM-free scoring tests.~~ Done.
+7. ~~Scoring models, normalized margin, contributors, Dealbreaker veto.~~ Done — see `docs/model-refinement.md`.
+8. **Next:** run the Playwright suite (it has never executed), then the remaining Category 2 items above.
+9. Architecture (`src/`, app bundler) only if deploy needs a real build.
 
 ---
 

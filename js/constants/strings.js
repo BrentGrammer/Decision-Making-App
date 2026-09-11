@@ -29,13 +29,13 @@ export const MODEL_HINTS = Object.freeze({
     [MODELS.linear.id]:
         "Every point counts the same: one 10 counts as much as two 5s.",
     [MODELS.squared.id]:
-        "Your highest importance and concern scores count for more: one 10 counts as much as four 5s.",
+        "The highest importance and concern ratings count for more: one 10 counts as much as four 5s.",
     [MODELS.cubed.id]:
-        "Your highest importance and concern scores count for much more: one 10 counts as much as eight 5s.",
+        "The highest importance and concern ratings count for much more: one 10 counts as much as eight 5s.",
     [MODELS.doubling.id]:
-        "The single highest importance or concern score almost always decides: one 10 counts as much as two 9s, or thirty-two 5s.",
+        "The single highest importance or concern rating almost always decides: one 10 counts as much as two 9s, or thirty-two 5s.",
     [MODELS.dealbreaker.id]:
-        "A con you rate 10 for concern rules that option out entirely. Otherwise every point counts the same.",
+        "A con rated 10 for concern rules that option out entirely. Otherwise every point counts the same.",
 });
 
 export const CONCERN_HINT =
