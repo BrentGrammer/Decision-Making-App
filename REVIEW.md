@@ -181,7 +181,7 @@ These are definite defects. They should be fixed before product/modeling redesig
 ### Calculation
 
 1. **~~"Percent better" is not a valid ratio of net scores.~~ Done.**  
-   Replaced with `difference = resultA − resultB`. Live copy: `RESULT: {winner} is better than {loser} by {n} points. That gap is {m}% of all points entered.`, plus the contributors table.
+   Replaced with `difference = resultA − resultB`. Live copy: `RESULT: {winner} is better than {loser} by {n} points. The margin is {m}% of all points entered.`, plus the contributors table.
 
 2. **~~Positive and negative branches use different denominators.~~ Done.**  
    Those branches are gone. Sign of the nets no longer changes the comparison method.
@@ -296,7 +296,7 @@ These are not "the current math is wrong." They are other ways to look at the pr
 
 14. Persist a decision (localStorage) so it can be revisited.
 
-15. **In force.** Copy that matches the math: never an unexplained "N% better." Live lead copy is "{winner} is better than {loser} by N points. That gap is M% of all points entered."
+15. **In force.** Copy that matches the math: never an unexplained "N% better." Live lead copy is "{winner} is better than {loser} by N points. The margin is M% of all points entered."
 
     The rule is **not** that the word "better" is banned — a point *difference* is a valid operation on an interval scale, so saying one decision is better by N points is sound. What is banned is attaching the percent to that claim, because "N% better" is the ratio-of-nets error this review exists to document. The verdict therefore keeps the two in **separate sentences**, and `test/strings.test.js` enforces exactly that: no single sentence of the verdict may contain both "better" and a "%". Keep that guard if the copy is edited again; it is narrower and more useful than the old blanket check that the verdict never said "better" at all.
 

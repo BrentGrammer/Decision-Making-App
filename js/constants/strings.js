@@ -63,7 +63,7 @@ export const DEALBREAKER_CONCERN_HINT =
 export const TIE_RESULT = "RESULT: Both decisions are equally good(or bad...).";
 
 export function leadResult(winner, loser, points, marginPercent) {
-    return `RESULT: ${winner} is better than ${loser} by ${Math.abs(points)} points. That gap is ${marginPercent}% of all points entered.`;
+    return `RESULT: ${winner} is better than ${loser} by ${Math.abs(points)} points. The margin is ${marginPercent}% of all points entered.`;
 }
 
 function joinWithAnd(phrases) {
