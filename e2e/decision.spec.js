@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 import {
   BLANK_PRO_ERROR,
   CON_PLACEHOLDER,
@@ -13,14 +14,18 @@ import {
   leadResult,
   MODEL_HINTS,
   MODEL_LABELS,
+  LOAD_ERROR,
+  LOAD_LABEL,
   VALIDATION_ERROR_DISMISS,
   EMPTY_TABLE_VALIDATION_ERROR,
   DECISION_NAME_VALIDATION_ERROR,
   CONSIDERATION_ROW_VALIDATION_ERROR,
   VALIDATION_ERROR_TITLE,
   PRO_PLACEHOLDER,
+  REPLACE_CONFIRMATION,
   REMOVE_PRO_LABEL,
   SCORING_MODEL_LABEL,
+  SAVE_LABEL,
 } from "../js/constants/strings.js";
 import { DECISION_NAME_MAX_LENGTH, MODELS } from "../js/scoring.js";
 
@@ -364,4 +369,178 @@ test("explains the contributors table on hover", async ({ page }) => {
 
   await expect(hintText).toBeVisible();
   await expect(hintText).toHaveText(CONTRIBUTORS_HINT);
+});
+
+test("saves the decisions to a JSON file", async ({ page }) => {
+  await page.goto("/");
+  await useLinearScoring(page);
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Stable team");
+  await page.locator(".prosA").first().fill("8");
+  await page.getByPlaceholder(CON_PLACEHOLDER).last().fill("Long commute");
+  await page.locator(".consB").first().fill("5");
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: SAVE_LABEL }).click();
+  const download = await downloadPromise;
+  const json = await readFile(await download.path(), "utf8");
+
+  expect(download.suggestedFilename()).toBe("saved-decisions.json");
+  expect(JSON.parse(json)).toEqual({
+    format: "decision-making-app-saved-decisions",
+    version: 1,
+    model: MODELS.linear.id,
+    decisions: [
+      {
+        name: "Stay",
+        pros: [{ text: "Stable team", rating: 8 }],
+        cons: [{ text: "", rating: 0 }],
+      },
+      {
+        name: "Leave",
+        pros: [{ text: "", rating: 0 }],
+        cons: [{ text: "Long commute", rating: 5 }],
+      },
+    ],
+  });
+});
+
+test("loads saved decisions after replacement is confirmed", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Old A");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Old B");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Old pro");
+  await page.locator(".prosA").first().fill("3");
+  await page.getByRole("button", { name: "Calculate" }).click();
+  await expect(page.locator("#finalResult")).not.toBeEmpty();
+
+  const saved = {
+    format: "decision-making-app-saved-decisions",
+    version: 1,
+    model: MODELS.cubed.id,
+    decisions: [
+      {
+        name: "Stay",
+        pros: [
+          { text: "Good team", rating: 8 },
+          { text: "Short commute", rating: 6 },
+        ],
+        cons: [{ text: "Lower pay", rating: 4 }],
+      },
+      {
+        name: "Leave",
+        pros: [{ text: "New challenge", rating: 7 }],
+        cons: [{ text: "Long commute", rating: 5 }],
+      },
+    ],
+  };
+  const savedFile = {
+    name: "saved-decisions.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(saved)),
+  };
+  let fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: LOAD_LABEL }).click();
+  let fileChooser = await fileChooserPromise;
+  let dialogPromise = page.waitForEvent("dialog");
+  let setFilesPromise = fileChooser.setFiles(savedFile);
+  let dialog = await dialogPromise;
+  expect(dialog.message()).toBe(REPLACE_CONFIRMATION);
+  await dialog.dismiss();
+  await setFilesPromise;
+
+  await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).toHaveValue("Old A");
+  await expect(page.getByLabel(DECISION_B_LABEL, { exact: true })).toHaveValue("Old B");
+  await expect(page.locator("#finalResult")).not.toBeEmpty();
+
+  fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: LOAD_LABEL }).click();
+  fileChooser = await fileChooserPromise;
+  dialogPromise = page.waitForEvent("dialog");
+  setFilesPromise = fileChooser.setFiles(savedFile);
+  dialog = await dialogPromise;
+  expect(dialog.message()).toBe(REPLACE_CONFIRMATION);
+  await dialog.accept();
+  await setFilesPromise;
+
+  await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).toHaveValue("Stay");
+  await expect(page.getByLabel(DECISION_B_LABEL, { exact: true })).toHaveValue("Leave");
+  await expect(page.getByLabel(SCORING_MODEL_LABEL)).toHaveValue(MODELS.cubed.id);
+  await expect(page.locator(".prosA")).toHaveCount(2);
+  await expect(page.locator(".prosA").first()).toHaveValue("8");
+  await expect(page.locator(".prosA").nth(1)).toHaveValue("6");
+  const savedPros = page.locator("[data-group='prosA'] input[type='text']");
+  await expect(savedPros.first()).toHaveValue("Good team");
+  await expect(savedPros.nth(1)).toHaveValue("Short commute");
+  await expect(page.locator("[data-group='prosA'] .sliderStatus").nth(1)).toHaveValue("6");
+  await expect(page.locator(".consA")).toHaveValue("4");
+  await expect(page.locator("[data-group='consA'] input[type='text']")).toHaveValue("Lower pay");
+  await expect(page.locator(".prosB")).toHaveValue("7");
+  await expect(page.locator("[data-group='prosB'] input[type='text']")).toHaveValue("New challenge");
+  await expect(page.locator(".consB")).toHaveValue("5");
+  await expect(page.locator("[data-group='consB'] input[type='text']")).toHaveValue("Long commute");
+  await expect(page.locator("#model-hint")).toHaveText(MODEL_HINTS[MODELS.cubed.id]);
+  await expect(page.locator("#finalResult")).toBeEmpty();
+});
+
+test("rejects an invalid saved decisions file without changing the table", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Good team");
+  await page.locator(".prosA").first().fill("8");
+
+  let fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: LOAD_LABEL }).click();
+  let fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: "invalid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{"),
+  });
+
+  await expect(page.getByText(LOAD_ERROR)).toBeVisible();
+  await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).toHaveValue("Stay");
+  await expect(page.getByLabel(DECISION_B_LABEL, { exact: true })).toHaveValue("Leave");
+  await expect(page.getByPlaceholder(PRO_PLACEHOLDER).first()).toHaveValue("Good team");
+  await expect(page.locator(".prosA").first()).toHaveValue("8");
+
+  fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: LOAD_LABEL }).click();
+  fileChooser = await fileChooserPromise;
+  const dialogPromise = page.waitForEvent("dialog");
+  const setFilesPromise = fileChooser.setFiles({
+    name: "saved-decisions.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({
+        format: "decision-making-app-saved-decisions",
+        version: 1,
+        model: MODELS.squared.id,
+        decisions: [
+          {
+            name: "Keep",
+            pros: [{ text: "", rating: 0 }],
+            cons: [{ text: "", rating: 0 }],
+          },
+          {
+            name: "Change",
+            pros: [{ text: "", rating: 0 }],
+            cons: [{ text: "", rating: 0 }],
+          },
+        ],
+      }),
+    ),
+  });
+  const dialog = await dialogPromise;
+  expect(dialog.message()).toBe(REPLACE_CONFIRMATION);
+  await dialog.accept();
+  await setFilesPromise;
+
+  await expect(page.getByText(LOAD_ERROR)).toHaveCount(0);
+  await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).toHaveValue("Keep");
+  await expect(page.getByLabel(DECISION_B_LABEL, { exact: true })).toHaveValue("Change");
 });

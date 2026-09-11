@@ -408,6 +408,16 @@ input[type="text"]:focus {
     gap: 0.75rem;
 }
 
+.load-status,
+.load-error {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+.load-error {
+    color: var(--color-error);
+}
+
 .model-choice {
     display: flex;
     flex-direction: column;

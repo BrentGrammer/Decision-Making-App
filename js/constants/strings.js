@@ -17,6 +17,12 @@ export const BLANK_PRO_ERROR = "Enter a pro, or remove this row.";
 export const BLANK_CON_ERROR = "Enter a con, or remove this row.";
 
 export const SCORING_MODEL_LABEL = "Try a different model";
+export const SAVE_LABEL = "Save";
+export const LOAD_LABEL = "Load";
+export const LOAD_SUCCESS = "Saved decisions loaded.";
+export const LOAD_ERROR = "This file could not be loaded.";
+export const REPLACE_CONFIRMATION =
+    "Loading this file will replace your unsaved changes. Continue?";
 
 export const MODEL_LABELS = Object.freeze({
     [MODELS.linear.id]: "Linear",

@@ -78,7 +78,12 @@
           <div class="actions">
             <div class="action-buttons">
               <button type="button" class="button" onclick="calculate()">Calculate</button>
+              <button type="button" id="save-decisions" class="button button-secondary"></button>
+              <button type="button" id="load-decisions" class="button button-secondary"></button>
+              <input id="load-decisions-file" type="file" accept=".json,application/json" hidden>
               <button type="reset" class="button button-secondary" onclick="resetSliders()">Reset</button>
+              <p id="load-decisions-status" class="load-status" role="status"></p>
+              <p id="load-decisions-error" class="load-error" role="alert" hidden></p>
             </div>
             <div class="model-choice">
               <label for="model">Try a different model:</label>

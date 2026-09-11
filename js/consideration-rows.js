@@ -6,18 +6,10 @@ import {
     REMOVE_CON_LABEL,
     REMOVE_PRO_LABEL,
 } from "./constants/strings.js";
-
-export const CONSIDERATION_KIND = Object.freeze({
-    pro: "pro",
-    con: "con",
-});
-
-export const CONSIDERATION_GROUPS = Object.freeze({
-    prosA: Object.freeze({ id: "prosA", kind: CONSIDERATION_KIND.pro }),
-    consA: Object.freeze({ id: "consA", kind: CONSIDERATION_KIND.con }),
-    prosB: Object.freeze({ id: "prosB", kind: CONSIDERATION_KIND.pro }),
-    consB: Object.freeze({ id: "consB", kind: CONSIDERATION_KIND.con }),
-});
+import {
+    CONSIDERATION_GROUPS,
+    CONSIDERATION_KIND,
+} from "./constants/decision-table.js";
 
 const CONSIDERATION_UI = {
     [CONSIDERATION_KIND.pro]: {
@@ -79,6 +71,10 @@ function considerationErrorElement(slider) {
 function considerationText(slider) {
     const input = considerationTextInput(slider);
     return input ? input.value.trim() : "";
+}
+
+function considerationInputValue(slider) {
+    return considerationTextInput(slider)?.value ?? "";
 }
 
 function groupOfSlider(slider) {
@@ -198,12 +194,27 @@ export function restoreDefaultRows() {
     }
 }
 
+export function replaceConsiderationRows(groupId, considerations) {
+    const rows = document.querySelector(
+        `[data-group="${groupId}"] .consideration-rows`,
+    );
+    rows.replaceChildren();
+    for (const { text, rating } of considerations) {
+        addConsiderationRow(groupId, { focus: false });
+        const row = rows.lastElementChild;
+        row.querySelector("input[type='text']").value = text;
+        const slider = row.querySelector(".sliders");
+        slider.value = String(rating);
+        sliderChange(slider);
+    }
+}
+
 export function getConsiderations(groupId) {
     const sliders = document.getElementsByClassName(groupId);
     const considerations = [];
     for (const slider of sliders) {
         considerations.push({
-            text: considerationText(slider),
+            text: considerationInputValue(slider),
             weight: slider.value,
         });
     }
