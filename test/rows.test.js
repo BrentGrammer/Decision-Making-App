@@ -133,6 +133,6 @@ describe("add and remove rows", () => {
     slider.value = "5";
     slider.dispatchEvent(new Event("input", { bubbles: true }));
 
-    expect(label.textContent).toBe("5");
+    expect(label.value).toBe("5");
   });
 });

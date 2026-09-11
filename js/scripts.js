@@ -33,6 +33,7 @@ import {
     addConsiderationRow,
     CONSIDERATION_GROUPS,
     getConsiderations,
+    ratingChange,
     removeConsiderationRow,
     restoreDefaultRows,
     sliderChange,
@@ -228,8 +229,8 @@ function validateDecisionNames() {
 
 function resetSliders() {
     restoreDefaultRows();
-    for (const label of document.getElementsByClassName("sliderStatus")) {
-        label.textContent = "0";
+    for (const field of document.getElementsByClassName("sliderStatus")) {
+        field.value = "0";
     }
     const inputA = document.getElementById("A");
     const inputB = document.getElementById("B");
@@ -350,6 +351,10 @@ function onFormInput(event) {
     if (event.target.classList.contains("sliders")) {
         sliderChange(event.target);
         validateConsiderationRow(event.target);
+        return;
+    }
+    if (event.target.classList.contains("sliderStatus")) {
+        validateConsiderationRow(ratingChange(event.target));
         return;
     }
     if (

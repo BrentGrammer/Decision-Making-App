@@ -33,7 +33,7 @@ The last column is that row's **share of all points entered** — how much of th
 ## Use the App
 
 - Run `npm run serve` (Vite, usually http://localhost:5173/) and open that URL, or visit [the hosted page](https://brentgrammer.github.io/Decision-Making-App/).
-- Type each option’s name in the Decision column (1–50 characters), fill rows, then **Calculate**. Calculate stops and says what is wrong, rather than scoring a decision table it cannot read, when a decision has no name, when a row carries a rating but no text (a row only counts once it has text), or when nothing has been rated yet. 
+- Type each option’s name in the Decision column (1–50 characters), fill rows, then **Calculate**. Rate a consideration either by dragging its slider or by typing a number from 0 to 10 in the **Value** box beside it — the two stay in step, and typing is usually easier on a phone. A rating of 0 means the consideration does not count. Calculate stops and says what is wrong, rather than scoring a decision table it cannot read, when a decision has no name, when a row carries a rating but no text (a row only counts once it has text), or when nothing has been rated yet. 
 - **RESET** clears names, inputs, slider labels, and the result, and returns the model to Squared.
 
 ```bash

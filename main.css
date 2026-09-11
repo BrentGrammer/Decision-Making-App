@@ -373,11 +373,26 @@ input[type="text"]:focus {
     font-size: 0.9rem;
 }
 
+.slider-readout {
+    cursor: default;
+}
+
 .sliderStatus {
-    font-size: 1.5rem;
-    font-weight: 400;
-    line-height: 1;
-    color: var(--color-muted);
+    width: 3.25rem;
+    padding: 0.15rem 0.35rem;
+    border: 1px solid var(--color-outline);
+    border-radius: var(--radius);
+    background: var(--color-panel);
+    color: var(--color-on-surface);
+    font-family: inherit;
+    font-size: 1.1rem;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.sliderStatus:focus-visible {
+    outline: 2px solid var(--slider, var(--color-pro));
+    outline-offset: 1px;
 }
 
 .actions {

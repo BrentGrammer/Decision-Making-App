@@ -100,6 +100,23 @@ export function verdictLine() {
   return resultLines()[0];
 }
 
+export function ratingField(sliderClass, rowIndex) {
+  const slider = document.getElementsByClassName(sliderClass)[rowIndex];
+  return slider.parentElement.querySelector(".sliderStatus");
+}
+
+export function typeRating(sliderClass, rowIndex, value) {
+  const field = ratingField(sliderClass, rowIndex);
+  field.value = String(value);
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+export function moveSlider(sliderClass, rowIndex, value) {
+  const slider = document.getElementsByClassName(sliderClass)[rowIndex];
+  slider.value = String(value);
+  slider.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 export function considerationTextInput(sliderClass, rowIndex) {
   return considerationTextCell(sliderClass, rowIndex).querySelector(
     "input[type='text']",

@@ -132,9 +132,9 @@ describe("reset", () => {
     const labels = document.getElementsByClassName("sliderStatus");
 
     sliders[0].value = "8";
-    labels[0].textContent = "8";
+    labels[0].value = "8";
     sliders[3].value = "4";
-    labels[3].textContent = "4";
+    labels[3].value = "4";
 
     document.querySelector("form").reset();
     globalThis.resetSliders();
@@ -142,7 +142,7 @@ describe("reset", () => {
     expect(sliders.length).toBe(labels.length);
     for (let i = 0; i < sliders.length; i++) {
       expect(sliders[i].value).toBe("0");
-      expect(labels[i].textContent).toBe("0");
+      expect(labels[i].value).toBe("0");
     }
   });
 
@@ -402,19 +402,19 @@ describe("slider labels", () => {
   });
 
   it("updates Current Value beside the slider that moved", () => {
-    const extra = document.createElement("span");
+    const extra = document.createElement("input");
     extra.className = "sliderStatus";
-    extra.textContent = "9";
+    extra.value = "9";
     document.body.prepend(extra);
 
     const slider = document.getElementsByClassName("sliders")[2];
-    const labelBeside = slider.parentElement.querySelector(".sliderStatus");
+    const fieldBeside = slider.parentElement.querySelector(".sliderStatus");
 
     slider.value = "6";
     globalThis.sliderChange(slider);
 
-    expect(labelBeside.textContent).toBe("6");
-    expect(extra.textContent).toBe("9");
+    expect(fieldBeside.value).toBe("6");
+    expect(extra.value).toBe("9");
   });
 
   it("updates Current Value while the slider is being dragged", () => {
@@ -424,6 +424,6 @@ describe("slider labels", () => {
     slider.value = "7";
     slider.dispatchEvent(new Event("input", { bubbles: true }));
 
-    expect(label.textContent).toBe("7");
+    expect(label.value).toBe("7");
   });
 });

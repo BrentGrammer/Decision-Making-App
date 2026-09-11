@@ -16,7 +16,7 @@ index.html
 main.css
 js/
   scripts.js              Orchestration, initApp, decision name validation, calculate/reset
-  consideration-rows.js   Row templates, add/remove, slider sync, blank-row warning
+  consideration-rows.js   Row templates, add/remove, slider ↔ rating field, blank-row warning
   scoring.js              DOM-free: weights, name rules, comparison outcome
   constants/strings.js   UI sentences + formatComparison(outcome)
 test/                     Vitest + jsdom
@@ -48,7 +48,7 @@ A row counts only if the adjacent text is non-blank. Empty sliders default to `0
 
 Decision-name validation lives in the UI only. `compareDecisions` no longer checks names — the `missingNames` and `nameLength` kinds, their result strings and their `formatComparison` branches were deleted once the dialog took over, because the UI blocks before scoring is ever called and unreachable code drifts. The rule itself is still single-sourced in `scoring.js` (`DECISION_NAME_MIN_LENGTH` / `MAX`, `isValidDecisionName`), which the UI imports. `compareDecisions` now trusts its caller to pass names it has already validated. Extra distinct cons still add up (that is intended). Near-duplicate phrasing is a future warning, not a formula change — see `docs/ai-duplicate-detection.md`.
 
-Decision names are inputs `#A` / `#B` (1–50 characters after trim). Invalid names show `#A-error` / `#B-error` and `aria-invalid`. Calculate writes `#finalResult` and `scrollIntoView`s it (`aria-live="polite"`). Native `type="reset"` zeros form fields (including names); `resetSliders()` restores default 1-pro/1-con rows, sets slider labels to `"0"`, and clears the result and name errors.
+Decision names are inputs `#A` / `#B` (1–50 characters after trim). Invalid names show `#A-error` / `#B-error` and `aria-invalid`. Calculate writes `#finalResult` and `scrollIntoView`s it (`aria-live="polite"`). Native `type="reset"` zeros form fields (including names); `resetSliders()` restores default 1-pro/1-con rows, sets every rating field to `"0"`, and clears the result and name errors.
 
 ### How to run
 
@@ -60,7 +60,7 @@ npm run test:e2e                 # Playwright; reuses Vite if already running
 npm run serve                    # Vite, usually http://localhost:5173/
 ```
 
-Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (formatComparison blocks) + `test/empty-rows.test.js` (page behavior & blank warnings via jsdom) + `test/rows.test.js` (add/remove rows) + `test/model-select.test.js` (dropdown, hints, chosen model applies on Calculate) + `test/result-display.test.js` (verdict line, contributors table, shares) + `test/validation.test.js` (Calculate blocked: missing names, unnamed rated rows, nothing rated) + `test/loadApp.js`. 151 unit tests, all passing at handoff. Playwright (`e2e/decision.spec.js`) has **never been run** — see "What to do next".
+Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (formatComparison blocks) + `test/empty-rows.test.js` (page behavior & blank warnings via jsdom) + `test/rows.test.js` (add/remove rows) + `test/model-select.test.js` (dropdown, hints, chosen model applies on Calculate) + `test/result-display.test.js` (verdict line, contributors table, shares) + `test/validation.test.js` (Calculate blocked: missing names, unnamed rated rows, nothing rated) + `test/rating-input.test.js` (typed ratings and the slider link) + `test/loadApp.js`. 159 unit tests, all passing at handoff. Playwright (`e2e/decision.spec.js`) has **never been run** — see "What to do next".
 
 ### How tests load the app
 
@@ -68,9 +68,9 @@ Vitest: `test/scoring.test.js` (outcomes, no DOM) + `test/strings.test.js` (form
 
 jsdom **inline `onclick`** still cannot see page functions unless they are on `window` (`initApp` does that). Drive jsdom by calling `globalThis.resetSliders()` / `calculate()` (and `form.reset()` for native form reset). Do not `.click()` RESET in jsdom. Playwright **should** click Calculate / Reset.
 
-RESET: `type="reset"` zeros inputs; `resetSliders()` sets labels to `"0"` (not `.value`) because `onclick` can run **before** the form reset.
+RESET: `type="reset"` zeros inputs; `resetSliders()` sets every rating field to `"0"` explicitly because `onclick` can run **before** the form reset.
 
-Slider labels: `input` listeners in `initApp()`, not `onchange`. Tests dispatch `input` (or call `sliderChange`). Readout copy is `Value:` (the number is `.sliderStatus`).
+Ratings: each row has a range slider (`.sliders`) and a number input beside it (`.sliderStatus`, labelled `Value:`), linked both ways by an `input` listener in `initApp()` — never `onchange`. Moving the slider writes the field (`sliderChange`); typing in the field writes the slider (`ratingChange`, which clamps to 0–10 and normalizes what was typed) and revalidates the row. The number field exists so a rating can be entered directly on a phone, where hitting an exact slider position with a thumb is hard. **The slider is still the source of truth for scoring** — `getConsiderations` reads `slider.value`, so anything that sets a rating must go through the slider. Tests dispatch `input` (or call `sliderChange` / `ratingChange`); assert `.value` on `.sliderStatus`, not `.textContent`.
 
 ### Working agreements
 
@@ -108,7 +108,7 @@ The hosted GitHub Pages copy may still be the old percent app until redeployed.
 | `index.html` | Page, name fields, grid decision table with pro/con lists, Calculate / Reset |
 | `js/scoring.js` | Weights, name rules, `{ kind, … }` outcome |
 | `js/constants/strings.js` | UI strings + `formatComparison` |
-| `js/consideration-rows.js` | Row templates, add/remove, slider sync, blank warnings |
+| `js/consideration-rows.js` | Row templates, add/remove, slider ↔ rating-field sync, blank warnings |
 | `js/scripts.js` | Orchestration, DOM / `initApp` |
 | `main.css` | Light Material-style layout + tokens |
 | `test/loadApp.js` | jsdom loader + `fillConsideration` / `setDecisionNames` |
@@ -116,6 +116,7 @@ The hosted GitHub Pages copy may still be the old percent app until redeployed.
 | `test/strings.test.js` | Result sentences |
 | `test/empty-rows.test.js` | Page behavior & blank row warnings |
 | `test/rows.test.js` | Add/remove rows behavior |
+| `test/rating-input.test.js` | Typed ratings, clamping, slider link |
 | `test/model-select.test.js` | Model dropdown, hint swapping, model applies on Calculate |
 | `test/validation.test.js` | Calculate blocked: missing names, unnamed rated rows, nothing rated |
 | `test/result-display.test.js` | Verdict line, the contributors table and the shares |
