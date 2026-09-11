@@ -4,22 +4,28 @@ import {
   BLANK_PRO_ERROR,
   DECISION_NAME_FIELD_ERROR,
   leadResult,
-  MISSING_NAMES_RESULT,
-  NAME_LENGTH_RESULT,
+  DECISION_NAME_LENGTH_VALIDATION_ERROR,
+  DECISION_NAME_VALIDATION_ERROR,
   TIE_RESULT,
 } from "../js/constants/strings.js";
-import { DECISION_NAME_MAX_LENGTH } from "../js/scoring.js";
+import { DECISION_NAME_MAX_LENGTH, MODELS } from "../js/scoring.js";
 import {
   considerationFieldError,
   considerationTextInput,
   fillConsideration,
+  validationDialog,
+  validationErrorMessages,
   loadApp,
+  resultLines,
   setDecisionNames,
+  verdictLine,
+  selectScoringModel,
 } from "./loadApp.js";
 
 describe("test harness", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
   it("loads the page script onto window", () => {
@@ -39,14 +45,16 @@ describe("test harness", () => {
 describe("empty rows do not count", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
-  it("does not let a blank row change the result", () => {
+  it("does not calculate while a blank row carries a rating", () => {
     setDecisionNames("Stay", "Leave");
     document.getElementsByClassName("prosA")[0].value = "10";
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(TIE_RESULT);
+    expect(validationDialog().open).toBe(true);
+    expect(resultLines()).toEqual([]);
   });
 
   it("warns that a moved slider with no text will not count", () => {
@@ -59,7 +67,7 @@ describe("empty rows do not count", () => {
     );
     expect(considerationFieldError("prosA", 0).hidden).toBe(false);
     expect(considerationFieldError("prosA", 0).textContent).toBe(BLANK_PRO_ERROR);
-    expect(document.getElementById("finalResult").textContent).toBe(TIE_RESULT);
+    expect(validationDialog().open).toBe(true);
   });
 
   it("warns while dragging a slider on a blank pro", () => {
@@ -108,7 +116,7 @@ describe("empty rows do not count", () => {
     fillConsideration("prosA", 0, "   ", 10);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(TIE_RESULT);
+    expect(validationDialog().open).toBe(true);
     expect(considerationFieldError("prosA", 0).textContent).toBe(BLANK_PRO_ERROR);
   });
 });
@@ -116,6 +124,7 @@ describe("empty rows do not count", () => {
 describe("reset", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
   it("restores slider values and Current Value labels to 0", () => {
@@ -123,9 +132,9 @@ describe("reset", () => {
     const labels = document.getElementsByClassName("sliderStatus");
 
     sliders[0].value = "8";
-    labels[0].textContent = "8";
+    labels[0].value = "8";
     sliders[3].value = "4";
-    labels[3].textContent = "4";
+    labels[3].value = "4";
 
     document.querySelector("form").reset();
     globalThis.resetSliders();
@@ -133,7 +142,7 @@ describe("reset", () => {
     expect(sliders.length).toBe(labels.length);
     for (let i = 0; i < sliders.length; i++) {
       expect(sliders[i].value).toBe("0");
-      expect(labels[i].textContent).toBe("0");
+      expect(labels[i].value).toBe("0");
     }
   });
 
@@ -141,8 +150,8 @@ describe("reset", () => {
     setDecisionNames("Stay", "Leave");
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
-    expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 8),
+    expect(verdictLine()).toBe(
+      leadResult("Stay", "Leave", 8, 100),
     );
 
     document.querySelector("form").reset();
@@ -182,6 +191,7 @@ describe("reset", () => {
 describe("ties", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
     setDecisionNames("Stay", "Leave");
   });
 
@@ -205,8 +215,8 @@ describe("ties", () => {
     fillConsideration("prosA", 0, "Pay", 9);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 4),
+    expect(verdictLine()).toBe(
+      leadResult("Stay", "Leave", 4, 29),
     );
   });
 });
@@ -214,15 +224,15 @@ describe("ties", () => {
 describe("decision names", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
   it("does not treat missing names as undefined", () => {
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
-    const result = document.getElementById("finalResult").textContent;
-    expect(result).not.toMatch(/undefined/i);
-    expect(result).toBe(MISSING_NAMES_RESULT);
+    expect(validationDialog().textContent).not.toMatch(/undefined/i);
+    expect(validationErrorMessages()).toContain(DECISION_NAME_VALIDATION_ERROR);
   });
 
   it("uses names typed into the decision fields", () => {
@@ -231,8 +241,8 @@ describe("decision names", () => {
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 8),
+    expect(verdictLine()).toBe(
+      leadResult("Stay", "Leave", 8, 100),
     );
   });
 
@@ -254,8 +264,8 @@ describe("decision names", () => {
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 8),
+    expect(verdictLine()).toBe(
+      leadResult("Stay", "Leave", 8, 100),
     );
   });
 
@@ -265,8 +275,8 @@ describe("decision names", () => {
     globalThis.calculate();
 
     expect(document.querySelector("#finalResult img")).toBeNull();
-    expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "<img src=x>", 8),
+    expect(verdictLine()).toBe(
+      leadResult("Stay", "<img src=x>", 8, 100),
     );
   });
 
@@ -275,8 +285,8 @@ describe("decision names", () => {
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("A", "B", 8),
+    expect(verdictLine()).toBe(
+      leadResult("A", "B", 8, 100),
     );
     expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(
       "true",
@@ -293,8 +303,8 @@ describe("decision names", () => {
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult(decisionA, decisionB, 8),
+    expect(verdictLine()).toBe(
+      leadResult(decisionA, decisionB, 8, 100),
     );
     expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(
       "true",
@@ -344,9 +354,7 @@ describe("decision names", () => {
     expect(document.getElementById("A").getAttribute("aria-invalid")).toBe(
       "true",
     );
-    expect(document.getElementById("finalResult").textContent).toBe(
-      MISSING_NAMES_RESULT,
-    );
+    expect(validationErrorMessages()).toContain(DECISION_NAME_VALIDATION_ERROR);
   });
 
   it("shows a field error when a name is longer than the maximum", () => {
@@ -361,8 +369,8 @@ describe("decision names", () => {
     expect(document.getElementById("B-error").textContent).toBe(
       DECISION_NAME_FIELD_ERROR,
     );
-    expect(document.getElementById("finalResult").textContent).toBe(
-      NAME_LENGTH_RESULT,
+    expect(validationErrorMessages()).toContain(
+      DECISION_NAME_LENGTH_VALIDATION_ERROR,
     );
   });
 
@@ -390,22 +398,23 @@ describe("decision names", () => {
 describe("slider labels", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
   it("updates Current Value beside the slider that moved", () => {
-    const extra = document.createElement("span");
+    const extra = document.createElement("input");
     extra.className = "sliderStatus";
-    extra.textContent = "9";
+    extra.value = "9";
     document.body.prepend(extra);
 
     const slider = document.getElementsByClassName("sliders")[2];
-    const labelBeside = slider.parentElement.querySelector(".sliderStatus");
+    const fieldBeside = slider.parentElement.querySelector(".sliderStatus");
 
     slider.value = "6";
     globalThis.sliderChange(slider);
 
-    expect(labelBeside.textContent).toBe("6");
-    expect(extra.textContent).toBe("9");
+    expect(fieldBeside.value).toBe("6");
+    expect(extra.value).toBe("9");
   });
 
   it("updates Current Value while the slider is being dragged", () => {
@@ -415,6 +424,6 @@ describe("slider labels", () => {
     slider.value = "7";
     slider.dispatchEvent(new Event("input", { bubbles: true }));
 
-    expect(label.textContent).toBe("7");
+    expect(label.value).toBe("7");
   });
 });

@@ -34,11 +34,36 @@ const CONSIDERATION_UI = {
 
 let considerationSeq = 0;
 
+const MIN_RATING = 0;
+const MAX_RATING = 10;
+
+function ratingField(slider) {
+    return slider.parentElement.querySelector(".sliderStatus");
+}
+
 export function sliderChange(slider) {
-    const label = slider.parentElement.querySelector(".sliderStatus");
-    if (label) {
-        label.textContent = slider.value;
+    const field = ratingField(slider);
+    if (field) {
+        field.value = slider.value;
     }
+}
+
+function clampRating(value) {
+    const rating = parseInt(value, 10);
+    if (Number.isNaN(rating)) {
+        return MIN_RATING;
+    }
+    return Math.min(MAX_RATING, Math.max(MIN_RATING, rating));
+}
+
+export function ratingChange(field) {
+    const slider = field.closest(".slider-well").querySelector(".sliders");
+    const rating = clampRating(field.value);
+    slider.value = String(rating);
+    if (field.value !== "") {
+        field.value = String(rating);
+    }
+    return slider;
 }
 
 function considerationTextInput(slider) {
@@ -96,12 +121,17 @@ export function validateConsiderationRow(slider) {
         slider,
         hasUncountedWeight ? blankConsiderationMessage(slider) : "",
     );
+    return hasUncountedWeight;
 }
 
 export function validateConsiderationRows() {
+    let uncounted = 0;
     for (const slider of document.getElementsByClassName("sliders")) {
-        validateConsiderationRow(slider);
+        if (validateConsiderationRow(slider)) {
+            uncounted += 1;
+        }
     }
+    return uncounted;
 }
 
 export function addConsiderationRow(group, { focus = true } = {}) {

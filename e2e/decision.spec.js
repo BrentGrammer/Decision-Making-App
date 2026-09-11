@@ -1,32 +1,63 @@
 import { expect, test } from "@playwright/test";
 import {
   BLANK_PRO_ERROR,
+  CON_PLACEHOLDER,
   DECISION_A_LABEL,
   DECISION_B_LABEL,
+  CONTRIBUTORS_CAPTION,
+  CONTRIBUTORS_HINT,
+  CONTRIBUTORS_HINT_LABEL,
   DECISION_NAME_FIELD_ERROR,
+  inFavorOf,
+  sharePercent,
   leadResult,
+  MODEL_HINTS,
+  MODEL_LABELS,
+  VALIDATION_ERROR_DISMISS,
+  EMPTY_TABLE_VALIDATION_ERROR,
+  DECISION_NAME_VALIDATION_ERROR,
+  CONSIDERATION_ROW_VALIDATION_ERROR,
+  VALIDATION_ERROR_TITLE,
   PRO_PLACEHOLDER,
   REMOVE_PRO_LABEL,
-  TIE_RESULT,
+  SCORING_MODEL_LABEL,
 } from "../js/constants/strings.js";
-import { DECISION_NAME_MAX_LENGTH } from "../js/scoring.js";
+import { DECISION_NAME_MAX_LENGTH, MODELS } from "../js/scoring.js";
+
+function verdict(page) {
+  return page.locator("#finalResult .result-line");
+}
+
+function contributorGroups(page) {
+  return page.locator("#finalResult .contributor-group");
+}
+
+// Point totals below are linear sums, so these tests choose Linear and stay
+// about rows and names rather than about the scoring curve.
+async function useLinearScoring(page) {
+  await page
+    .getByLabel(SCORING_MODEL_LABEL)
+    .selectOption(MODELS.linear.id);
+}
 
 test("calculates a lead from named options", async ({ page }) => {
   await page.goto("/");
+  await useLinearScoring(page);
   await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
   await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Pay");
   await page.locator(".prosA").first().fill("8");
   await page.getByRole("button", { name: "Calculate" }).click();
 
-  await expect(page.locator("#finalResult")).toHaveText(
-    leadResult("Stay", "Leave", 8),
+  await expect(verdict(page)).toHaveText(
+    leadResult("Stay", "Leave", 8, 100),
   );
 });
 
 test("scrolls the result into view after calculate", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 360 });
   await page.goto("/");
+  await useLinearScoring(page);
   await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
   await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Pay");
@@ -39,6 +70,9 @@ test("scrolls the result into view after calculate", async ({ page }) => {
 test("shows field errors when names are missing", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Calculate" }).click();
+
+  await expect(page.getByText(DECISION_NAME_VALIDATION_ERROR)).toBeVisible();
+  await page.getByRole("button", { name: VALIDATION_ERROR_DISMISS }).click();
 
   await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).toHaveAttribute(
     "aria-invalid",
@@ -54,6 +88,7 @@ test("clears a name field error when the name becomes valid", async ({
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Calculate" }).click();
+  await page.getByRole("button", { name: VALIDATION_ERROR_DISMISS }).click();
   await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
 
   await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).not.toHaveAttribute(
@@ -65,13 +100,14 @@ test("clears a name field error when the name becomes valid", async ({
 
 test("reset clears names, result, and name errors", async ({ page }) => {
   await page.goto("/");
+  await useLinearScoring(page);
   await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
   await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Pay");
   await page.locator(".prosA").first().fill("8");
   await page.getByRole("button", { name: "Calculate" }).click();
-  await expect(page.locator("#finalResult")).toHaveText(
-    leadResult("Stay", "Leave", 8),
+  await expect(verdict(page)).toHaveText(
+    leadResult("Stay", "Leave", 8, 100),
   );
 
   await page.getByRole("button", { name: "Reset" }).click();
@@ -99,6 +135,7 @@ test("adds a pro without adding a con and counts the extra row", async ({
   page,
 }) => {
   await page.goto("/");
+  await useLinearScoring(page);
   await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
   await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Pay");
@@ -109,13 +146,14 @@ test("adds a pro without adding a con and counts the extra row", async ({
   await page.getByRole("button", { name: "Calculate" }).click();
 
   await expect(page.locator(".consA")).toHaveCount(1);
-  await expect(page.locator("#finalResult")).toHaveText(
-    leadResult("Stay", "Leave", 11),
+  await expect(verdict(page)).toHaveText(
+    leadResult("Stay", "Leave", 11, 100),
   );
 });
 
 test("stops counting a pro after it is removed", async ({ page }) => {
   await page.goto("/");
+  await useLinearScoring(page);
   await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
   await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Pay");
@@ -126,13 +164,14 @@ test("stops counting a pro after it is removed", async ({ page }) => {
   await page.getByRole("button", { name: REMOVE_PRO_LABEL }).nth(1).click();
   await page.getByRole("button", { name: "Calculate" }).click();
 
-  await expect(page.locator("#finalResult")).toHaveText(
-    leadResult("Stay", "Leave", 8),
+  await expect(verdict(page)).toHaveText(
+    leadResult("Stay", "Leave", 8, 100),
   );
 });
 
 test("warns when a slider is moved with no text", async ({ page }) => {
   await page.goto("/");
+  await useLinearScoring(page);
   await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
   await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
   await page.locator(".prosA").first().fill("8");
@@ -144,7 +183,32 @@ test("warns when a slider is moved with no text", async ({ page }) => {
   await expect(page.getByText(BLANK_PRO_ERROR)).toBeVisible();
 
   await page.getByRole("button", { name: "Calculate" }).click();
-  await expect(page.locator("#finalResult")).toHaveText(TIE_RESULT);
+  await expect(page.getByText(VALIDATION_ERROR_TITLE)).toBeVisible();
+  await expect(page.locator("#finalResult")).toBeEmpty();
+});
+
+test("blocks the calculation until an unnamed rated row is fixed", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await useLinearScoring(page);
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Stable team");
+  await page.locator(".prosA").first().fill("8");
+  await page.locator(".consB").first().fill("5");
+
+  await page.getByRole("button", { name: "Calculate" }).click();
+  await expect(page.getByText(CONSIDERATION_ROW_VALIDATION_ERROR)).toBeVisible();
+
+  await page.getByRole("button", { name: VALIDATION_ERROR_DISMISS }).click();
+  await expect(page.getByText(CONSIDERATION_ROW_VALIDATION_ERROR)).toBeHidden();
+
+  await page.getByPlaceholder(CON_PLACEHOLDER).last().fill("Long commute");
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  await expect(page.getByText(CONSIDERATION_ROW_VALIDATION_ERROR)).toBeHidden();
+  await expect(page.locator("#finalResult")).not.toBeEmpty();
 });
 
 test("does not show remove when a list has one pro", async ({ page }) => {
@@ -170,3 +234,134 @@ test("shows a Remove tooltip when hovering over the remove button", async ({
   await expect(tooltip).toHaveText("Remove");
 });
 
+test("calculating again scores the same decision table with the newly chosen model", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Stable team");
+  await page.locator(".prosA").first().fill("10");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).nth(1).fill("Higher salary");
+  await page.locator(".prosB").first().fill("4");
+  for (const [index, text] of ["New city", "Shorter commute"].entries()) {
+    await page.getByRole("button", { name: "Add a pro for decision B" }).click();
+    await page.getByPlaceholder(PRO_PLACEHOLDER).nth(index + 2).fill(text);
+    await page.locator(".prosB").nth(index + 1).fill("4");
+  }
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  // Squared is the default, and weighs the one 10 (100) above three 4s (48).
+  await expect(verdict(page)).toHaveText(leadResult("Stay", "Leave", 52, 35));
+
+  await page.getByLabel(SCORING_MODEL_LABEL).selectOption(MODELS.linear.id);
+
+  // The result stands until the user asks for it again.
+  await expect(verdict(page)).toHaveText(leadResult("Stay", "Leave", 52, 35));
+
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  // Linear counts every point the same, so three 4s (12) now outweigh the 10.
+  await expect(verdict(page)).toHaveText(leadResult("Leave", "Stay", 2, 9));
+});
+
+test("explains the selected scoring model", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByLabel(SCORING_MODEL_LABEL)).toHaveValue(
+    MODELS.squared.id,
+  );
+  await expect(page.locator("#model-hint")).toHaveText(
+    MODEL_HINTS[MODELS.squared.id],
+  );
+
+  await page
+    .getByLabel(SCORING_MODEL_LABEL)
+    .selectOption({ label: MODEL_LABELS[MODELS.dealbreaker.id] });
+
+  await expect(page.locator("#model-hint")).toHaveText(
+    MODEL_HINTS[MODELS.dealbreaker.id],
+  );
+});
+
+test("refuses to calculate an empty decision table", async ({ page }) => {
+  await page.goto("/");
+  await useLinearScoring(page);
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  await expect(page.getByText(EMPTY_TABLE_VALIDATION_ERROR)).toBeVisible();
+  await expect(page.locator("#finalResult")).toBeEmpty();
+
+  await page.getByRole("button", { name: VALIDATION_ERROR_DISMISS }).click();
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Stable team");
+  await page.locator(".prosA").first().fill("8");
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  await expect(page.getByText(EMPTY_TABLE_VALIDATION_ERROR)).toBeHidden();
+  await expect(page.locator("#finalResult")).not.toBeEmpty();
+});
+
+test("tables the rows in favor of each decision", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await useLinearScoring(page);
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Stable team");
+  await page.locator(".prosA").first().fill("7");
+  await page.getByPlaceholder(CON_PLACEHOLDER).nth(1).fill("Long commute");
+  await page.locator(".consB").first().fill("5");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).nth(1).fill("Higher salary");
+  await page.locator(".prosB").first().fill("4");
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  await expect(contributorGroups(page)).toHaveCount(2);
+  await expect(page.locator(".contributors-caption")).toContainText(
+    CONTRIBUTORS_CAPTION,
+  );
+
+  const towardStay = contributorGroups(page).first();
+  await expect(towardStay.locator(".contributor-heading")).toHaveText(
+    inFavorOf("Stay"),
+  );
+  await expect(towardStay.locator(".contributor-text")).toHaveText([
+    "Stable team",
+    "Long commute",
+  ]);
+  await expect(towardStay.locator(".contributor-rating")).toHaveText(["7", "5"]);
+  await expect(towardStay.locator(".contributor-share")).toHaveText([
+    sharePercent(44),
+    sharePercent(31),
+  ]);
+
+  const towardLeave = contributorGroups(page).nth(1);
+  await expect(towardLeave.locator(".contributor-heading")).toHaveText(
+    inFavorOf("Leave"),
+  );
+  await expect(towardLeave.locator(".contributor-text")).toHaveText([
+    "Higher salary",
+  ]);
+});
+
+test("explains the contributors table on hover", async ({ page }) => {
+  await page.goto("/");
+  await useLinearScoring(page);
+  await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
+  await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Stable team");
+  await page.locator(".prosA").first().fill("7");
+  await page.getByRole("button", { name: "Calculate" }).click();
+
+  const hint = page.getByRole("button", { name: CONTRIBUTORS_HINT_LABEL });
+  const hintText = hint.locator(".hint-text");
+
+  await expect(hintText).toBeHidden();
+
+  await hint.hover();
+
+  await expect(hintText).toBeVisible();
+  await expect(hintText).toHaveText(CONTRIBUTORS_HINT);
+});

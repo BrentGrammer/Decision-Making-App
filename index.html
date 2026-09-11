@@ -23,10 +23,10 @@
       </symbol>
     </svg>
     <main class="page">
-      <p class="lede">Name both options, list the pros and cons, then calculate which leads and by how many points.</p>
+      <p class="lede">Name both decisions to compare, list the pros and cons, then calculate which leads and by how many points.</p>
 
       <form>
-          <div class="sheet sheet-grid">
+          <div class="decision-table decision-table-grid">
               <div class="col-head">Decision</div>
               <div class="col-head">
                 Pros <button type="button" class="hint" aria-label="About pros">
@@ -45,7 +45,7 @@
                 </button>
                 <div class="col-head-metric">Concern / negative impact (0–10) <button type="button" class="hint hint-con" aria-label="About concern">
                   <svg aria-hidden="true"><use href="#icon-info"/></svg>
-                  <span class="hint-text">How much does this worry or concern you? How much could this affect your life negatively? (On a scale of 1–10.)</span>
+                  <span class="hint-text" id="concern-hint">How much does this worry or concern you? How much could this affect your life negatively? (On a scale of 1–10.)</span>
                 </button></div>
               </div>
 
@@ -76,8 +76,15 @@
               </div>
           </div>
           <div class="actions">
-            <button type="button" class="button" onclick="calculate()">Calculate</button>
-            <button type="reset" class="button button-secondary" onclick="resetSliders()">Reset</button>
+            <div class="action-buttons">
+              <button type="button" class="button" onclick="calculate()">Calculate</button>
+              <button type="reset" class="button button-secondary" onclick="resetSliders()">Reset</button>
+            </div>
+            <div class="model-choice">
+              <label for="model">Try a different model:</label>
+              <select id="model" aria-describedby="model-hint"></select>
+              <p id="model-hint" class="model-hint"></p>
+            </div>
           </div>
       </form>
 
@@ -89,7 +96,7 @@
           </div>
           <div class="slider-well">
             <input class="sliders" type="range" min="0" max="10" value="0" step="1" />
-            <small class="slider-readout">Value: <span class="sliderStatus">0</span></small>
+            <label class="slider-readout">Value: <input class="sliderStatus" type="number" inputmode="numeric" min="0" max="10" step="1" value="0" /></label>
           </div>
           <button type="button" class="remove-row" title="Remove">
             <svg aria-hidden="true"><use href="#icon-close"/></svg>
@@ -98,7 +105,13 @@
         </div>
       </template>
 
-      <p id="finalResult" class="result" aria-live="polite"></p>
+      <div id="finalResult" class="result" aria-live="polite"></div>
+
+      <dialog id="validation-dialog" class="dialog" aria-labelledby="validation-dialog-title">
+        <h2 id="validation-dialog-title" class="dialog-title"></h2>
+        <div class="validation-errors"></div>
+        <button type="button" class="button dialog-dismiss"></button>
+      </dialog>
     </main>
     
     <script type="module">

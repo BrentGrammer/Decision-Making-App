@@ -1,16 +1,20 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { leadResult } from "../js/constants/strings.js";
+import { MODELS } from "../js/scoring.js";
 import {
   addConsideration,
   fillConsideration,
   loadApp,
   removeConsideration,
   setDecisionNames,
+  verdictLine,
+  selectScoringModel,
 } from "./loadApp.js";
 
 describe("add and remove rows", () => {
   beforeEach(() => {
     loadApp();
+    selectScoringModel(MODELS.linear.id);
   });
 
   it("adds a pro without adding a con", () => {
@@ -37,8 +41,8 @@ describe("add and remove rows", () => {
     fillConsideration("prosA", 1, "Team", 3);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 11),
+    expect(verdictLine()).toBe(
+      leadResult("Stay", "Leave", 11, 100),
     );
   });
 
@@ -50,8 +54,8 @@ describe("add and remove rows", () => {
     removeConsideration("prosA", 1);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 8),
+    expect(verdictLine()).toBe(
+      leadResult("Stay", "Leave", 8, 100),
     );
   });
 
@@ -62,8 +66,8 @@ describe("add and remove rows", () => {
     globalThis.calculate();
 
     expect(document.getElementsByClassName("prosA").length).toBe(1);
-    expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 8),
+    expect(verdictLine()).toBe(
+      leadResult("Stay", "Leave", 8, 100),
     );
   });
 
@@ -129,6 +133,6 @@ describe("add and remove rows", () => {
     slider.value = "5";
     slider.dispatchEvent(new Event("input", { bubbles: true }));
 
-    expect(label.textContent).toBe("5");
+    expect(label.value).toBe("5");
   });
 });
