@@ -41,7 +41,7 @@ describe("add and remove rows", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 11),
+      leadResult("Stay", "Leave", 11, 100),
     );
   });
 
@@ -54,7 +54,7 @@ describe("add and remove rows", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 8),
+      leadResult("Stay", "Leave", 8, 100),
     );
   });
 
@@ -66,7 +66,7 @@ describe("add and remove rows", () => {
 
     expect(document.getElementsByClassName("prosA").length).toBe(1);
     expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 8),
+      leadResult("Stay", "Leave", 8, 100),
     );
   });
 

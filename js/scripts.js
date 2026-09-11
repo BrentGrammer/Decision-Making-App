@@ -47,6 +47,18 @@ function fillModelOptions() {
     showModelHint();
 }
 
+function showResultLines(lines) {
+    const result = document.getElementById("finalResult");
+    result.replaceChildren(
+        ...lines.map((line) => {
+            const paragraph = document.createElement("p");
+            paragraph.className = "result-line";
+            paragraph.textContent = line;
+            return paragraph;
+        }),
+    );
+}
+
 function decisionNameMessage(value) {
     return isValidDecisionName(value) ? "" : DECISION_NAME_FIELD_ERROR;
 }
@@ -93,23 +105,25 @@ function resetSliders() {
     setNameValidity(inputB, "");
     modelSelect().value = DEFAULT_MODEL_ID;
     showModelHint();
-    document.getElementById("finalResult").textContent = "";
+    showResultLines([]);
 }
 
 function calculate() {
     validateDecisionNames();
     validateConsiderationRows();
     const result = document.getElementById("finalResult");
-    result.textContent = formatComparison(
-        compareDecisions({
-            decisionA: document.getElementById("A").value,
-            decisionB: document.getElementById("B").value,
-            prosA: getConsiderations(CONSIDERATION_GROUPS.prosA.id),
-            consA: getConsiderations(CONSIDERATION_GROUPS.consA.id),
-            prosB: getConsiderations(CONSIDERATION_GROUPS.prosB.id),
-            consB: getConsiderations(CONSIDERATION_GROUPS.consB.id),
-            model: selectedModel(),
-        }),
+    showResultLines(
+        formatComparison(
+            compareDecisions({
+                decisionA: document.getElementById("A").value,
+                decisionB: document.getElementById("B").value,
+                prosA: getConsiderations(CONSIDERATION_GROUPS.prosA.id),
+                consA: getConsiderations(CONSIDERATION_GROUPS.consA.id),
+                prosB: getConsiderations(CONSIDERATION_GROUPS.prosB.id),
+                consB: getConsiderations(CONSIDERATION_GROUPS.consB.id),
+                model: selectedModel(),
+            }),
+        ),
     );
     result.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }

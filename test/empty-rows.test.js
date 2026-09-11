@@ -146,7 +146,7 @@ describe("reset", () => {
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
     expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 8),
+      leadResult("Stay", "Leave", 8, 100),
     );
 
     document.querySelector("form").reset();
@@ -211,7 +211,7 @@ describe("ties", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 4),
+      leadResult("Stay", "Leave", 4, 29),
     );
   });
 });
@@ -238,7 +238,7 @@ describe("decision names", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 8),
+      leadResult("Stay", "Leave", 8, 100),
     );
   });
 
@@ -261,7 +261,7 @@ describe("decision names", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "Leave", 8),
+      leadResult("Stay", "Leave", 8, 100),
     );
   });
 
@@ -272,7 +272,7 @@ describe("decision names", () => {
 
     expect(document.querySelector("#finalResult img")).toBeNull();
     expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("Stay", "<img src=x>", 8),
+      leadResult("Stay", "<img src=x>", 8, 100),
     );
   });
 
@@ -282,7 +282,7 @@ describe("decision names", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult("A", "B", 8),
+      leadResult("A", "B", 8, 100),
     );
     expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(
       "true",
@@ -300,7 +300,7 @@ describe("decision names", () => {
     globalThis.calculate();
 
     expect(document.getElementById("finalResult").textContent).toBe(
-      leadResult(decisionA, decisionB, 8),
+      leadResult(decisionA, decisionB, 8, 100),
     );
     expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(
       "true",

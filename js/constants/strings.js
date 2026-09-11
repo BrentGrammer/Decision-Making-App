@@ -42,20 +42,27 @@ export const MISSING_NAMES_RESULT = "RESULT: Enter both decision names first.";
 export const TIE_RESULT = "RESULT: Both decisions are equally good(or bad...).";
 export const NAME_LENGTH_RESULT = `RESULT: Each decision name must be ${DECISION_NAME_MIN_LENGTH}–${DECISION_NAME_MAX_LENGTH} characters.`;
 
-export function leadResult(winner, loser, points) {
-    return `RESULT: ${winner} is better than ${loser} by ${Math.abs(points)} points.`;
+export function leadResult(winner, loser, points, marginPercent) {
+    return `RESULT: ${winner} leads ${loser} by ${Math.abs(points)} points — ${marginPercent}% of all points entered.`;
 }
 
 export function formatComparison(outcome) {
     switch (outcome.kind) {
         case KIND.missingNames:
-            return MISSING_NAMES_RESULT;
+            return [MISSING_NAMES_RESULT];
         case KIND.nameLength:
-            return NAME_LENGTH_RESULT;
+            return [NAME_LENGTH_RESULT];
         case KIND.tie:
-            return TIE_RESULT;
+            return [TIE_RESULT];
         case KIND.lead:
-            return leadResult(outcome.winner, outcome.loser, outcome.points);
+            return [
+                leadResult(
+                    outcome.winner,
+                    outcome.loser,
+                    outcome.points,
+                    outcome.marginPercent,
+                ),
+            ];
         default:
             throw new Error(`Unknown comparison kind: ${outcome.kind}`);
     }

@@ -421,11 +421,24 @@ input[type="text"]:focus {
 }
 
 .result {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
     margin: 0;
     scroll-margin-bottom: 1.5rem;
+    color: var(--color-pro);
+}
+
+.result-line {
+    margin: 0;
     font-size: 1.25rem;
     font-weight: 500;
-    color: var(--color-pro);
+}
+
+.result-line ~ .result-line {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--color-text);
 }
 
 .hint {

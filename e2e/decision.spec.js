@@ -32,7 +32,7 @@ test("calculates a lead from named options", async ({ page }) => {
   await page.getByRole("button", { name: "Calculate" }).click();
 
   await expect(page.locator("#finalResult")).toHaveText(
-    leadResult("Stay", "Leave", 8),
+    leadResult("Stay", "Leave", 8, 100),
   );
 });
 
@@ -85,7 +85,7 @@ test("reset clears names, result, and name errors", async ({ page }) => {
   await page.locator(".prosA").first().fill("8");
   await page.getByRole("button", { name: "Calculate" }).click();
   await expect(page.locator("#finalResult")).toHaveText(
-    leadResult("Stay", "Leave", 8),
+    leadResult("Stay", "Leave", 8, 100),
   );
 
   await page.getByRole("button", { name: "Reset" }).click();
@@ -125,7 +125,7 @@ test("adds a pro without adding a con and counts the extra row", async ({
 
   await expect(page.locator(".consA")).toHaveCount(1);
   await expect(page.locator("#finalResult")).toHaveText(
-    leadResult("Stay", "Leave", 11),
+    leadResult("Stay", "Leave", 11, 100),
   );
 });
 
@@ -143,7 +143,7 @@ test("stops counting a pro after it is removed", async ({ page }) => {
   await page.getByRole("button", { name: "Calculate" }).click();
 
   await expect(page.locator("#finalResult")).toHaveText(
-    leadResult("Stay", "Leave", 8),
+    leadResult("Stay", "Leave", 8, 100),
   );
 });
 

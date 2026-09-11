@@ -94,7 +94,7 @@ describe("compareDecisions", () => {
         consB: [],
         model: MODELS.linear.id,
       }),
-    ).toEqual({
+    ).toMatchObject({
       kind: KIND.lead,
       winner: "Stay",
       loser: "Leave",
@@ -116,7 +116,7 @@ describe("compareDecisions", () => {
         consB: [],
         model: MODELS.linear.id,
       }),
-    ).toEqual({
+    ).toMatchObject({
       kind: KIND.lead,
       winner: decisionA,
       loser: decisionB,
@@ -138,7 +138,7 @@ describe("compareDecisions", () => {
         consB: [],
         model: MODELS.linear.id,
       }),
-    ).toEqual({
+    ).toMatchObject({
       kind: KIND.lead,
       winner: decisionA,
       loser: decisionB,
@@ -203,7 +203,7 @@ describe("compareDecisions", () => {
           ...oneTenAgainstThreeFours,
           model: MODELS.linear.id,
         }),
-      ).toEqual({
+      ).toMatchObject({
         kind: KIND.lead,
         winner: "Leave",
         loser: "Stay",
@@ -217,7 +217,7 @@ describe("compareDecisions", () => {
           ...oneTenAgainstThreeFours,
           model: MODELS.squared.id,
         }),
-      ).toEqual({
+      ).toMatchObject({
         kind: KIND.lead,
         winner: "Stay",
         loser: "Leave",
@@ -289,7 +289,7 @@ describe("compareDecisions", () => {
           consB: [],
           model: MODELS.squared.id,
         }),
-      ).toEqual({
+      ).toMatchObject({
         kind: KIND.lead,
         winner: "Leave",
         loser: "Stay",
@@ -340,6 +340,145 @@ describe("compareDecisions", () => {
           consB: [],
         }),
       ).toMatchObject({ kind: KIND.lead, winner: "Stay", loser: "Leave" });
+    });
+  });
+
+  describe("margin", () => {
+    const linear = MODELS.linear.id;
+
+    it("reads a three point lead as large on a small sheet", () => {
+      expect(
+        compareDecisions({
+          decisionA: "Stay",
+          decisionB: "Leave",
+          prosA: [{ text: "Near family", weight: 5 }],
+          consA: [],
+          prosB: [{ text: "Higher salary", weight: 2 }],
+          consB: [],
+          model: linear,
+        }).marginPercent,
+      ).toBe(43);
+    });
+
+    it("reads the same three point lead as small on a crowded sheet", () => {
+      expect(
+        compareDecisions({
+          decisionA: "Stay",
+          decisionB: "Leave",
+          prosA: [{ text: "Near family", weight: 10 }],
+          consA: [{ text: "Small flat", weight: 7 }],
+          prosB: [{ text: "Higher salary", weight: 10 }],
+          consB: [{ text: "Long commute", weight: 10 }],
+          model: linear,
+        }).marginPercent,
+      ).toBe(8);
+    });
+
+    it("reports a full margin when the winner is all pros and the loser all cons", () => {
+      expect(
+        compareDecisions({
+          decisionA: "Stay",
+          decisionB: "Leave",
+          prosA: [{ text: "Near family", weight: 8 }],
+          consA: [],
+          prosB: [],
+          consB: [{ text: "Long commute", weight: 6 }],
+          model: linear,
+        }).marginPercent,
+      ).toBe(100);
+    });
+
+    it("shrinks the margin when equal weight is added to both options", () => {
+      const before = compareDecisions({
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [{ text: "Near family", weight: 5 }],
+        consA: [],
+        prosB: [{ text: "Higher salary", weight: 2 }],
+        consB: [],
+        model: linear,
+      });
+      const after = compareDecisions({
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [
+          { text: "Near family", weight: 5 },
+          { text: "Known neighbours", weight: 6 },
+        ],
+        consA: [],
+        prosB: [
+          { text: "Higher salary", weight: 2 },
+          { text: "New scenery", weight: 6 },
+        ],
+        consB: [],
+        model: linear,
+      });
+
+      expect(after.winner).toBe(before.winner);
+      expect(after.points).toBe(before.points);
+      expect(after.marginPercent).toBeLessThan(before.marginPercent);
+    });
+
+    it("reports the margin as a whole percent", () => {
+      const { marginPercent } = compareDecisions({
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [{ text: "Near family", weight: 7 }],
+        consA: [],
+        prosB: [{ text: "Higher salary", weight: 4 }],
+        consB: [],
+        model: linear,
+      });
+
+      expect(Number.isInteger(marginPercent)).toBe(true);
+    });
+
+    it("measures the margin in the chosen model's units", () => {
+      const sheet = {
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [{ text: "Near family", weight: 10 }],
+        consA: [],
+        prosB: [
+          { text: "Higher salary", weight: 6 },
+          { text: "New city", weight: 6 },
+        ],
+        consB: [],
+      };
+
+      expect(
+        compareDecisions({ ...sheet, model: MODELS.squared.id }).marginPercent,
+      ).not.toBe(
+        compareDecisions({ ...sheet, model: linear }).marginPercent,
+      );
+    });
+
+    it("reports no margin for a tie", () => {
+      expect(
+        compareDecisions({
+          decisionA: "Stay",
+          decisionB: "Leave",
+          prosA: [{ text: "Near family", weight: 5 }],
+          consA: [],
+          prosB: [{ text: "Higher salary", weight: 5 }],
+          consB: [],
+          model: linear,
+        }),
+      ).toEqual({ kind: KIND.tie });
+    });
+
+    it("calls an empty sheet a tie rather than dividing by nothing", () => {
+      expect(
+        compareDecisions({
+          decisionA: "Stay",
+          decisionB: "Leave",
+          prosA: [],
+          consA: [],
+          prosB: [],
+          consB: [],
+          model: linear,
+        }),
+      ).toEqual({ kind: KIND.tie });
     });
   });
 

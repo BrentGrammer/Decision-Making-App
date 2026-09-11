@@ -99,10 +99,18 @@ export function compareDecisions({
         return { kind: KIND.tie };
     }
 
+    const points = Math.abs(difference);
+    const weightEntered = [prosA, consA, prosB, consB].reduce(
+        (total, considerations) =>
+            total + sumFilledWeights(considerations, transform),
+        0,
+    );
+
     return {
         kind: KIND.lead,
         winner: difference > 0 ? nameA : nameB,
         loser: difference > 0 ? nameB : nameA,
-        points: Math.abs(difference),
+        points,
+        marginPercent: Math.round((points / weightEntered) * 100),
     };
 }
