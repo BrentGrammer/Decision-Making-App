@@ -30,15 +30,33 @@
 
 .model-choice label {
     font-weight: 500;
+    cursor: pointer;
 }
 
 .model-choice select {
-    padding: 0.4rem 0.5rem;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0.5rem 2.5rem 0.5rem 0.75rem;
     border: 1px solid var(--color-outline);
     border-radius: 0.4rem;
-    background: var(--color-surface);
+    background-color: var(--color-surface);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23546e7a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.25rem 1.25rem;
     color: inherit;
     font: inherit;
+    cursor: pointer;
+}
+
+.model-choice select::-ms-expand {
+    display: none;
+}
+
+.model-choice select:focus-visible {
+    outline: 2px solid var(--color-pro);
+    outline-offset: 1px;
+    border-color: var(--color-pro);
 }
 
 .model-hint {
