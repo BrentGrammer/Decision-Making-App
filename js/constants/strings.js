@@ -94,7 +94,7 @@ export const CONSIDERATION_TYPE_LABELS = Object.freeze({
 export const CONTRIBUTORS_CAPTION = "Top contributors";
 export const CONTRIBUTORS_HINT_LABEL = "About top contributors";
 export const CONTRIBUTORS_HINT =
-    "The pros or cons that contributed to the result the most.";
+    "The top pros or cons for each decision.";
 
 export function inFavorOf(decision) {
     return `In favor of ${decision}`;
