@@ -9,6 +9,7 @@ import {
   CONTRIBUTORS_HINT_LABEL,
   DECISION_NAME_FIELD_ERROR,
   inFavorOf,
+  sharePercent,
   leadResult,
   MODEL_HINTS,
   MODEL_LABELS,
@@ -331,6 +332,10 @@ test("tables the rows in favor of each decision", async ({
     "Long commute",
   ]);
   await expect(towardStay.locator(".contributor-rating")).toHaveText(["7", "5"]);
+  await expect(towardStay.locator(".contributor-share")).toHaveText([
+    sharePercent(44),
+    sharePercent(31),
+  ]);
 
   const towardLeave = contributorGroups(page).nth(1);
   await expect(towardLeave.locator(".contributor-heading")).toHaveText(

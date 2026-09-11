@@ -625,7 +625,7 @@ describe("contributors", () => {
       model: linear,
     });
 
-    expect(contributors.toward).toEqual([
+    expect(contributors.toward).toMatchObject([
       {
         text: "Long commute",
         rating: 8,
@@ -679,6 +679,64 @@ describe("contributors", () => {
       compareDecisions({ ...table, model: MODELS.squared.id }).contributors
         .toward,
     ).toMatchObject([{ text: "Stable team", rating: 10, option: "Stay" }]);
+  });
+
+  it("reports each row's share of all the points entered", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [{ text: "Stable team", weight: 9 }],
+      consA: [],
+      prosB: [{ text: "Higher salary", weight: 3 }],
+      consB: [],
+      model: linear,
+    });
+
+    expect(contributors.toward).toMatchObject([
+      { text: "Stable team", share: 75 },
+    ]);
+    expect(contributors.against).toMatchObject([
+      { text: "Higher salary", share: 25 },
+    ]);
+  });
+
+  it("gives the higher rating a larger share under a steeper model", () => {
+    const table = {
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [{ text: "Stable team", weight: 9 }],
+      consA: [],
+      prosB: [{ text: "Higher salary", weight: 3 }],
+      consB: [],
+    };
+
+    expect(
+      compareDecisions({ ...table, model: MODELS.squared.id }).contributors
+        .toward,
+    ).toMatchObject([{ text: "Stable team", share: 90 }]);
+    expect(
+      compareDecisions({ ...table, model: MODELS.doubling.id }).contributors
+        .toward,
+    ).toMatchObject([{ text: "Stable team", share: 98 }]);
+  });
+
+  it("shares out the whole decision between the rows of a full table", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [{ text: "Stable team", weight: 5 }],
+      consA: [{ text: "Small flat", weight: 1 }],
+      prosB: [{ text: "Higher salary", weight: 3 }],
+      consB: [{ text: "Long commute", weight: 1 }],
+      model: linear,
+    });
+
+    expect(
+      [...contributors.toward, ...contributors.against].reduce(
+        (total, row) => total + row.share,
+        0,
+      ),
+    ).toBe(100);
   });
 });
 

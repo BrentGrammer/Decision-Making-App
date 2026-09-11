@@ -522,6 +522,13 @@ input[type="text"]:focus {
     font-weight: 500;
 }
 
+.contributor-share {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-muted);
+}
+
 @media (max-width: 40rem) {
     .contributors {
         font-size: 0.9rem;

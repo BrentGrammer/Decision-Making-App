@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   contributorGroups,
+  contributorShares,
   contributorsCaption,
   fillConsideration,
   loadApp,
@@ -15,6 +16,7 @@ import {
   CONTRIBUTORS_HINT,
   CONTRIBUTORS_HINT_LABEL,
   inFavorOf,
+  sharePercent,
 } from "../js/constants/strings.js";
 
 function fillOnePerSide() {
@@ -161,6 +163,27 @@ describe("the contributors table", () => {
 
     expect(contributorGroups().map((group) => group.heading)).toEqual([
       inFavorOf("Stay"),
+    ]);
+  });
+
+  it("says how much of all the points entered each row accounts for", () => {
+    fillOnePerSide();
+    globalThis.calculate();
+
+    expect(contributorShares()).toEqual([
+      { text: "Stable team", share: sharePercent(71) },
+      { text: "Higher salary", share: sharePercent(29) },
+    ]);
+  });
+
+  it("raises the top row's share under a steeper model", () => {
+    selectScoringModel(MODELS.doubling.id);
+    fillOnePerSide();
+    globalThis.calculate();
+
+    expect(contributorShares()).toEqual([
+      { text: "Stable team", share: sharePercent(89) },
+      { text: "Higher salary", share: sharePercent(11) },
     ]);
   });
 

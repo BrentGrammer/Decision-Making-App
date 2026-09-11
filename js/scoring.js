@@ -93,7 +93,8 @@ function netScore(pros, cons, transform) {
 
 const MAX_CONTRIBUTORS_PER_SIDE = 3;
 
-function filledRows(considerations, option, type, sign, transform) {
+function filledRows(considerations, option, type, sign, context) {
+    const { transform, weightEntered } = context;
     const rows = [];
     for (const consideration of considerations) {
         const text = String(consideration.text ?? "").trim();
@@ -101,17 +102,19 @@ function filledRows(considerations, option, type, sign, transform) {
             continue;
         }
         const rating = parseInt(consideration.weight, 10);
-        const favorsWinnerBy = sign * transform(rating);
+        const weight = transform(rating);
+        const favorsWinnerBy = sign * weight;
         if (favorsWinnerBy === 0) {
             continue;
         }
-        rows.push({ text, rating, option, type, favorsWinnerBy });
+        const share = Math.round((weight / weightEntered) * 100);
+        rows.push({ text, rating, option, type, share, favorsWinnerBy });
     }
     return rows;
 }
 
-function extractContributor({ text, rating, option, type }) {
-    return { text, rating, option, type };
+function extractContributor({ text, rating, option, type, share }) {
+    return { text, rating, option, type, share };
 }
 
 function findStrongestContributors(rows) {
@@ -183,11 +186,12 @@ export function compareDecisions({
     const winner = aLeads ? nameA : nameB;
     const loser = aLeads ? nameB : nameA;
     const towardA = aLeads ? 1 : -1;
+    const context = { transform, weightEntered };
     const rows = [
-        ...filledRows(prosA, nameA, CONSIDERATION_TYPE.pro, towardA, transform),
-        ...filledRows(consA, nameA, CONSIDERATION_TYPE.con, -towardA, transform),
-        ...filledRows(prosB, nameB, CONSIDERATION_TYPE.pro, -towardA, transform),
-        ...filledRows(consB, nameB, CONSIDERATION_TYPE.con, towardA, transform),
+        ...filledRows(prosA, nameA, CONSIDERATION_TYPE.pro, towardA, context),
+        ...filledRows(consA, nameA, CONSIDERATION_TYPE.con, -towardA, context),
+        ...filledRows(prosB, nameB, CONSIDERATION_TYPE.pro, -towardA, context),
+        ...filledRows(consB, nameB, CONSIDERATION_TYPE.con, towardA, context),
     ];
 
     return {

@@ -84,7 +84,12 @@ export const CONTRIBUTOR_COLUMN_LABELS = Object.freeze({
     type: "Pro or con",
     text: "Consideration",
     rating: "Rating",
+    share: "Share of all points entered",
 });
+
+export function sharePercent(percent) {
+    return `${percent}%`;
+}
 
 export const CONSIDERATION_TYPE_LABELS = Object.freeze({
     [CONSIDERATION_TYPE.pro]: "pro",
@@ -94,7 +99,7 @@ export const CONSIDERATION_TYPE_LABELS = Object.freeze({
 export const CONTRIBUTORS_CAPTION = "Top contributors";
 export const CONTRIBUTORS_HINT_LABEL = "About top contributors";
 export const CONTRIBUTORS_HINT =
-    "The top pros or cons for each decision.";
+    "The top pros or cons for each decision and how much weight they had on the result as a percentage.";
 
 export function inFavorOf(decision) {
     return `In favor of ${decision}`;

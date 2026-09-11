@@ -26,6 +26,10 @@ A result is a verdict line followed by a table of the considerations that favour
 
 The verdict line reports **which decision leads, by how many points**, and **the margin** — that point lead as a share of total points, rounded to a percent. The margin says how decisive the lead is: 3 points out of 6 is more significant, 3 out of 200 is a coin flip.
 
+The table lists the strongest considerations pushing each way, grouped under the decision they favour. A consideration favours a decision by being one of its pros or one of the other option's cons, so each row names the decision it was typed under. The rating shown is the one you gave.
+
+The last column is that row's **share of all points entered** — how much of the verdict rests on that single consideration. A row at 46% means the decision is close to resting on one thing; a table where nothing exceeds 20% means the verdict is spread across many considerations. That is a useful sanity check on a result, and a good prompt to re-read the row carrying the most weight.
+
 ## Use the App
 
 - Run `npm run serve` (Vite, usually http://localhost:5173/) and open that URL, or visit [the hosted page](https://brentgrammer.github.io/Decision-Making-App/).

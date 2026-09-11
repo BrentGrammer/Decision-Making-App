@@ -17,6 +17,7 @@ import {
     DECISION_NAME_FIELD_ERROR,
     formatComparison,
     RESULT_BLOCK,
+    sharePercent,
     CONCERN_HINT,
     DEALBREAKER_CONCERN_HINT,
     VALIDATION_ERROR_DISMISS,
@@ -70,13 +71,22 @@ function fillModelOptions() {
     showModelHint();
 }
 
-const CONTRIBUTOR_COLUMNS = ["option", "type", "text", "rating"];
+const CONTRIBUTOR_COLUMNS = ["option", "type", "text", "rating", "share"];
+
+function contributorCellText(row, column) {
+    if (column === "type") {
+        return CONSIDERATION_TYPE_LABELS[row.type];
+    }
+    if (column === "share") {
+        return sharePercent(row.share);
+    }
+    return row[column];
+}
 
 function contributorCell(row, column) {
     const cell = document.createElement("td");
     cell.className = `contributor-${column}`;
-    cell.textContent =
-        column === "type" ? CONSIDERATION_TYPE_LABELS[row.type] : row[column];
+    cell.textContent = contributorCellText(row, column);
     if (column === "type") {
         cell.dataset.type = row.type;
     }

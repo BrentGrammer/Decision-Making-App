@@ -87,6 +87,15 @@ export function contributorGroups() {
   );
 }
 
+export function contributorShares() {
+  return [...document.querySelectorAll("#finalResult .contributor-row")].map(
+    (row) => ({
+      text: row.querySelector(".contributor-text").textContent,
+      share: row.querySelector(".contributor-share").textContent,
+    }),
+  );
+}
+
 export function verdictLine() {
   return resultLines()[0];
 }

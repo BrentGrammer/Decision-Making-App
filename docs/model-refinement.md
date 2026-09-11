@@ -42,7 +42,7 @@ Every field is shown wherever it applies. More information is better than less.
 1. **Winner and loser.**
 2. **Raw point lead**, in the selected model's units.
 3. **Margin.** `|lead| / Σ w(every filled row, both options)`, rounded to a whole percent. Bounded 0–100% under every curve; 100% only when the winner is all pros and the loser all cons. Total is 0 only when nothing is filled, which is already a tie. This is a normalized margin chosen by the app, not "% better."
-4. **Contributors.** Each row contributes `±w(r)` toward the winner. Show the top 2–3 rows pushing toward the winner and the single strongest row pushing the other way, with the user's ratings (not transformed weights). (Shipped as a sentence, then replaced by a grouped table — see **Where this stands** item 6.)
+4. **Contributors.** Each row contributes `±w(r)` toward the winner. Show the top 2–3 rows pushing toward the winner and the single strongest row pushing the other way, with the user's ratings (not transformed weights). (Shipped as a sentence, then replaced by a grouped table — see **Where this stands** item 6 — which then gained a share bar per row, item 7.)
 5. **Veto outcome** (Dealbreaker only): *"Leave is disqualified by 'would have to sell the house' (10)."*
 
 Example block, as shipped:
@@ -60,7 +60,7 @@ IN FAVOR OF LEAVE
 Leave    pro   Higher salary      9
 ```
 
-Under nonlinear models the point lead is in squared or cubed units nobody can picture. The contributors table is the only output in the user's own 0–10 ratings, so it is what makes switching models understandable: change the model and see which rows now decide it.
+Under nonlinear models the point lead is in squared or cubed units nobody can picture. The contributors table is the only output in the user's own 0–10 ratings. It was expected to make switching models understandable; in practice it does not, except under Doubling — see the loose end in **Where this stands**.
 
 **Cut: the flip check.** Earlier drafts of this plan added a "smallest flip" sentence (*"Would tie if 'long commute' were rated 8 instead of 6"*) and, from it, **Close call** / **Decisive** labels. Both are cut. The idea was sound — it is the only honest read on whether a verdict is fragile — but it needed a brute-force search over every filled row × 11 values, a tie-break rule for when several rows are equally cheap to flip, its own vocabulary, and a sentence that took several attempts to explain in plain English. That is most of the remaining complexity for the smaller half of the payoff; contributors answer "why did this win," which is what people actually want. The cost of cutting: the margin percent can read as comfortable when the result is in fact one notch from flipping (two rows, 5 vs 4 — an 11% margin that a single notch ties). Accepted. The flip check is self-contained and nothing else depends on it, so it can return later if the result block turns out to hide fragility.
 
@@ -89,7 +89,11 @@ Last worked 11 September 2026, on branch `feature/model-refinement`. 124 unit te
 
 6. **Contributors as a table.** The sentence in §2 item 4 was replaced after it shipped, because it had to name up to six rows, two decisions and their ratings in one breath, and it never said which column a row was typed under. `formatComparison` now returns tagged blocks — `{ kind: RESULT_BLOCK.line, text }` and `{ kind: RESULT_BLOCK.contributors, groups }` — which `js/scripts.js` renders as a `<p class="result-line">` and a `<table class="contributors">`. The table is captioned "Top contributors" with an info-icon tooltip explaining it, since a table that arrives with only two group headings does not say what it is counting. Each group is headed `In favor of {decision}`, the winner's first, the loser's only when something favours it, and each row prints the decision it was typed under, `pro`/`con`, the text, and the user's own rating. Contributors carry a `type` from the new `CONSIDERATION_TYPE` in `scoring.js` to make the third column possible. Ties and vetoes stay a single line with no table.
 
-7. **Docs.** README gained "Scoring models" and "Reading the result" sections. `docs/ai-duplicate-detection.md` no longer claims several moderate cons outweigh fewer higher-rated ones; it now says the answer depends on the selected model. `REVIEW.md` handoff rewritten for this stretch, with the unrun Playwright suite as the next task.
+7. **Share of all points entered.** Each contributor carries a `share` — its transformed weight over `weightEntered`, the same denominator `marginPercent` uses, so "of all points entered" has one definition. It renders as a fifth column showing a plain percent. It was first drawn as a bar with the number hidden, on the reasoning that a rounded share of subjective 0–10 ratings does not deserve a percent column; that was wrong twice over — the bars read as meaningless stubs, because real shares cluster between 5% and 30% of a bar scaled to 100%, and hiding the number removed the only part anyone could read. Plain percent, right-aligned, tabular figures.
+
+   Keep it for what it actually tells you — how much of the verdict rests on one consideration, which is close to the fragility question the flip check was cut for — **not** as a demonstration of model choice, which it fails at. See the loose end below.
+
+8. **Docs.** README gained "Scoring models" and "Reading the result" sections. `docs/ai-duplicate-detection.md` no longer claims several moderate cons outweigh fewer higher-rated ones; it now says the answer depends on the selected model. `REVIEW.md` handoff rewritten for this stretch, with the unrun Playwright suite as the next task.
 
 ### Left
 
@@ -98,7 +102,10 @@ Nothing in this plan. Outstanding work is listed in `REVIEW.md` under "What to d
 ### Known loose ends
 
 - **Playwright is unverified.** The e2e specs for the dropdown were written but never run: chromium will not download in the dev sandbox. Run `npx playwright install chromium && npx playwright test` before trusting `e2e/decision.spec.js`.
-- **Contributor ranking does not move between models.** Every transform is monotone increasing, so the rows rank in the same order under Linear, Squared, Cubed and Doubling; only the *winner* can change, which flips a row between `toward` and `against`. §2's claim that switching models shows "which rows now decide it" is therefore true only in that weaker sense. Worth knowing before designing anything else around contributors.
+- **Contributor ranking does not move between models, and share barely does either.** Every transform is monotone increasing, so rows rank in the same order under Linear, Squared, Cubed and Doubling; only the *winner* can change, flipping a row between `toward` and `against`. Ranking is not the thing to fix — reordering would mean a 7 outweighing a 9, which would be a bug. Magnitude is the only thing a model touches, which is why item 7 added a per-row share. **That did not solve the problem it was added for.** Share is normalized, so squaring inflates the denominator too and only the *ratios* between rows survive — and ratios of similar ratings compress hard (8 vs 7 is 1.14×; 8² vs 7² only 1.31×). On a realistic six-row table rated 5–9, the top row's share goes 19% → 21% → 23% across Linear → Squared → Cubed. Invisible. Only Doubling moves it sharply, and there it usually flips the winner anyway, which reorganizes the whole table on its own.
+
+  The mistake was generalizing from a two-row table rated 9 and 3 (75% → 90% → 98%): a wide spread and a tiny row count is the best possible case for this metric, not a typical one. **So: nothing in the result block makes the difference between Linear, Squared and Cubed visible on ordinary input, and the share column does not change that.** If that difference needs to be legible, it needs a different mechanism — most likely the "compare all models" table in the decisions log, which states each model's winner outright instead of hoping a derived number reveals it.
+
 ### Conventions in force
 
 Tests pin their own subject: DOM tests about rows, names, or reset select Linear explicitly (`selectScoringModel` in `test/loadApp.js`) so their arithmetic does not silently re-base when the default model changes. Outcome tests that care about the winner use `toMatchObject`, not `toEqual`, so adding a field to the outcome does not break them.
@@ -128,6 +135,7 @@ Small steps, each one reviewable on its own.
 - Raw point lead stays visible wherever it exists.
 - No `localStorage`; model choice lives in memory.
 - Contributors are a table grouped "In favor of {decision}", not a sentence. Both group headings take the same form, so neither side reads as the app's own verdict.
+- Contributor share is printed as a plain percent. A bar was tried and rejected: unlabelled stubs in the bottom third of their range, and no number to read.
 - Later, optional: a "compare all models" table (winner and label per model).
 
 ---
