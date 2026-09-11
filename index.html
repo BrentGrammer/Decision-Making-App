@@ -86,8 +86,31 @@
               <p id="load-decisions-error" class="load-error" role="alert" hidden></p>
             </div>
             <div class="model-choice">
-              <label for="model">Try a different model:</label>
-              <select id="model" aria-describedby="model-hint"></select>
+              <label id="model-label" for="model">Try a different model:</label>
+              <div class="custom-dropdown" id="model-dropdown">
+                <button
+                  type="button"
+                  id="model-trigger"
+                  class="custom-dropdown-trigger"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-labelledby="model-label model-trigger-text"
+                >
+                  <span id="model-trigger-text" class="custom-dropdown-label">Squared</span>
+                  <svg class="custom-dropdown-arrow" aria-hidden="true" viewBox="0 0 24 24">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+                <ul
+                  id="model-menu"
+                  class="custom-dropdown-menu"
+                  role="listbox"
+                  aria-labelledby="model-label"
+                  tabindex="-1"
+                  hidden
+                ></ul>
+                <select id="model" aria-describedby="model-hint" class="visually-hidden" tabindex="-1"></select>
+              </div>
               <p id="model-hint" class="model-hint"></p>
             </div>
           </div>
