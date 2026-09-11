@@ -3,10 +3,13 @@ import {
     DEFAULT_MODEL_ID,
     isValidDecisionName,
     MODELS,
+    resolveModel,
 } from "./scoring.js";
 import {
     DECISION_NAME_FIELD_ERROR,
     formatComparison,
+    CONCERN_HINT,
+    DEALBREAKER_CONCERN_HINT,
     MODEL_HINTS,
     MODEL_LABELS,
 } from "./constants/strings.js";
@@ -32,6 +35,11 @@ function selectedModel() {
 function showModelHint() {
     document.getElementById("model-hint").textContent =
         MODEL_HINTS[selectedModel()];
+    document.getElementById("concern-hint").textContent = resolveModel(
+        selectedModel(),
+    ).veto
+        ? DEALBREAKER_CONCERN_HINT
+        : CONCERN_HINT;
 }
 
 function fillModelOptions() {

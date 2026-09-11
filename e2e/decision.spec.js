@@ -193,7 +193,7 @@ test("calculating again scores the same sheet with the newly chosen model", asyn
   await page.goto("/");
   await page.getByLabel(DECISION_A_LABEL, { exact: true }).fill("Stay");
   await page.getByLabel(DECISION_B_LABEL, { exact: true }).fill("Leave");
-  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Near family");
+  await page.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Stable team");
   await page.locator(".prosA").first().fill("10");
   await page.getByPlaceholder(PRO_PLACEHOLDER).nth(1).fill("Higher salary");
   await page.locator(".prosB").first().fill("4");

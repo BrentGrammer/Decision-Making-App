@@ -5,15 +5,15 @@
 
 ## Problem
 
-Scoring is a **sum** of filled weights. That is the intended model: several moderate cons should outweigh fewer cons that are weighted higher.
+Scoring is a **sum** of filled weights, transformed by the selected [scoring model](../README.md#scoring-models). How far several moderate cons go toward outweighing fewer, higher-rated ones depends on that model: under Linear they add up point for point, while Squared, Cubed and Doubling make each high rating progressively harder to cancel out.
 
 Addable lists make a different failure easier. A user can list the same consideration more than once, phrased differently:
 
-- “Higher salary”
-- “More disposable income”
-- “Better finances”
+- "Higher salary"
+- "More disposable income"
+- "Better finances"
 
-Those three rows are one benefit counted three times. The total is inflated even though each slider rating is honest. The same happens on cons (“long commute,” “time in the car,” “less time at home”).
+Those three rows are one benefit counted three times. The total is inflated even though each slider rating is honest. The same happens on cons ("long commute," "time in the car," "less time at home").
 
 This is a list problem, not a reason to average, normalize, or cap how many rows an option may have.
 
@@ -28,7 +28,7 @@ The app does not auto-correct the score. The user decides.
 1. After the user has entered text on two or more filled rows in the same list (pros of A, cons of A, pros of B, or cons of B), analyze those texts for overlapping meaning.
 2. If a pair (or group) looks like the same consideration, show a warning that names the rows and says they may be counting the same thing twice.
 3. The user can dismiss, edit, or remove a row. Scoring stays the current sum until they change the list.
-4. Do not warn across options. “Higher pay” on Stay and “higher pay” on Leave are a shared criterion, not a duplicate.
+4. Do not warn across options. "Higher pay" on Stay and "higher pay" on Leave are a shared criterion, not a duplicate.
 5. Do not warn on blank rows. Empty text is already ignored by scoring.
 
 ## Non-goals
@@ -48,7 +48,7 @@ When implementing, prefer:
 - A **suggestion**, not a silent rewrite.
 - Clear copy: which rows, why they look alike.
 - Privacy: texts are the user’s decision notes; do not send them to a third party without an explicit, documented choice.
-- Tests for the warning UX and for “leave these, they are different” as well as obvious paraphrases.
+- Tests for the warning UX and for "leave these, they are different" as well as obvious paraphrases.
 
 ## Out of scope until then
 

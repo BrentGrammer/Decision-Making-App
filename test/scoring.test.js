@@ -163,7 +163,7 @@ describe("compareDecisions", () => {
     const oneTenAgainstThreeFours = {
       decisionA: "Stay",
       decisionB: "Leave",
-      prosA: [{ text: "Near family", weight: 10 }],
+      prosA: [{ text: "Stable team", weight: 10 }],
       consA: [],
       prosB: [
         { text: "Higher salary", weight: 4 },
@@ -176,7 +176,7 @@ describe("compareDecisions", () => {
     const oneSevenAgainstTwoFives = {
       decisionA: "Stay",
       decisionB: "Leave",
-      prosA: [{ text: "Near family", weight: 7 }],
+      prosA: [{ text: "Stable team", weight: 7 }],
       consA: [],
       prosB: [
         { text: "Higher salary", weight: 5 },
@@ -188,7 +188,7 @@ describe("compareDecisions", () => {
     const oneTenAgainstTwoNines = {
       decisionA: "Stay",
       decisionB: "Leave",
-      prosA: [{ text: "Near family", weight: 10 }],
+      prosA: [{ text: "Stable team", weight: 10 }],
       consA: [],
       prosB: [
         { text: "Higher salary", weight: 9 },
@@ -267,7 +267,7 @@ describe("compareDecisions", () => {
           decisionA: "Stay",
           decisionB: "Leave",
           prosA: [
-            { text: "Near family", weight: 5 },
+            { text: "Stable team", weight: 5 },
             { text: "Same weather", weight: 0 },
           ],
           consA: [],
@@ -283,7 +283,7 @@ describe("compareDecisions", () => {
         compareDecisions({
           decisionA: "Stay",
           decisionB: "Leave",
-          prosA: [{ text: "Near family", weight: 6 }],
+          prosA: [{ text: "Stable team", weight: 6 }],
           consA: [{ text: "Small flat", weight: 4 }],
           prosB: [{ text: "Higher salary", weight: 5 }],
           consB: [],
@@ -302,7 +302,7 @@ describe("compareDecisions", () => {
         compareDecisions({
           decisionA: "Stay",
           decisionB: "Leave",
-          prosA: [{ text: "Near family", weight: 5 }],
+          prosA: [{ text: "Stable team", weight: 5 }],
           consA: [],
           prosB: [
             { text: "Higher salary", weight: 4 },
@@ -318,7 +318,7 @@ describe("compareDecisions", () => {
       const args = {
         decisionA: "Stay",
         decisionB: "Leave",
-        prosA: [{ text: "Near family", weight: 9 }],
+        prosA: [{ text: "Stable team", weight: 9 }],
         consA: [],
         prosB: [{ text: "Higher salary", weight: 5 }],
         consB: [],
@@ -334,7 +334,7 @@ describe("compareDecisions", () => {
         compareDecisions({
           decisionA: "Stay",
           decisionB: "Leave",
-          prosA: [{ text: "Near family", weight: 9 }],
+          prosA: [{ text: "Stable team", weight: 9 }],
           consA: [],
           prosB: [{ text: "Higher salary", weight: 5 }],
           consB: [],
@@ -351,7 +351,7 @@ describe("compareDecisions", () => {
         compareDecisions({
           decisionA: "Stay",
           decisionB: "Leave",
-          prosA: [{ text: "Near family", weight: 5 }],
+          prosA: [{ text: "Stable team", weight: 5 }],
           consA: [],
           prosB: [{ text: "Higher salary", weight: 2 }],
           consB: [],
@@ -365,7 +365,7 @@ describe("compareDecisions", () => {
         compareDecisions({
           decisionA: "Stay",
           decisionB: "Leave",
-          prosA: [{ text: "Near family", weight: 10 }],
+          prosA: [{ text: "Stable team", weight: 10 }],
           consA: [{ text: "Small flat", weight: 7 }],
           prosB: [{ text: "Higher salary", weight: 10 }],
           consB: [{ text: "Long commute", weight: 10 }],
@@ -379,7 +379,7 @@ describe("compareDecisions", () => {
         compareDecisions({
           decisionA: "Stay",
           decisionB: "Leave",
-          prosA: [{ text: "Near family", weight: 8 }],
+          prosA: [{ text: "Stable team", weight: 8 }],
           consA: [],
           prosB: [],
           consB: [{ text: "Long commute", weight: 6 }],
@@ -392,7 +392,7 @@ describe("compareDecisions", () => {
       const before = compareDecisions({
         decisionA: "Stay",
         decisionB: "Leave",
-        prosA: [{ text: "Near family", weight: 5 }],
+        prosA: [{ text: "Stable team", weight: 5 }],
         consA: [],
         prosB: [{ text: "Higher salary", weight: 2 }],
         consB: [],
@@ -402,7 +402,7 @@ describe("compareDecisions", () => {
         decisionA: "Stay",
         decisionB: "Leave",
         prosA: [
-          { text: "Near family", weight: 5 },
+          { text: "Stable team", weight: 5 },
           { text: "Known neighbours", weight: 6 },
         ],
         consA: [],
@@ -423,7 +423,7 @@ describe("compareDecisions", () => {
       const { marginPercent } = compareDecisions({
         decisionA: "Stay",
         decisionB: "Leave",
-        prosA: [{ text: "Near family", weight: 7 }],
+        prosA: [{ text: "Stable team", weight: 7 }],
         consA: [],
         prosB: [{ text: "Higher salary", weight: 4 }],
         consB: [],
@@ -437,7 +437,7 @@ describe("compareDecisions", () => {
       const sheet = {
         decisionA: "Stay",
         decisionB: "Leave",
-        prosA: [{ text: "Near family", weight: 10 }],
+        prosA: [{ text: "Stable team", weight: 10 }],
         consA: [],
         prosB: [
           { text: "Higher salary", weight: 6 },
@@ -458,7 +458,7 @@ describe("compareDecisions", () => {
         compareDecisions({
           decisionA: "Stay",
           decisionB: "Leave",
-          prosA: [{ text: "Near family", weight: 5 }],
+          prosA: [{ text: "Stable team", weight: 5 }],
           consA: [],
           prosB: [{ text: "Higher salary", weight: 5 }],
           consB: [],
@@ -503,7 +503,7 @@ describe("contributors", () => {
     const { contributors } = compareDecisions({
       decisionA: "Stay",
       decisionB: "Leave",
-      prosA: [{ text: "Near family", weight: 10 }],
+      prosA: [{ text: "Stable team", weight: 10 }],
       consA: [],
       prosB: [{ text: "Higher salary", weight: 3 }],
       consB: [],
@@ -511,7 +511,7 @@ describe("contributors", () => {
     });
 
     expect(contributors.toward).toEqual([
-      { text: "Near family", rating: 10, option: "Stay" },
+      { text: "Stable team", rating: 10, option: "Stay" },
     ]);
   });
 
@@ -519,7 +519,7 @@ describe("contributors", () => {
     const { contributors } = compareDecisions({
       decisionA: "Stay",
       decisionB: "Leave",
-      prosA: [{ text: "Near family", weight: 4 }],
+      prosA: [{ text: "Stable team", weight: 4 }],
       consA: [],
       prosB: [],
       consB: [{ text: "Long commute", weight: 8 }],
@@ -528,7 +528,7 @@ describe("contributors", () => {
 
     expect(contributors.toward).toEqual([
       { text: "Long commute", rating: 8, option: "Leave" },
-      { text: "Near family", rating: 4, option: "Stay" },
+      { text: "Stable team", rating: 4, option: "Stay" },
     ]);
   });
 
@@ -536,7 +536,7 @@ describe("contributors", () => {
     const { contributors } = compareDecisions({
       decisionA: "Stay",
       decisionB: "Leave",
-      prosA: [{ text: "Near family", weight: 10 }],
+      prosA: [{ text: "Stable team", weight: 10 }],
       consA: [{ text: "Small flat", weight: 2 }],
       prosB: [{ text: "Higher salary", weight: 5 }],
       consB: [],
@@ -553,7 +553,7 @@ describe("contributors", () => {
     const { contributors } = compareDecisions({
       decisionA: "Stay",
       decisionB: "Leave",
-      prosA: [{ text: "Near family", weight: 7 }],
+      prosA: [{ text: "Stable team", weight: 7 }],
       consA: [],
       prosB: [],
       consB: [{ text: "Long commute", weight: 5 }],
@@ -568,7 +568,7 @@ describe("contributors", () => {
       decisionA: "Stay",
       decisionB: "Leave",
       prosA: [
-        { text: "Near family", weight: 10 },
+        { text: "Stable team", weight: 10 },
         { text: "Known neighbours", weight: 9 },
         { text: "Cheap rent", weight: 8 },
         { text: "Good school", weight: 7 },
@@ -580,7 +580,7 @@ describe("contributors", () => {
     });
 
     expect(contributors.toward.map((row) => row.text)).toEqual([
-      "Near family",
+      "Stable team",
       "Known neighbours",
       "Cheap rent",
     ]);
@@ -591,7 +591,7 @@ describe("contributors", () => {
       decisionA: "Stay",
       decisionB: "Leave",
       prosA: [
-        { text: "Near family", weight: 10 },
+        { text: "Stable team", weight: 10 },
         { text: "Cheap rent", weight: 10 },
         { text: "Good schools", weight: 10 },
       ],
@@ -618,7 +618,7 @@ describe("contributors", () => {
       decisionA: "Stay",
       decisionB: "Leave",
       prosA: [
-        { text: "Near family", weight: 6 },
+        { text: "Stable team", weight: 6 },
         { text: "Same weather", weight: 0 },
       ],
       consA: [],
@@ -628,7 +628,7 @@ describe("contributors", () => {
     });
 
     expect(contributors.toward).toEqual([
-      { text: "Near family", rating: 6, option: "Stay" },
+      { text: "Stable team", rating: 6, option: "Stay" },
     ]);
   });
 
@@ -637,7 +637,7 @@ describe("contributors", () => {
       decisionA: "Stay",
       decisionB: "Leave",
       prosA: [
-        { text: "Near family", weight: 6 },
+        { text: "Stable team", weight: 6 },
         { text: "   ", weight: 9 },
       ],
       consA: [],
@@ -647,7 +647,7 @@ describe("contributors", () => {
     });
 
     expect(contributors.toward).toEqual([
-      { text: "Near family", rating: 6, option: "Stay" },
+      { text: "Stable team", rating: 6, option: "Stay" },
     ]);
   });
 
@@ -655,7 +655,7 @@ describe("contributors", () => {
     const sheet = {
       decisionA: "Stay",
       decisionB: "Leave",
-      prosA: [{ text: "Near family", weight: 10 }],
+      prosA: [{ text: "Stable team", weight: 10 }],
       consA: [],
       prosB: [
         { text: "Higher salary", weight: 4 },
@@ -667,10 +667,144 @@ describe("contributors", () => {
 
     expect(
       compareDecisions({ ...sheet, model: linear }).contributors.against,
-    ).toEqual([{ text: "Near family", rating: 10, option: "Stay" }]);
+    ).toEqual([{ text: "Stable team", rating: 10, option: "Stay" }]);
     expect(
       compareDecisions({ ...sheet, model: MODELS.squared.id }).contributors
         .toward,
-    ).toEqual([{ text: "Near family", rating: 10, option: "Stay" }]);
+    ).toEqual([{ text: "Stable team", rating: 10, option: "Stay" }]);
+  });
+});
+
+describe("the dealbreaker model", () => {
+  const dealbreaker = MODELS.dealbreaker.id;
+
+  it("rules out an option carrying a con rated 10", () => {
+    expect(
+      compareDecisions({
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [{ text: "Stable team", weight: 1 }],
+        consA: [],
+        prosB: [{ text: "Higher salary", weight: 10 }],
+        consB: [{ text: "Sell the house", weight: 10 }],
+        model: dealbreaker,
+      }),
+    ).toEqual({
+      kind: KIND.disqualified,
+      winner: "Stay",
+      loser: "Leave",
+      dealbreakers: [{ text: "Sell the house", rating: 10 }],
+    });
+  });
+
+  it("rules out an option even when it leads on points", () => {
+    expect(
+      compareDecisions({
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [{ text: "Stable team", weight: 1 }],
+        consA: [],
+        prosB: [
+          { text: "Higher salary", weight: 10 },
+          { text: "New city", weight: 10 },
+        ],
+        consB: [{ text: "Sell the house", weight: 10 }],
+        model: dealbreaker,
+      }).winner,
+    ).toBe("Stay");
+  });
+
+  it("names every con that rules the option out", () => {
+    expect(
+      compareDecisions({
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [{ text: "Stable team", weight: 5 }],
+        consA: [],
+        prosB: [],
+        consB: [
+          { text: "Sell the house", weight: 10 },
+          { text: "Long lease", weight: 10 },
+          { text: "Long commute", weight: 8 },
+        ],
+        model: dealbreaker,
+      }).dealbreakers,
+    ).toEqual([
+      { text: "Sell the house", rating: 10 },
+      { text: "Long lease", rating: 10 },
+    ]);
+  });
+
+  it("does not treat a pro rated 10 as a veto", () => {
+    expect(
+      compareDecisions({
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [{ text: "Stable team", weight: 4 }],
+        consA: [],
+        prosB: [{ text: "Higher salary", weight: 10 }],
+        consB: [],
+        model: dealbreaker,
+      }),
+    ).toMatchObject({ kind: KIND.lead, winner: "Leave" });
+  });
+
+  it("does not rule out an option over a blank row rated 10", () => {
+    expect(
+      compareDecisions({
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [{ text: "Stable team", weight: 4 }],
+        consA: [],
+        prosB: [{ text: "Higher salary", weight: 9 }],
+        consB: [{ text: "   ", weight: 10 }],
+        model: dealbreaker,
+      }),
+    ).toMatchObject({ kind: KIND.lead, winner: "Leave" });
+  });
+
+  it("scores on points when both options carry a dealbreaker", () => {
+    expect(
+      compareDecisions({
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [{ text: "Stable team", weight: 9 }],
+        consA: [{ text: "Small flat", weight: 10 }],
+        prosB: [{ text: "Higher salary", weight: 4 }],
+        consB: [{ text: "Sell the house", weight: 10 }],
+        model: dealbreaker,
+      }),
+    ).toMatchObject({ kind: KIND.lead, winner: "Stay", points: 5 });
+  });
+
+  it("counts every point the same when nothing is ruled out", () => {
+    expect(
+      compareDecisions({
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [{ text: "Stable team", weight: 9 }],
+        consA: [],
+        prosB: [
+          { text: "Higher salary", weight: 5 },
+          { text: "New city", weight: 5 },
+        ],
+        consB: [],
+        model: dealbreaker,
+      }),
+    ).toMatchObject({ kind: KIND.lead, winner: "Leave", points: 1 });
+  });
+
+  it("treats a con rated 10 as weight, not a veto, under other models", () => {
+    expect(
+      compareDecisions({
+        decisionA: "Stay",
+        decisionB: "Leave",
+        prosA: [{ text: "Stable team", weight: 1 }],
+        consA: [],
+        prosB: [{ text: "Higher salary", weight: 10 }],
+        consB: [{ text: "Sell the house", weight: 10 }],
+        model: MODELS.squared.id,
+      }),
+    ).toMatchObject({ kind: KIND.lead, winner: "Stay" });
   });
 });

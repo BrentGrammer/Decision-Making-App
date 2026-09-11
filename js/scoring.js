@@ -6,7 +6,10 @@ export const KIND = Object.freeze({
     nameLength: "nameLength",
     tie: "tie",
     lead: "lead",
+    disqualified: "disqualified",
 });
+
+export const DEALBREAKER_RATING = 10;
 
 export function trimmedDecisionName(value) {
     return String(value ?? "").trim();
@@ -62,6 +65,17 @@ export function sumFilledWeights(
         total += transform(parseInt(consideration.weight, 10));
     }
     return total;
+}
+
+function findDealbreakers(cons) {
+    const found = [];
+    for (const consideration of cons) {
+        const text = String(consideration.text ?? "").trim();
+        if (text && parseInt(consideration.weight, 10) === DEALBREAKER_RATING) {
+            found.push({ text, rating: DEALBREAKER_RATING });
+        }
+    }
+    return found;
 }
 
 function netScore(pros, cons, transform) {
@@ -133,7 +147,28 @@ export function compareDecisions({
         return { kind: KIND.nameLength };
     }
 
-    const { transform } = resolveModel(model);
+    const { transform, veto } = resolveModel(model);
+    if (veto) {
+        const dealbreakersA = findDealbreakers(consA);
+        const dealbreakersB = findDealbreakers(consB);
+        if (dealbreakersA.length > 0 && dealbreakersB.length === 0) {
+            return {
+                kind: KIND.disqualified,
+                winner: nameB,
+                loser: nameA,
+                dealbreakers: dealbreakersA,
+            };
+        }
+        if (dealbreakersB.length > 0 && dealbreakersA.length === 0) {
+            return {
+                kind: KIND.disqualified,
+                winner: nameA,
+                loser: nameB,
+                dealbreakers: dealbreakersB,
+            };
+        }
+    }
+
     const difference =
         netScore(prosA, consA, transform) - netScore(prosB, consB, transform);
     if (difference === 0) {

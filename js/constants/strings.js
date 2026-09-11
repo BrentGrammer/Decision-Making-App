@@ -38,6 +38,11 @@ export const MODEL_HINTS = Object.freeze({
         "A con you rate 10 for concern rules that option out entirely. Otherwise every point counts the same.",
 });
 
+export const CONCERN_HINT =
+    "How much does this worry or concern you? How much could this affect your life negatively? (On a scale of 1–10.)";
+export const DEALBREAKER_CONCERN_HINT =
+    "How unacceptable is this? Rate a con 10 only if it rules the option out entirely. (On a scale of 1–10.)";
+
 export const MISSING_NAMES_RESULT = "RESULT: Enter both decision names first.";
 export const TIE_RESULT = "RESULT: Both decisions are equally good(or bad...).";
 export const NAME_LENGTH_RESULT = `RESULT: Each decision name must be ${DECISION_NAME_MIN_LENGTH}–${DECISION_NAME_MAX_LENGTH} characters.`;
@@ -50,12 +55,22 @@ function formatContributor(contributor) {
     return `${contributor.option}'s "${contributor.text}" (${contributor.rating})`;
 }
 
-function formatContributorList(contributors) {
-    const phrases = contributors.map(formatContributor);
+function joinWithAnd(phrases) {
     if (phrases.length < 2) {
         return phrases.join("");
     }
     return `${phrases.slice(0, -1).join(", ")} and ${phrases[phrases.length - 1]}`;
+}
+
+function formatContributorList(contributors) {
+    return joinWithAnd(contributors.map(formatContributor));
+}
+
+export function disqualifiedResult(winner, loser, dealbreakers) {
+    const ruledOutBy = joinWithAnd(
+        dealbreakers.map(({ text, rating }) => `"${text}" (${rating})`),
+    );
+    return `RESULT: ${winner} wins. ${loser} is disqualified by ${ruledOutBy}.`;
 }
 
 export function contributorsResult(winner, loser, { toward, against }) {
@@ -74,6 +89,14 @@ export function formatComparison(outcome) {
             return [NAME_LENGTH_RESULT];
         case KIND.tie:
             return [TIE_RESULT];
+        case KIND.disqualified:
+            return [
+                disqualifiedResult(
+                    outcome.winner,
+                    outcome.loser,
+                    outcome.dealbreakers,
+                ),
+            ];
         case KIND.lead:
             return [
                 leadResult(

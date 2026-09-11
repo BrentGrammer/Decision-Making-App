@@ -28,7 +28,7 @@ describe("formatComparison", () => {
 
   it("formats a lead", () => {
     const contributors = {
-      toward: [{ text: "near family", rating: 10, option: "Stay" }],
+      toward: [{ text: "stable team", rating: 10, option: "Stay" }],
       against: [],
     };
 
@@ -56,7 +56,7 @@ describe("formatComparison", () => {
       marginPercent: 23,
       contributors: {
         toward: [
-          { text: "near family", rating: 10, option: "Stay" },
+          { text: "stable team", rating: 10, option: "Stay" },
           { text: "long commute", rating: 8, option: "Leave" },
         ],
         against: [{ text: "higher salary", rating: 9, option: "Leave" }],
@@ -64,7 +64,7 @@ describe("formatComparison", () => {
     });
 
     expect(lines).toHaveLength(2);
-    for (const text of ["near family", "long commute", "higher salary"]) {
+    for (const text of ["stable team", "long commute", "higher salary"]) {
       expect(lines[1]).toContain(text);
     }
   });
@@ -80,7 +80,7 @@ describe("formatComparison", () => {
 
   it("reports the ratings the user gave, not the model's weights", () => {
     const line = contributorsResult("Stay", "Leave", {
-      toward: [{ text: "near family", rating: 10, option: "Stay" }],
+      toward: [{ text: "stable team", rating: 10, option: "Stay" }],
       against: [],
     });
 
@@ -91,34 +91,34 @@ describe("formatComparison", () => {
   it("names every row it is given, strongest first", () => {
     const line = contributorsResult("Stay", "Leave", {
       toward: [
-        { text: "near family", rating: 10, option: "Stay" },
+        { text: "stable team", rating: 10, option: "Stay" },
         { text: "cheap rent", rating: 9, option: "Stay" },
         { text: "long commute", rating: 8, option: "Leave" },
       ],
       against: [],
     });
 
-    expect(line.indexOf("near family")).toBeLessThan(line.indexOf("cheap rent"));
+    expect(line.indexOf("stable team")).toBeLessThan(line.indexOf("cheap rent"));
     expect(line.indexOf("cheap rent")).toBeLessThan(line.indexOf("long commute"));
   });
 
   it("reports the rows pulling the other way after the rows behind the winner", () => {
     const line = contributorsResult("Stay", "Leave", {
-      toward: [{ text: "near family", rating: 10, option: "Stay" }],
+      toward: [{ text: "stable team", rating: 10, option: "Stay" }],
       against: [
         { text: "higher salary", rating: 9, option: "Leave" },
         { text: "new city", rating: 7, option: "Leave" },
       ],
     });
 
-    expect(line.indexOf("near family")).toBeLessThan(
+    expect(line.indexOf("stable team")).toBeLessThan(
       line.indexOf("higher salary"),
     );
     expect(line.indexOf("higher salary")).toBeLessThan(line.indexOf("new city"));
   });
 
   it("drops the in-favor clause when nothing favours the loser", () => {
-    const toward = [{ text: "near family", rating: 10, option: "Stay" }];
+    const toward = [{ text: "stable team", rating: 10, option: "Stay" }];
     const against = [{ text: "higher salary", rating: 9, option: "Leave" }];
 
     const withOpposition = contributorsResult("Stay", "Leave", {
@@ -135,6 +135,47 @@ describe("formatComparison", () => {
     expect(withoutOpposition.trim()).toMatch(/\.$/);
   });
 
+  it("formats a disqualified option as a single line", () => {
+    const lines = formatComparison({
+      kind: KIND.disqualified,
+      winner: "Stay",
+      loser: "Leave",
+      dealbreakers: [{ text: "sell the house", rating: 10 }],
+    });
+
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("Stay");
+    expect(lines[0]).toContain("Leave");
+    expect(lines[0]).toContain("sell the house");
+  });
+
+  it("names every con that ruled the option out", () => {
+    const [line] = formatComparison({
+      kind: KIND.disqualified,
+      winner: "Stay",
+      loser: "Leave",
+      dealbreakers: [
+        { text: "sell the house", rating: 10 },
+        { text: "long lease", rating: 10 },
+      ],
+    });
+
+    expect(line).toContain("sell the house");
+    expect(line).toContain("long lease");
+  });
+
+  it("reports no margin or point lead for a disqualified option", () => {
+    const [line] = formatComparison({
+      kind: KIND.disqualified,
+      winner: "Stay",
+      loser: "Leave",
+      dealbreakers: [{ text: "sell the house", rating: 10 }],
+    });
+
+    expect(line).not.toContain("%");
+    expect(line).not.toContain("points");
+  });
+
   it("states the margin as a share of the weight entered, not as being better", () => {
     const [verdict] = formatComparison({
       kind: KIND.lead,
@@ -143,7 +184,7 @@ describe("formatComparison", () => {
       points: 7,
       marginPercent: 23,
       contributors: {
-        toward: [{ text: "near family", rating: 10, option: "Stay" }],
+        toward: [{ text: "stable team", rating: 10, option: "Stay" }],
         against: [],
       },
     });

@@ -35,7 +35,7 @@ function announcedWinner() {
 // (12 > 10). So the announced winner says which model was used.
 function fillModelSensitiveDecision() {
   setDecisionNames("Stay", "Leave");
-  fillConsideration("prosA", 0, "Near family", 10);
+  fillConsideration("prosA", 0, "Stable team", 10);
   for (const [index, text] of ["Higher salary", "New city", "Shorter commute"].entries()) {
     if (index > 0) {
       document.querySelector('.add-row[data-group="prosB"]').click();
@@ -84,7 +84,7 @@ describe("scoring model selection", () => {
 
   it("scores a 10 far above a 9 when doubling is chosen", () => {
     setDecisionNames("Stay", "Leave");
-    fillConsideration("prosA", 0, "Near family", 10);
+    fillConsideration("prosA", 0, "Stable team", 10);
     fillConsideration("prosB", 0, "Higher salary", 9);
     document.querySelector('.add-row[data-group="prosB"]').click();
     fillConsideration("prosB", 1, "New city", 8);
@@ -141,5 +141,43 @@ describe("scoring model selection", () => {
     expect(modelSelect().value).toBe(MODELS.squared.id);
     expect(hintText()).toBe(MODEL_HINTS[MODELS.squared.id]);
     expect(resultText()).toBe("");
+  });
+});
+
+describe("the dealbreaker model in the app", () => {
+  beforeEach(() => {
+    loadApp();
+    setDecisionNames("Stay", "Leave");
+  });
+
+  function concernHint() {
+    return document.getElementById("concern-hint").textContent;
+  }
+
+  it("explains that a 10 rules an option out once dealbreaker is chosen", () => {
+    const before = concernHint();
+    chooseModel(MODELS.dealbreaker.id);
+
+    expect(concernHint()).not.toBe(before);
+    expect(concernHint()).toContain("unacceptable");
+  });
+
+  it("explains concern the usual way under every other model", () => {
+    const usual = concernHint();
+    chooseModel(MODELS.dealbreaker.id);
+    chooseModel(MODELS.squared.id);
+
+    expect(concernHint()).toBe(usual);
+  });
+
+  it("rules out the option carrying a con rated 10", () => {
+    chooseModel(MODELS.dealbreaker.id);
+    fillConsideration("prosA", 0, "Stable team", 1);
+    fillConsideration("prosB", 0, "Higher salary", 10);
+    fillConsideration("consB", 0, "Sell the house", 10);
+    globalThis.calculate();
+
+    expect(announcedWinner()).toBe("Stay");
+    expect(resultText()).toContain("Sell the house");
   });
 });

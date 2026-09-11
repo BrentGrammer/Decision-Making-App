@@ -67,7 +67,7 @@ Under nonlinear models the point lead is in squared or cubed units nobody can pi
 
 ## Where this stands
 
-Last worked 11 September 2026, on branch `feature/model-refinement`. 110 unit tests pass (`npx vitest run`).
+Last worked 11 September 2026, on branch `feature/model-refinement`. 124 unit tests pass (`npx vitest run`).
 
 ### Done
 
@@ -75,17 +75,20 @@ Last worked 11 September 2026, on branch `feature/model-refinement`. 110 unit te
 2. **Model dropdown.** Labelled "Try a different model" in the actions row, options built from the registry so labels have one source of truth, hint beneath it from `MODEL_HINTS`. Default Squared. Changing the model swaps the hint only; the new model applies on the next Calculate. Memory only, no `localStorage`.
 3. **Margin.** `marginPercent` on the `lead` outcome. Wording settled as *"— 23% of all points entered."* and staying that way. `formatComparison` now returns an **array of lines**, and `#finalResult` is a `<div>` holding one `<p class="result-line">` per line — so a later step adds a line rather than rewriting a sentence. `showResultLines([])` clears it.
 
-4. **Contributors.** `contributors: { toward, against }` on the `lead` outcome — up to the three rows pushing hardest toward the winner and up to the three pushing hardest the other way. (§2 specified one row against; three a side was chosen instead, since the opposing case is what someone second-guessing a verdict most wants to see. Past three a side the sentence stops reading, so showing every row would need a list or table rather than a sentence.) Each entry is `{ text, rating, option }`: the user's own 0–10 rating, never the transformed weight. Rows with no text, and rows whose weight is 0, are left out. `contributorsResult` renders the second line, attributing a row to the loser by name and leaving the winner's own rows bare ("Most of Stay's lead comes from \"near family\" (10) and Leave's \"long commute\" (8). Pulling the other way: Leave's \"higher salary\" (9)."). DOM tests that are not about the result block now read `verdictLine()` from `test/loadApp.js` instead of the whole `#finalResult` text.
+4. **Contributors.** `contributors: { toward, against }` on the `lead` outcome — up to the three rows pushing hardest toward the winner and up to the three pushing hardest the other way. (§2 specified one row against; three a side was chosen instead, since the opposing case is what someone second-guessing a verdict most wants to see. Past three a side the sentence stops reading, so showing every row would need a list or table rather than a sentence.) Each entry is `{ text, rating, option }`, carrying the user's own 0–10 rating. Rows with no text, and rows whose weight is 0, are left out. `contributorsResult` renders the second line, attributing a row to the loser by name and leaving the winner's own rows bare ("Most of Stay's lead comes from \"near family\" (10) and Leave's \"long commute\" (8). Pulling the other way: Leave's \"higher salary\" (9)."). DOM tests that are not about the result block now read `verdictLine()` from `test/loadApp.js` instead of the whole `#finalResult` text.
+
+5. **Dealbreaker veto.** `compareDecisions` reads the model's `veto` flag and short-circuits before any scoring: a filled con rated `DEALBREAKER_RATING` (10) rules that option out. One option ruled out returns `{ kind: "disqualified", winner, loser, dealbreakers }` — no points, margin, or contributors. Both ruled out, or neither, falls through to the ordinary comparison. Pros are never vetoes, and blank rows rated 10 do not count. The concern column's hint (`#concern-hint` in `index.html`) swaps to `DEALBREAKER_CONCERN_HINT` whenever the selected model vetoes, driven off the flag rather than the model id.
+
+6. **Docs.** README gained "Scoring models" and "Reading the result" sections, with both example blocks copied from real program output. `docs/ai-duplicate-detection.md` no longer claims several moderate cons outweigh fewer higher-rated ones; it now says the answer depends on the selected model. `REVIEW.md` handoff rewritten for this stretch, with the unrun Playwright suite as the next task.
 
 ### Left
 
-5. **Dealbreaker veto** — §1 and §2 item 5. The `veto` flag is declared on the model but nothing reads it yet, so Dealbreaker currently scores as plain Linear. Needs the `disqualified` kind, and the con-slider hint wording change.
-6. **Docs** — README scoring section; `docs/ai-duplicate-detection.md` line 8 ("several moderate cons should outweigh fewer cons weighted higher") is now true only for Linear and must be reworded; `REVIEW.md` handoff.
+Nothing in this plan. Outstanding work is listed in `REVIEW.md` under "What to do next".
 
 ### Known loose ends
 
 - **Playwright is unverified.** The e2e specs for the dropdown were written but never run: chromium will not download in the dev sandbox. Run `npx playwright install chromium && npx playwright test` before trusting `e2e/decision.spec.js`.
-- **Contributor ranking does not move between models.** Every transform is monotone increasing, so the rows rank in the same order under Linear, Squared, Cubed and Doubling; only the *winner* can change, which flips a row between `toward` and `against`. §2's claim that switching models shows "which rows now decide it" is therefore true only in that weaker sense. Nothing to fix — worth knowing before designing anything else around contributors.
+- **Contributor ranking does not move between models.** Every transform is monotone increasing, so the rows rank in the same order under Linear, Squared, Cubed and Doubling; only the *winner* can change, which flips a row between `toward` and `against`. §2's claim that switching models shows "which rows now decide it" is therefore true only in that weaker sense. Worth knowing before designing anything else around contributors.
 - **Slider readouts say "Value: 8"**, which matches neither column header ("Importance / positive impact", "Concern / negative impact") nor the model hints, which now use the words *importance* and *concern*. Renaming the readouts would tie the vocabulary together. Not started.
 
 ### Conventions in force
@@ -98,7 +101,7 @@ Small steps, each one reviewable on its own.
 
 **Test-driven.** Write the test first, run it, confirm it fails for the right reason, then write the production code that makes it pass.
 
-**Tests do not assert on exact wording.** A test checks that the result names the right rows, in the right order, on the right line — not that a sentence reads word for word as it does today. Pinning a whole sentence makes every copy edit a test failure without testing anything real. Assert on the words only where the wording is itself the behavior (that the margin is never called "better," for instance).
+**Tests do not assert on exact wording.** A test checks that the result names the right rows, in the right order, on the right line. Pinning a whole sentence turns every copy edit into a test failure while testing nothing real. Assert on specific words only where the wording is itself the behavior, such as the check that the margin copy avoids the word "better."
 
 **Tests assert observable behavior, not implementation.** A test drives the app the way a user does — fill the sheet, choose a model, calculate, read the result — or calls a public function and checks its outcome. No asserting on the shape of the `MODELS` registry, on a transform in isolation, or on anything else a refactor could rename without changing what the app does. Where a test's subject is not the thing under change (a row-counting test that happens to sum points), pin the unrelated variable explicitly so its arithmetic stays about its own subject.
 

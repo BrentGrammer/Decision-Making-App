@@ -2,8 +2,8 @@
 
 ## Handoff (for the next session)
 
-**When:** 8 September 2026, after in-page names, add/remove independent pro and con rows, blank-row slider warnings, `consideration-rows.js` extraction, scoring/UI-string split, Vite serve, and Playwright tests.
-**Start here.** Historical review notes are below; they still describe *why* the old percent formula was wrong. Several “current” sentences in those notes are stale. Trust this handoff and the code.
+**When:** 11 September 2026, after selectable scoring models, the normalized margin, the contributor line, and the Dealbreaker veto. (Previous handoff: 8 September 2026 — in-page names, add/remove independent pro and con rows, blank-row slider warnings, `consideration-rows.js` extraction, scoring/UI-string split, Vite serve, Playwright tests.)
+**Start here.** Historical review notes are below; they still describe *why* the old percent formula was wrong. Several "current" sentences in those notes are stale. Trust this handoff and the code.
 
 ### Where the project is
 
@@ -24,14 +24,23 @@ e2e/                      Playwright (Chromium)
 docs/                     future-feature notes
 ```
 
-Scoring returns a **structured outcome** (`KIND.missingNames` | `nameLength` | `tie` | `lead`). `formatComparison` in `js/constants/strings.js` turns that into the result sentence. Length limits (`DECISION_NAME_MIN_LENGTH` / `MAX`) stay in `scoring.js`. Tests import UI strings from `constants/strings.js` — do not hardcode those sentences in tests.
+Scoring returns a **structured outcome** (`KIND.missingNames` | `nameLength` | `tie` | `lead` | `disqualified`). `formatComparison` in `js/constants/strings.js` turns that into an **array of result lines**; `#finalResult` holds one `<p class="result-line">` per line. Length limits (`DECISION_NAME_MIN_LENGTH` / `MAX`) stay in `scoring.js`. Tests import UI strings from `constants/strings.js` — do not hardcode those sentences in tests.
 
-Scoring math (unchanged):
+Scoring math. Every filled rating passes through the selected model's transform `w(r)` before it is summed:
 
 ```text
-score = sum(filled pro weights) − sum(filled cons)
+score      = sum(w(filled pro ratings)) − sum(w(filled con ratings))
 difference = scoreA − scoreB
+margin     = |difference| / sum(w(every filled rating, both options))
 ```
+
+The `MODELS` registry in `scoring.js` holds each model's `id`, `transform`, and (Dealbreaker only) `veto: true`. `resolveModel` falls back to `DEFAULT_MODEL_ID` (Squared) for an unknown or missing id. The dropdown holds its choice in memory only, and a model change applies on the next Calculate.
+
+A `lead` outcome carries `points`, `marginPercent`, and `contributors: { toward, against }` — up to three rows a side, each `{ text, rating, option }` carrying the user's own 0–10 rating. Every transform is monotone, so the list keeps the same order under every model; switching models changes which decision wins, moving rows between `toward` and `against`.
+
+Dealbreaker short-circuits before any of that: a filled con rated 10 disqualifies its option and returns `disqualified`, carrying only the winner, the loser, and the cons that ruled it out. Both options vetoed, or neither, falls through to the ordinary comparison. Only cons can veto. The concern column's hint (`#concern-hint`) swaps wording whenever the selected model carries the `veto` flag.
+
+`marginPercent` reports the lead as a share of every point entered — a measure of decisiveness chosen by the app. Keep the result copy describing it that way; reporting it as a percent one decision beats another is the bug this review was written about. See [`docs/model-refinement.md`](docs/model-refinement.md) for the full plan and decisions log.
 
 A row counts only if the adjacent text is non-blank. Empty sliders default to `0`. If a slider is moved (> 0) while text remains blank, inline field validation warns that text is required or the row should be removed (`aria-invalid="true"` and an adjacent `.field-error`). Extra distinct cons still add up (that is intended). Near-duplicate phrasing is a future warning, not a formula change — see `docs/ai-duplicate-detection.md`.
 
@@ -73,15 +82,19 @@ Slider labels: `input` listeners in `initApp()`, not `onchange`. Tests dispatch 
 
 ### What is done this stretch
 
-In-page names; START / `prompt()` removed. Name validation (min 1 / max 50, field errors, blur + calculate). Calculate scrolls `#finalResult` into view. Scoring outcomes split from UI strings. App modules under `js/` with `consideration-rows.js` extracted. Add/remove independent pro and con rows per decision (no pro/con row pairing). Inline validation warnings when a slider moves without text (`BLANK_PRO_ERROR` / `BLANK_CON_ERROR`). Accessible names and UI text centralized in `js/constants/strings.js`. Vitest + Playwright suites passing. Light panel UI: app bar, grid sheet, inset slider wells, `Value:` readouts, info-icon header tips, teal pros / terracotta cons.
+Selectable scoring models (Linear, Squared, Cubed, Doubling, Dealbreaker) behind a "Try a different model" dropdown with a per-model hint. Normalized margin on the result. Contributor line naming the rows that drove the verdict and the rows opposing it. Dealbreaker veto with the `disqualified` outcome. Result is now multi-line. 124 Vitest tests pass.
+
+Earlier stretch: in-page names; START / `prompt()` removed. Name validation (min 1 / max 50, field errors, blur + calculate). Calculate scrolls `#finalResult` into view. Scoring outcomes split from UI strings. App modules under `js/` with `consideration-rows.js` extracted. Add/remove independent pro and con rows per decision (no pro/con row pairing). Inline validation warnings when a slider moves without text (`BLANK_PRO_ERROR` / `BLANK_CON_ERROR`). Accessible names and UI text centralized in `js/constants/strings.js`. Vitest + Playwright suites passing. Light panel UI: app bar, grid sheet, inset slider wells, `Value:` readouts, info-icon header tips, teal pros / terracotta cons.
 
 ### What to do next (Category 2)
 
 Product/modeling, not bugfixes:
 
-1. Show contribution of each row; sensitivity (“would one point flip the winner?”).
-2. Shared criteria matrix vs independent lists — later, if you want the same questions for both options.
-3. Duplicate-phrasing warning — `docs/ai-duplicate-detection.md` (AI, not this pass).
+1. **Run the Playwright suite.** The e2e specs covering the model dropdown have never executed; Chromium would not download in the dev sandbox. Run `npx playwright install chromium && npx playwright test` before trusting `e2e/decision.spec.js`.
+2. Sensitivity ("would one point flip the winner?"). Deliberately cut from the model-refinement pass; see the reasoning in `docs/model-refinement.md` §2.
+3. Slider readouts still say `Value: 8`, matching neither the column headers ("Importance / positive impact", "Concern / negative impact") nor the model hints, which say *importance* and *concern*.
+4. Shared criteria matrix vs independent lists — later, if you want the same questions for both options.
+5. Duplicate-phrasing warning — `docs/ai-duplicate-detection.md` (AI, not this pass).
 
 The hosted GitHub Pages copy may still be the old percent app until redeployed.
 
@@ -121,7 +134,7 @@ That model is a valid first design. A score of:
 option score = sum(pro weights) − sum(con weights)
 ```
 
-is internally consistent. The review’s objection is not “you should have split importance and impact.” The objection is that **turning those net scores into “X is N% better than Y” is not a valid calculation**, and several surrounding bugs corrupt the inputs or the UI.
+is internally consistent. The review’s objection is not "you should have split importance and impact." The objection is that **turning those net scores into "X is N% better than Y" is not a valid calculation**, and several surrounding bugs corrupt the inputs or the UI.
 
 ---
 
@@ -133,9 +146,9 @@ is internally consistent. The review’s objection is not “you should have spl
 2. Sum each group.
 3. Net score: `resultA = prosA − consA`, `resultB = prosB − consB`.
 4. Declare the larger net the winner.
-5. Attempt a “percent better” figure by dividing the gap by one of the nets, with extra branches for negatives and zeros.
+5. Attempt a "percent better" figure by dividing the gap by one of the nets, with extra branches for negatives and zeros.
 
-The README already notes that positive and negative cases use different divisors. That inconsistency is real, and it is a symptom of a deeper problem: **net scores are interval-scale, not ratio-scale.** Zero means “pros balance cons,” not “none of the thing.” Dividing one net by another (or by a number near zero) does not mean “percent better.”
+The README already notes that positive and negative cases use different divisors. That inconsistency is real, and it is a symptom of a deeper problem: **net scores are interval-scale, not ratio-scale.** Zero means "pros balance cons," not "none of the thing." Dividing one net by another (or by a number near zero) does not mean "percent better."
 
 Numeric probes of the live formula in `scripts.js` produced results like:
 
@@ -160,7 +173,7 @@ These are definite defects. They should be fixed before product/modeling redesig
 
 ### Calculation
 
-1. **~~“Percent better” is not a valid ratio of net scores.~~ Done.**  
+1. **~~"Percent better" is not a valid ratio of net scores.~~ Done.**  
    Replaced with `difference = resultA − resultB`. Live copy: `RESULT: {winner} is better than {loser} by {n} points.`
 
 2. **~~Positive and negative branches use different denominators.~~ Done.**  
@@ -204,7 +217,7 @@ These are definite defects. They should be fixed before product/modeling redesig
 
 ### Immediate calculation replacement (keep the weighted pro/con model)
 
-Do **not** keep claiming a relative “% better” from nets. Keep:
+Do **not** keep claiming a relative "% better" from nets. Keep:
 
 ```text
 scoreA = sum(filled A pro weights) − sum(filled A con weights)
@@ -212,7 +225,7 @@ scoreB = sum(filled B pro weights) − sum(filled B con weights)
 difference = scoreA − scoreB
 ```
 
-Report the winner and the **point difference**, e.g. “Option A leads Option B by a difference of 12 weighted points.”
+Report the winner and the **point difference**, e.g. "Option A leads Option B by a difference of 12 weighted points."
 
 Optional 0–100 display if there are five pros and five cons, each 0–10:
 
@@ -220,9 +233,9 @@ Optional 0–100 display if there are five pros and five cons, each 0–10:
 displayScore = netScore + 50
 ```
 
-Then a net of −50 → 0, 0 → 50, +50 → 100. Describe the gap as **percentage points on that scale**, not “12% better.”
+Then a net of −50 → 0, 0 → 50, +50 → 100. Describe the gap as **percentage points on that scale**, not "12% better."
 
-If a 0–100-style *share of entered weight* is wanted later, a bounded alternative is `(scoreA − scoreB) / (prosA + consA + prosB + consB)`. That is still a **normalized margin chosen by the app**, not a literal “percent better,” and it shrinks if the user adds equally rated items to both sides. Prefer honest wording: “A leads by N% of the total weight you entered.”
+If a 0–100-style *share of entered weight* is wanted later, a bounded alternative is `(scoreA − scoreB) / (prosA + consA + prosB + consB)`. That is still a **normalized margin chosen by the app**, not a literal "percent better," and it shrinks if the user adds equally rated items to both sides. Prefer honest wording: "A leads by N% of the total weight you entered."
 
 Also: ~~default empty sliders to 0, and skip rows whose text is blank.~~ Done with this pass.
 
@@ -230,12 +243,12 @@ Also: ~~default empty sliders to 0, and skip rows whose text is blank.~~ Done wi
 
 ## Category 2 — Improvements (modeling, business logic, product, UX)
 
-These are not “the current math is wrong.” They are other ways to look at the problem, and ways to make the app more useful after Category 1 is fixed.
+These are not "the current math is wrong." They are other ways to look at the problem, and ways to make the app more useful after Category 1 is fixed.
 
 ### Modeling and business logic
 
 1. **Keep combined importance × impact on one slider if that matches how users think.**  
-   Splitting “importance” vs “how much it affects me” is optional. The current single weight is a legitimate product choice.
+   Splitting "importance" vs "how much it affects me" is optional. The current single weight is a legitimate product choice.
 
 2. **Shared criteria vs independent lists.**  
    Independent pro/con lists are good for brainstorming. They are weaker for comparison: users may list more cons for B, or rate two unrelated lists on different mental scales. A later redesign: define criteria once, rate both options on each (weighted sum / sum of weights).
@@ -246,7 +259,7 @@ These are not “the current math is wrong.” They are other ways to look at th
    - Dealbreakers that cannot be averaged away (hard constraints).
 
 4. **Double-counting.**  
-   The current sum is correct when extra rows are distinct: several moderate cons should outweigh fewer, higher-weighted ones. The failure case is the same consideration written different ways (“higher salary,” “more disposable income,” “better finances”). That inflates the total without adding new harm or benefit. Do not change the formula for this. A future warning that detects near-duplicate phrasing is specified in [docs/ai-duplicate-detection.md](docs/ai-duplicate-detection.md).
+   The current sum is correct when extra rows are distinct: several moderate cons should outweigh fewer, higher-weighted ones. The failure case is the same consideration written different ways ("higher salary," "more disposable income," "better finances"). That inflates the total without adding new harm or benefit. Do not change the formula for this. A future warning that detects near-duplicate phrasing is specified in [docs/ai-duplicate-detection.md](docs/ai-duplicate-detection.md).
 
 5. **False precision.**  
    Subjective 1–10 ratings do not justify a single dramatic percentage without explaining what the number is.
@@ -274,7 +287,7 @@ These are not “the current math is wrong.” They are other ways to look at th
 
 14. Persist a decision (localStorage) so it can be revisited.
 
-15. Copy that matches the math: never an unexplained “N% better.” Live lead copy is “is better than … by N points.”
+15. Copy that matches the math: never an unexplained "N% better." Live lead copy is "is better than … by N points."
 
 16. **~~Add Vitest + jsdom as a test-only harness.~~ Done (no app rewrite).**  
     See **Handoff**. Tests are behavioral. Do not add source-regex markup tests.
@@ -289,7 +302,7 @@ These are not “the current math is wrong.” They are other ways to look at th
 ## Recommended order of work
 
 1. ~~Delete or replace `scriptstesting.js`.~~ Removed.
-2. ~~Replace the percent formula with net scores + an honest difference.~~ Done. Copy: “is better than … by N points.”
+2. ~~Replace the percent formula with net scores + an honest difference.~~ Done. Copy: "is better than … by N points."
 3. ~~Empty-row weighting and slider defaults.~~ Done.
 4. ~~Critical UI bugs.~~ Done (reset, ties, names, `textContent`, HTML, slider/label pairing). `scripts.js` modernized (`const`/`let`).
 5. ~~Vitest + jsdom (test-only).~~ Done.
@@ -300,4 +313,4 @@ These are not “the current math is wrong.” They are other ways to look at th
 
 ## What this review is *not* saying
 
-It is not saying the weighted pro/con idea is invalid. Combining “this matters to me” and “this would affect me a lot” into one rating per consideration is the core of the product. The critical failure is **misrepresenting those nets as a percentage one decision is better than another**, plus bugs that change the numbers before that formula even runs.
+It is not saying the weighted pro/con idea is invalid. Combining "this matters to me" and "this would affect me a lot" into one rating per consideration is the core of the product. The critical failure is **misrepresenting those nets as a percentage one decision is better than another**, plus bugs that change the numbers before that formula even runs.

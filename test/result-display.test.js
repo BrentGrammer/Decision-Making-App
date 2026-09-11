@@ -16,7 +16,7 @@ describe("the result", () => {
   });
 
   it("shows how decisive the lead is alongside it", () => {
-    fillConsideration("prosA", 0, "Near family", 5);
+    fillConsideration("prosA", 0, "Stable team", 5);
     fillConsideration("prosB", 0, "Higher salary", 2);
     globalThis.calculate();
 
@@ -25,7 +25,7 @@ describe("the result", () => {
   });
 
   it("puts each part of the verdict on its own line", () => {
-    fillConsideration("prosA", 0, "Near family", 5);
+    fillConsideration("prosA", 0, "Stable team", 5);
     fillConsideration("prosB", 0, "Higher salary", 2);
     globalThis.calculate();
 
@@ -34,16 +34,16 @@ describe("the result", () => {
   });
 
   it("names the rows that drove the result", () => {
-    fillConsideration("prosA", 0, "Near family", 5);
+    fillConsideration("prosA", 0, "Stable team", 5);
     fillConsideration("prosB", 0, "Higher salary", 2);
     globalThis.calculate();
 
-    expect(resultLines()[1]).toContain("Near family");
+    expect(resultLines()[1]).toContain("Stable team");
     expect(resultLines()[1]).toContain("Higher salary");
   });
 
   it("replaces the previous lines when calculated again", () => {
-    fillConsideration("prosA", 0, "Near family", 5);
+    fillConsideration("prosA", 0, "Stable team", 5);
     fillConsideration("prosB", 0, "Higher salary", 2);
     globalThis.calculate();
     globalThis.calculate();
@@ -52,7 +52,7 @@ describe("the result", () => {
   });
 
   it("clears every line on reset", () => {
-    fillConsideration("prosA", 0, "Near family", 5);
+    fillConsideration("prosA", 0, "Stable team", 5);
     fillConsideration("prosB", 0, "Higher salary", 2);
     globalThis.calculate();
 
@@ -63,7 +63,7 @@ describe("the result", () => {
   });
 
   it("shows a tie as a single line", () => {
-    fillConsideration("prosA", 0, "Near family", 5);
+    fillConsideration("prosA", 0, "Stable team", 5);
     fillConsideration("prosB", 0, "Higher salary", 5);
     globalThis.calculate();
 
