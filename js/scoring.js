@@ -68,6 +68,47 @@ function netScore(pros, cons, transform) {
     return sumFilledWeights(pros, transform) - sumFilledWeights(cons, transform);
 }
 
+const MAX_CONTRIBUTORS_PER_SIDE = 3;
+
+function filledRows(considerations, option, sign, transform) {
+    const rows = [];
+    for (const consideration of considerations) {
+        const text = String(consideration.text ?? "").trim();
+        if (!text) {
+            continue;
+        }
+        const rating = parseInt(consideration.weight, 10);
+        const favorsWinnerBy = sign * transform(rating);
+        if (favorsWinnerBy === 0) {
+            continue;
+        }
+        rows.push({ text, rating, option, favorsWinnerBy });
+    }
+    return rows;
+}
+
+function extractContributor({ text, rating, option }) {
+    return { text, rating, option };
+}
+
+function findStrongestContributors(rows) {
+    const favoringWinner = rows
+        .filter((row) => row.favorsWinnerBy > 0)
+        .sort((a, b) => b.favorsWinnerBy - a.favorsWinnerBy);
+    const favoringLoser = rows
+        .filter((row) => row.favorsWinnerBy < 0)
+        .sort((a, b) => a.favorsWinnerBy - b.favorsWinnerBy);
+
+    return {
+        toward: favoringWinner
+            .slice(0, MAX_CONTRIBUTORS_PER_SIDE)
+            .map(extractContributor),
+        against: favoringLoser
+            .slice(0, MAX_CONTRIBUTORS_PER_SIDE)
+            .map(extractContributor),
+    };
+}
+
 export function compareDecisions({
     decisionA,
     decisionB,
@@ -106,11 +147,23 @@ export function compareDecisions({
         0,
     );
 
+    const aLeads = difference > 0;
+    const winner = aLeads ? nameA : nameB;
+    const loser = aLeads ? nameB : nameA;
+    const towardA = aLeads ? 1 : -1;
+    const rows = [
+        ...filledRows(prosA, nameA, towardA, transform),
+        ...filledRows(consA, nameA, -towardA, transform),
+        ...filledRows(prosB, nameB, -towardA, transform),
+        ...filledRows(consB, nameB, towardA, transform),
+    ];
+
     return {
         kind: KIND.lead,
-        winner: difference > 0 ? nameA : nameB,
-        loser: difference > 0 ? nameB : nameA,
+        winner,
+        loser,
         points,
         marginPercent: Math.round((points / weightEntered) * 100),
+        contributors: findStrongestContributors(rows),
     };
 }

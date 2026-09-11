@@ -2,16 +2,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   fillConsideration,
   loadApp,
+  resultLines,
   selectScoringModel,
   setDecisionNames,
 } from "./loadApp.js";
 import { MODELS } from "../js/scoring.js";
-
-function resultLines() {
-  return [...document.querySelectorAll("#finalResult .result-line")].map(
-    (line) => line.textContent,
-  );
-}
 
 describe("the result", () => {
   beforeEach(() => {
@@ -34,8 +29,17 @@ describe("the result", () => {
     fillConsideration("prosB", 0, "Higher salary", 2);
     globalThis.calculate();
 
-    expect(resultLines()).toHaveLength(1);
+    expect(resultLines()).toHaveLength(2);
     expect(resultLines()[0]).toContain("Stay");
+  });
+
+  it("names the rows that drove the result", () => {
+    fillConsideration("prosA", 0, "Near family", 5);
+    fillConsideration("prosB", 0, "Higher salary", 2);
+    globalThis.calculate();
+
+    expect(resultLines()[1]).toContain("Near family");
+    expect(resultLines()[1]).toContain("Higher salary");
   });
 
   it("replaces the previous lines when calculated again", () => {
@@ -44,7 +48,7 @@ describe("the result", () => {
     globalThis.calculate();
     globalThis.calculate();
 
-    expect(resultLines()).toHaveLength(1);
+    expect(resultLines()).toHaveLength(2);
   });
 
   it("clears every line on reset", () => {

@@ -63,6 +63,16 @@ export function removeConsideration(sliderClass, rowIndex) {
   slider.closest(".consideration-row").querySelector(".remove-row").click();
 }
 
+export function resultLines() {
+  return [...document.querySelectorAll("#finalResult .result-line")].map(
+    (line) => line.textContent,
+  );
+}
+
+export function verdictLine() {
+  return resultLines()[0];
+}
+
 export function considerationTextInput(sliderClass, rowIndex) {
   return considerationTextCell(sliderClass, rowIndex).querySelector(
     "input[type='text']",

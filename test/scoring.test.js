@@ -495,3 +495,182 @@ describe("compareDecisions", () => {
     ).toEqual({ kind: KIND.missingNames });
   });
 });
+
+describe("contributors", () => {
+  const linear = MODELS.linear.id;
+
+  it("names the winner's own pros as driving its lead", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [{ text: "Near family", weight: 10 }],
+      consA: [],
+      prosB: [{ text: "Higher salary", weight: 3 }],
+      consB: [],
+      model: linear,
+    });
+
+    expect(contributors.toward).toEqual([
+      { text: "Near family", rating: 10, option: "Stay" },
+    ]);
+  });
+
+  it("counts the loser's cons as pushing toward the winner", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [{ text: "Near family", weight: 4 }],
+      consA: [],
+      prosB: [],
+      consB: [{ text: "Long commute", weight: 8 }],
+      model: linear,
+    });
+
+    expect(contributors.toward).toEqual([
+      { text: "Long commute", rating: 8, option: "Leave" },
+      { text: "Near family", rating: 4, option: "Stay" },
+    ]);
+  });
+
+  it("names the rows pulling the other way, whichever option they belong to", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [{ text: "Near family", weight: 10 }],
+      consA: [{ text: "Small flat", weight: 2 }],
+      prosB: [{ text: "Higher salary", weight: 5 }],
+      consB: [],
+      model: linear,
+    });
+
+    expect(contributors.against).toEqual([
+      { text: "Higher salary", rating: 5, option: "Leave" },
+      { text: "Small flat", rating: 2, option: "Stay" },
+    ]);
+  });
+
+  it("has nothing pulling the other way when every row favours the winner", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [{ text: "Near family", weight: 7 }],
+      consA: [],
+      prosB: [],
+      consB: [{ text: "Long commute", weight: 5 }],
+      model: linear,
+    });
+
+    expect(contributors.against).toEqual([]);
+  });
+
+  it("lists no more than the three strongest rows behind the winner", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [
+        { text: "Near family", weight: 10 },
+        { text: "Known neighbours", weight: 9 },
+        { text: "Cheap rent", weight: 8 },
+        { text: "Good school", weight: 7 },
+      ],
+      consA: [],
+      prosB: [{ text: "Higher salary", weight: 3 }],
+      consB: [],
+      model: linear,
+    });
+
+    expect(contributors.toward.map((row) => row.text)).toEqual([
+      "Near family",
+      "Known neighbours",
+      "Cheap rent",
+    ]);
+  });
+
+  it("lists no more than the three strongest rows pulling the other way", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [
+        { text: "Near family", weight: 10 },
+        { text: "Cheap rent", weight: 10 },
+        { text: "Good schools", weight: 10 },
+      ],
+      consA: [],
+      prosB: [
+        { text: "Higher salary", weight: 9 },
+        { text: "New city", weight: 8 },
+        { text: "Shorter commute", weight: 7 },
+        { text: "Better weather", weight: 6 },
+      ],
+      consB: [{ text: "Long commute", weight: 10 }],
+      model: linear,
+    });
+
+    expect(contributors.against.map((row) => row.text)).toEqual([
+      "Higher salary",
+      "New city",
+      "Shorter commute",
+    ]);
+  });
+
+  it("leaves out a row the user rated 0", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [
+        { text: "Near family", weight: 6 },
+        { text: "Same weather", weight: 0 },
+      ],
+      consA: [],
+      prosB: [{ text: "Higher salary", weight: 2 }],
+      consB: [],
+      model: linear,
+    });
+
+    expect(contributors.toward).toEqual([
+      { text: "Near family", rating: 6, option: "Stay" },
+    ]);
+  });
+
+  it("leaves out a row with no text", () => {
+    const { contributors } = compareDecisions({
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [
+        { text: "Near family", weight: 6 },
+        { text: "   ", weight: 9 },
+      ],
+      consA: [],
+      prosB: [{ text: "Higher salary", weight: 2 }],
+      consB: [],
+      model: linear,
+    });
+
+    expect(contributors.toward).toEqual([
+      { text: "Near family", rating: 6, option: "Stay" },
+    ]);
+  });
+
+  it("swaps which rows drive the result when the model changes the winner", () => {
+    const sheet = {
+      decisionA: "Stay",
+      decisionB: "Leave",
+      prosA: [{ text: "Near family", weight: 10 }],
+      consA: [],
+      prosB: [
+        { text: "Higher salary", weight: 4 },
+        { text: "New city", weight: 4 },
+        { text: "Shorter commute", weight: 4 },
+      ],
+      consB: [],
+    };
+
+    expect(
+      compareDecisions({ ...sheet, model: linear }).contributors.against,
+    ).toEqual([{ text: "Near family", rating: 10, option: "Stay" }]);
+    expect(
+      compareDecisions({ ...sheet, model: MODELS.squared.id }).contributors
+        .toward,
+    ).toEqual([{ text: "Near family", rating: 10, option: "Stay" }]);
+  });
+});

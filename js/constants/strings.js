@@ -46,6 +46,26 @@ export function leadResult(winner, loser, points, marginPercent) {
     return `RESULT: ${winner} leads ${loser} by ${Math.abs(points)} points — ${marginPercent}% of all points entered.`;
 }
 
+function formatContributor(contributor) {
+    return `${contributor.option}'s "${contributor.text}" (${contributor.rating})`;
+}
+
+function formatContributorList(contributors) {
+    const phrases = contributors.map(formatContributor);
+    if (phrases.length < 2) {
+        return phrases.join("");
+    }
+    return `${phrases.slice(0, -1).join(", ")} and ${phrases[phrases.length - 1]}`;
+}
+
+export function contributorsResult(winner, loser, { toward, against }) {
+    const lead = `Most of ${winner}'s lead comes from ${formatContributorList(toward)}.`;
+    if (against.length === 0) {
+        return lead;
+    }
+    return `${lead} In favor of ${loser}: ${formatContributorList(against)}.`;
+}
+
 export function formatComparison(outcome) {
     switch (outcome.kind) {
         case KIND.missingNames:
@@ -61,6 +81,11 @@ export function formatComparison(outcome) {
                     outcome.loser,
                     outcome.points,
                     outcome.marginPercent,
+                ),
+                contributorsResult(
+                    outcome.winner,
+                    outcome.loser,
+                    outcome.contributors,
                 ),
             ];
         default:

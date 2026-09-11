@@ -15,6 +15,7 @@ import {
   fillConsideration,
   loadApp,
   setDecisionNames,
+  verdictLine,
   selectScoringModel,
 } from "./loadApp.js";
 
@@ -145,7 +146,7 @@ describe("reset", () => {
     setDecisionNames("Stay", "Leave");
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
-    expect(document.getElementById("finalResult").textContent).toBe(
+    expect(verdictLine()).toBe(
       leadResult("Stay", "Leave", 8, 100),
     );
 
@@ -210,7 +211,7 @@ describe("ties", () => {
     fillConsideration("prosA", 0, "Pay", 9);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
+    expect(verdictLine()).toBe(
       leadResult("Stay", "Leave", 4, 29),
     );
   });
@@ -237,7 +238,7 @@ describe("decision names", () => {
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
+    expect(verdictLine()).toBe(
       leadResult("Stay", "Leave", 8, 100),
     );
   });
@@ -260,7 +261,7 @@ describe("decision names", () => {
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
+    expect(verdictLine()).toBe(
       leadResult("Stay", "Leave", 8, 100),
     );
   });
@@ -271,7 +272,7 @@ describe("decision names", () => {
     globalThis.calculate();
 
     expect(document.querySelector("#finalResult img")).toBeNull();
-    expect(document.getElementById("finalResult").textContent).toBe(
+    expect(verdictLine()).toBe(
       leadResult("Stay", "<img src=x>", 8, 100),
     );
   });
@@ -281,7 +282,7 @@ describe("decision names", () => {
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
+    expect(verdictLine()).toBe(
       leadResult("A", "B", 8, 100),
     );
     expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(
@@ -299,7 +300,7 @@ describe("decision names", () => {
     fillConsideration("prosA", 0, "Pay", 8);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
+    expect(verdictLine()).toBe(
       leadResult(decisionA, decisionB, 8, 100),
     );
     expect(document.getElementById("A").getAttribute("aria-invalid")).not.toBe(

@@ -7,6 +7,7 @@ import {
   loadApp,
   removeConsideration,
   setDecisionNames,
+  verdictLine,
   selectScoringModel,
 } from "./loadApp.js";
 
@@ -40,7 +41,7 @@ describe("add and remove rows", () => {
     fillConsideration("prosA", 1, "Team", 3);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
+    expect(verdictLine()).toBe(
       leadResult("Stay", "Leave", 11, 100),
     );
   });
@@ -53,7 +54,7 @@ describe("add and remove rows", () => {
     removeConsideration("prosA", 1);
     globalThis.calculate();
 
-    expect(document.getElementById("finalResult").textContent).toBe(
+    expect(verdictLine()).toBe(
       leadResult("Stay", "Leave", 8, 100),
     );
   });
@@ -65,7 +66,7 @@ describe("add and remove rows", () => {
     globalThis.calculate();
 
     expect(document.getElementsByClassName("prosA").length).toBe(1);
-    expect(document.getElementById("finalResult").textContent).toBe(
+    expect(verdictLine()).toBe(
       leadResult("Stay", "Leave", 8, 100),
     );
   });
