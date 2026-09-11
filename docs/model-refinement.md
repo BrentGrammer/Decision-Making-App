@@ -1,6 +1,6 @@
 # Model refinement plan
 
-**Status:** planned, not implemented. Agreed 11 September 2026.
+**Status:** in progress. Agreed 11 September 2026; steps 1–3 built the same day. See **Where this stands** below before picking it up.
 
 ## Why
 
@@ -42,28 +42,54 @@ Every field is shown wherever it applies. More information is better than less.
 1. **Winner and loser.**
 2. **Raw point lead**, in the selected model's units.
 3. **Margin.** `|lead| / Σ w(every filled row, both options)`, rounded to a whole percent. Bounded 0–100% under every curve; 100% only when the winner is all pros and the loser all cons. Total is 0 only when nothing is filled, which is already a tie. This is a normalized margin chosen by the app, not "% better."
-4. **Label**, only at the two boundaries that need no judgment call:
-   - **Close call** — flip distance is 1: moving one slider one notch would tie or flip the result. The smallest possible input change changes the answer.
-   - **Decisive** — no single rating, moved anywhere in 0–10, can tie or flip the result.
-   - Anything between gets **no label**. The flip sentence gives the actual number instead of an arbitrary band.
-5. **Smallest flip.** The specific row, its current rating, and the rating that would tie or flip the result, in the user's own units: *"Would tie if Leave's 'long commute' were rated 8 instead of 6."* If none exists: *"No single rating change would flip this."*
-6. **Contributors.** Each row contributes `±w(r)` toward the winner. Show the top 2–3 rows pushing toward the winner and the single strongest row pushing the other way, with the user's ratings (not transformed weights): *"Most of Stay's lead comes from 'near family' (10) and Leave's 'long commute' (8). Pulling the other way: Leave's 'higher salary' (9)."*
-7. **Veto outcome** (Dealbreaker only): *"Leave is disqualified by 'would have to sell the house' (10)."*
+4. **Contributors.** Each row contributes `±w(r)` toward the winner. Show the top 2–3 rows pushing toward the winner and the single strongest row pushing the other way, with the user's ratings (not transformed weights): *"Most of Stay's lead comes from 'near family' (10) and Leave's 'long commute' (8). Pulling the other way: Leave's 'higher salary' (9)."*
+5. **Veto outcome** (Dealbreaker only): *"Leave is disqualified by 'would have to sell the house' (10)."*
 
-Example line: *"Stay leads Leave (23% margin, 7 points). Would tie if 'long commute' were rated 8 instead of 6."*
+Example block:
 
-**Flip distance** is the fewest notches any single filled slider must move (staying within 0–10) so that `lead ≤ 0`, or, in Dealbreaker, so that a veto is triggered or removed. Computed by brute force: for each filled row try all 11 values and recompute. It is measured in the user's units, so it stays meaningful under every model, which is why it drives the label rather than the percent. (With two rows, a 1-point lead can be a 20% margin and still flip on one notch; that is a coin flip and the label must say so.)
+```text
+RESULT: Stay leads Leave by 7 points — 23% of the total weight.
+Most of Stay's lead comes from "near family" (10) and Leave's "long commute" (8). Pulling the other way: Leave's "higher salary" (9).
+```
 
-Under nonlinear models the point lead is in squared or cubed units nobody can picture. The flip sentence and contributor list are the only outputs in the user's own 0–10 ratings, so they are what makes switching models understandable: change the model and see which row now decides it and how fragile it became.
+Under nonlinear models the point lead is in squared or cubed units nobody can picture. The contributor list is the only output in the user's own 0–10 ratings, so it is what makes switching models understandable: change the model and see which rows now decide it.
+
+**Cut: the flip check.** Earlier drafts of this plan added a "smallest flip" sentence (*"Would tie if 'long commute' were rated 8 instead of 6"*) and, from it, **Close call** / **Decisive** labels. Both are cut. The idea was sound — it is the only honest read on whether a verdict is fragile — but it needed a brute-force search over every filled row × 11 values, a tie-break rule for when several rows are equally cheap to flip, its own vocabulary, and a sentence that took several attempts to explain in plain English. That is most of the remaining complexity for the smaller half of the payoff; contributors answer "why did this win," which is what people actually want. The cost of cutting: the margin percent can read as comfortable when the result is in fact one notch from flipping (two rows, 5 vs 4 — an 11% margin that a single notch ties). Accepted. The flip check is self-contained and nothing else depends on it, so it can return later if the result block turns out to hide fragility.
 
 ## 3. Code shape
 
-- `js/scoring.js` — `MODELS` registry (`id`, `transform`, `veto`). `compareDecisions({ ..., model })`. The `lead` outcome grows to `{ winner, loser, points, marginPercent, closeness, flip, contributors }`. New kind `disqualified`. Rows already carry `text`, so naming them needs no data changes. Stays DOM-free.
+- `js/scoring.js` — `MODELS` registry (`id`, `transform`, `veto`). `compareDecisions({ ..., model })`. The `lead` outcome grows to `{ winner, loser, points, marginPercent, contributors }`. New kind `disqualified`. Rows already carry `text`, so naming them needs no data changes. Stays DOM-free.
 - `js/constants/strings.js` — model labels and hints; `formatComparison` for the new fields and kind.
-- `js/scripts.js` — dropdown wiring, recalc on change.
+- `js/scripts.js` — dropdown wiring; the chosen model applies on the next Calculate.
 - `index.html` / `main.css` — dropdown, hint, multi-line result.
-- Tests — `test/scoring.test.js`: per-model scoring, including one 10 vs three 4s flipping between Linear (4s win, 12 > 10) and Squared (10 wins, 100 > 48); veto cases (one side, both sides, neither); flip search; contributors. `test/strings.test.js`: new sentences. One Playwright test: switch models, result changes.
+- Tests — `test/scoring.test.js`: per-model scoring, including one 10 vs three 4s flipping between Linear (4s win, 12 > 10) and Squared (10 wins, 100 > 48); veto cases (one side, both sides, neither); contributors. `test/strings.test.js`: new sentences. One Playwright test: switch models, result changes.
 - Docs — README scoring section. `docs/ai-duplicate-detection.md` line 8 ("several moderate cons should outweigh fewer cons weighted higher") is now true only for Linear and must be reworded. `REVIEW.md` handoff.
+
+## Where this stands
+
+Last worked 11 September 2026, on branch `feature/model-refinement`. 94 unit tests pass (`npx vitest run`).
+
+### Done
+
+1. **Scoring models.** `MODELS` registry in `js/scoring.js` (`id`, `transform`, and `veto: true` on Dealbreaker), `DEFAULT_MODEL_ID`, `resolveModel` (unknown or missing id falls back to the default rather than throwing), and `compareDecisions({ ..., model })`. `sumFilledWeights` takes a transform.
+2. **Model dropdown.** Labelled "Try a different model" in the actions row, options built from the registry so labels have one source of truth, hint beneath it from `MODEL_HINTS`. Default Squared. Changing the model swaps the hint only; the new model applies on the next Calculate. Memory only, no `localStorage`.
+3. **Margin.** `marginPercent` on the `lead` outcome. `formatComparison` now returns an **array of lines**, and `#finalResult` is a `<div>` holding one `<p class="result-line">` per line — so a later step adds a line rather than rewriting a sentence. `showResultLines([])` clears it.
+
+### Left
+
+4. **Contributors** — §2 item 4. Adds `contributors` to the `lead` outcome and a second result line.
+5. **Dealbreaker veto** — §1 and §2 item 5. The `veto` flag is declared on the model but nothing reads it yet, so Dealbreaker currently scores as plain Linear. Needs the `disqualified` kind, and the con-slider hint wording change.
+6. **Docs** — README scoring section; `docs/ai-duplicate-detection.md` line 8 ("several moderate cons should outweigh fewer cons weighted higher") is now true only for Linear and must be reworded; `REVIEW.md` handoff.
+
+### Known loose ends
+
+- **Playwright is unverified.** The e2e specs for the dropdown were written but never run: chromium will not download in the dev sandbox. Run `npx playwright install chromium && npx playwright test` before trusting `e2e/decision.spec.js`.
+- **The margin wording is unsettled.** Currently *"— 43% of the total weight."* "Total weight" is not a phrase the UI uses anywhere, and it describes the arithmetic rather than the meaning. Deliberately parked: revisit once the contributor line exists and the whole result block can be judged together. Candidates considered: "of everything you entered," "of all the points you entered."
+- **Slider readouts say "Value: 8"**, which matches neither column header ("Importance / positive impact", "Concern / negative impact") nor the model hints, which now use the words *importance* and *concern*. Renaming the readouts would tie the vocabulary together. Not started.
+
+### Conventions in force
+
+Tests pin their own subject: DOM tests about rows, names, or reset select Linear explicitly (`selectScoringModel` in `test/loadApp.js`) so their arithmetic does not silently re-base when the default model changes. Outcome tests that care about the winner use `toMatchObject`, not `toEqual`, so adding a field to the outcome does not break them.
 
 ## How this gets built
 
@@ -80,7 +106,7 @@ Small steps, each one reviewable on its own.
 ## Decisions log
 
 - Percent is a normalized margin, never "% better."
-- Label boundaries: only Close call (flip distance 1) and Decisive (unflippable by one rating). No middle bands.
+- Cut the flip check and the Close call / Decisive labels — complexity outweighed the payoff. See §2.
 - Dealbreaker: cons only. No must-have pro veto.
 - Default model: Squared.
 - Dropdown label is "Try a different model."
