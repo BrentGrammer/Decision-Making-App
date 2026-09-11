@@ -36,10 +36,12 @@
 .model-choice select {
     appearance: none;
     -webkit-appearance: none;
+    align-self: flex-start;
+    min-width: 13rem;
     padding: 0.5rem 2.5rem 0.5rem 0.75rem;
     border: 1px solid var(--color-outline);
     border-radius: 0.4rem;
-    background-color: var(--color-surface);
+    background-color: var(--color-field);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23546e7a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
@@ -47,6 +49,11 @@
     color: inherit;
     font: inherit;
     cursor: pointer;
+}
+
+.model-choice select option {
+    background-color: var(--color-field);
+    color: var(--color-on-surface);
 }
 
 .model-choice select::-ms-expand {
