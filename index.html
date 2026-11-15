@@ -59,10 +59,12 @@
               <div class="list" data-group="prosA" data-kind="pro">
                 <div class="consideration-rows"></div>
                 <button type="button" class="add-row" data-group="prosA" aria-label="Add a pro for decision A">Add pro</button>
+                <div class="duplicate-warnings" aria-live="polite"></div>
               </div>
               <div class="list" data-group="consA" data-kind="con">
                 <div class="consideration-rows"></div>
                 <button type="button" class="add-row" data-group="consA" aria-label="Add a con for decision A">Add con</button>
+                <div class="duplicate-warnings" aria-live="polite"></div>
               </div>
 
               <div class="decision-name">
@@ -72,15 +74,18 @@
               <div class="list" data-group="prosB" data-kind="pro">
                 <div class="consideration-rows"></div>
                 <button type="button" class="add-row" data-group="prosB" aria-label="Add a pro for decision B">Add pro</button>
+                <div class="duplicate-warnings" aria-live="polite"></div>
               </div>
               <div class="list" data-group="consB" data-kind="con">
                 <div class="consideration-rows"></div>
                 <button type="button" class="add-row" data-group="consB" aria-label="Add a con for decision B">Add con</button>
+                <div class="duplicate-warnings" aria-live="polite"></div>
               </div>
           </div>
           <div class="actions">
             <div class="action-buttons">
               <button type="button" class="button" onclick="calculate()">Calculate</button>
+              <button type="button" id="detect-duplicates" class="button button-secondary"></button>
               <button type="button" id="save-decisions" class="button button-secondary"></button>
               <button type="button" id="load-decisions" class="button button-secondary"></button>
               <input id="load-decisions-file" type="file" accept=".json,application/json" hidden>
@@ -142,6 +147,15 @@
         <h2 id="validation-dialog-title" class="dialog-title"></h2>
         <div class="validation-errors"></div>
         <button type="button" class="button dialog-dismiss"></button>
+      </dialog>
+
+      <dialog id="duplicate-privacy-dialog" class="dialog" aria-labelledby="duplicate-privacy-dialog-title">
+        <h2 id="duplicate-privacy-dialog-title" class="dialog-title"></h2>
+        <p class="dialog-message"></p>
+        <div class="dialog-actions">
+          <button type="button" class="button dialog-continue"></button>
+          <button type="button" class="button button-secondary dialog-cancel"></button>
+        </div>
       </dialog>
     </main>
     

@@ -17,6 +17,13 @@ export const BLANK_PRO_ERROR = "Enter a pro, or remove this row.";
 export const BLANK_CON_ERROR = "Enter a con, or remove this row.";
 
 export const SCORING_MODEL_LABEL = "Try a different model";
+export const DETECT_DUPLICATES_LABEL = "Detect duplicate considerations";
+export const DUPLICATE_PRIVACY_TITLE = "Check for duplicate considerations";
+export const DUPLICATE_PRIVACY_MESSAGE =
+    "To check for duplicate considerations, the text of your pros and cons will be sent to an external API. Do you want to continue?";
+export const DUPLICATE_PRIVACY_CONTINUE = "Continue";
+export const DUPLICATE_PRIVACY_CANCEL = "Cancel";
+export const DUPLICATE_WARNING_DISMISS = "Dismiss";
 export const SAVE_LABEL = "Save";
 export const LOAD_LABEL = "Load";
 export const LOAD_SUCCESS = "Saved decisions loaded.";
@@ -53,6 +60,9 @@ export const CONSIDERATION_ROW_VALIDATION_ERROR =
     "Some rows have a rating but no text, so they cannot be counted. Enter the missing pro or con, or remove the row.";
 export const EMPTY_TABLE_VALIDATION_ERROR =
     "Nothing has been rated yet. Enter a pro or con and rate it above 0.";
+export const DUPLICATE_VALIDATION_ERROR_TITLE = "No considerations to check";
+export const DUPLICATE_NEEDS_PAIR_VALIDATION_ERROR =
+    "Enter at least two pros or two cons for a decision before detecting duplicates.";
 export const VALIDATION_ERROR_DISMISS = "Back to the decision table";
 
 export const CONCERN_HINT =
@@ -71,6 +81,11 @@ function joinWithAnd(phrases) {
         return phrases.join("");
     }
     return `${phrases.slice(0, -1).join(", ")} and ${phrases[phrases.length - 1]}`;
+}
+
+export function duplicateWarningText(considerations) {
+    const quoted = considerations.map((text) => `"${text}"`);
+    return `Possible duplicate considerations: ${joinWithAnd(quoted)}.`;
 }
 
 export function disqualifiedResult(winner, loser, dealbreakers) {

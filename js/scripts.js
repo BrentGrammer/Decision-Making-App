@@ -26,6 +26,11 @@ import {
     selectedModel,
     setSelectedModel,
 } from "./model-controls.js";
+import {
+    clearDuplicateWarnings,
+    initDuplicateWarnings,
+    pruneDuplicateWarnings,
+} from "./duplicate-warnings.js";
 
 function resetSliders() {
     restoreDefaultRows();
@@ -37,6 +42,7 @@ function resetSliders() {
     inputA.value = "";
     inputB.value = "";
     clearDecisionValidation();
+    clearDuplicateWarnings();
     resetModel();
     showResult([]);
     resetSavedDecisionsState();
@@ -85,6 +91,7 @@ function onFormInput(event) {
             .closest(".consideration-row")
             .querySelector(".sliders");
         validateConsiderationRow(slider);
+        pruneDuplicateWarnings(event.target.closest(".list")?.dataset.group);
     }
 }
 
@@ -96,11 +103,13 @@ function onFormClick(event) {
     }
     const remove = event.target.closest(".remove-row");
     if (remove) {
+        const groupId = remove.closest(".list")?.dataset.group;
         removeConsiderationRow(remove);
+        pruneDuplicateWarnings(groupId);
     }
 }
 
-function initApp() {
+function initApp(options) {
     window.sliderChange = sliderChange;
     window.resetSliders = resetSliders;
     window.calculate = calculate;
@@ -114,6 +123,7 @@ function initApp() {
     initSavedDecisions({ setSelectedModel });
 
     initDecisionValidation();
+    initDuplicateWarnings(options);
 }
 
 export { sliderChange, resetSliders, calculate, initApp };

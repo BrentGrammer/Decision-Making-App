@@ -5,4 +5,5 @@
 @import "./model-controls.css";
 @import "./result-view.css";
 @import "./validation-dialog.css";
+@import "./duplicate-warnings.css";
 @import "./responsive.css";

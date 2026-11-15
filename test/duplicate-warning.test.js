@@ -3,7 +3,13 @@ import {
   CONSIDERATION_GROUPS,
   DUPLICATE_WARNING_CLASS,
 } from "../js/constants/decision-table.js";
-import { leadResult } from "../js/constants/strings.js";
+import {
+  DETECT_DUPLICATES_LABEL,
+  DUPLICATE_NEEDS_PAIR_VALIDATION_ERROR,
+  DUPLICATE_PRIVACY_CANCEL,
+  DUPLICATE_PRIVACY_CONTINUE,
+  leadResult,
+} from "../js/constants/strings.js";
 import { MODELS } from "../js/scoring.js";
 import {
   addConsideration,
@@ -12,6 +18,8 @@ import {
   removeConsideration,
   selectScoringModel,
   setDecisionNames,
+  validationDialog,
+  validationErrorMessages,
   verdictLine,
 } from "./loadApp.js";
 
@@ -46,9 +54,9 @@ function failingDuplicateConsiderationDetector() {
   });
 }
 
-function findDuplicateConsiderationsButton() {
+function detectDuplicateConsiderationsButton() {
   return [...document.querySelectorAll("button")].find(
-    (button) => button.textContent.trim() === "Find duplicate considerations",
+    (button) => button.textContent.trim() === DETECT_DUPLICATES_LABEL,
   );
 }
 
@@ -63,10 +71,10 @@ function dialogButton(dialog, label) {
 }
 
 function scanForDuplicates() {
-  findDuplicateConsiderationsButton().click();
+  detectDuplicateConsiderationsButton().click();
   const dialog = openDialog();
   if (dialog) {
-    dialogButton(dialog, "Continue").click();
+    dialogButton(dialog, DUPLICATE_PRIVACY_CONTINUE).click();
   }
 }
 
@@ -112,7 +120,7 @@ describe("duplicate consideration warning", () => {
     startAppWith(mockDuplicateConsiderationDetector(HIGHER_PAY_DUPLICATES));
   });
 
-  it("does not detect automatically before the user clicks Find duplicate considerations", async () => {
+  it("does not detect automatically before the user clicks Detect duplicate considerations", async () => {
     enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
 
     await waitForPendingDetections();
@@ -123,13 +131,13 @@ describe("duplicate consideration warning", () => {
   it("asks for privacy confirmation before sending considerations, and does nothing if cancelled", async () => {
     enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
 
-    findDuplicateConsiderationsButton().click();
+    detectDuplicateConsiderationsButton().click();
 
     const dialog = openDialog();
     expect(dialog).not.toBeNull();
     expect(dialog.textContent).toMatch(/API|external|third[- ]party/i);
 
-    dialogButton(dialog, "Cancel").click();
+    dialogButton(dialog, DUPLICATE_PRIVACY_CANCEL).click();
     await waitForPendingDetections();
 
     expect(dialog.open).toBe(false);
@@ -139,16 +147,16 @@ describe("duplicate consideration warning", () => {
 
   it("remembers confirmation for the current session on subsequent scans", async () => {
     enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
-    findDuplicateConsiderationsButton().click();
+    detectDuplicateConsiderationsButton().click();
     const dialog = openDialog();
-    dialogButton(dialog, "Continue").click();
+    dialogButton(dialog, DUPLICATE_PRIVACY_CONTINUE).click();
     await vi.waitFor(() =>
       expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(1),
     );
 
     const detectionsBefore =
       duplicateConsiderationDetector.mock.calls.length;
-    findDuplicateConsiderationsButton().click();
+    detectDuplicateConsiderationsButton().click();
 
     expect(openDialog()).toBeNull();
     await vi.waitFor(() =>
@@ -224,13 +232,29 @@ describe("duplicate consideration warning", () => {
     expect(allDuplicateWarnings()).toHaveLength(0);
   });
 
+  it("shows a validation message and does not detect when no considerations are entered", async () => {
+    detectDuplicateConsiderationsButton().click();
+
+    await waitForPendingDetections();
+    expect(validationDialog().open).toBe(true);
+    expect(validationErrorMessages()).toContain(
+      DUPLICATE_NEEDS_PAIR_VALIDATION_ERROR,
+    );
+    expect(duplicateConsiderationDetector).not.toHaveBeenCalled();
+    expect(allDuplicateWarnings()).toHaveLength(0);
+  });
+
   it("does not detect until two pros or cons of the same decision have text", async () => {
     enterConsideration(DECISION_A_PROS, 0, HIGHER_SALARY);
     addConsideration(DECISION_A_PROS);
     addConsideration(DECISION_A_PROS);
-    scanForDuplicates();
+    detectDuplicateConsiderationsButton().click();
 
     await waitForPendingDetections();
+    expect(validationDialog().open).toBe(true);
+    expect(validationErrorMessages()).toContain(
+      DUPLICATE_NEEDS_PAIR_VALIDATION_ERROR,
+    );
     expect(duplicateConsiderationDetector).not.toHaveBeenCalled();
     expect(allDuplicateWarnings()).toHaveLength(0);
   });
