@@ -20,6 +20,10 @@ import {
   EMPTY_TABLE_VALIDATION_ERROR,
   DECISION_NAME_VALIDATION_ERROR,
   CONSIDERATION_ROW_VALIDATION_ERROR,
+  DETECT_DUPLICATES_LABEL,
+  DUPLICATE_PRIVACY_CONTINUE,
+  DUPLICATE_WARNING_REMOVE,
+  duplicateWarningText,
   VALIDATION_ERROR_TITLE,
   PRO_PLACEHOLDER,
   REPLACE_CONFIRMATION,
@@ -543,4 +547,40 @@ test("rejects an invalid saved decisions file without changing the table", async
   await expect(page.getByText(LOAD_ERROR)).toHaveCount(0);
   await expect(page.getByLabel(DECISION_A_LABEL, { exact: true })).toHaveValue("Keep");
   await expect(page.getByLabel(DECISION_B_LABEL, { exact: true })).toHaveValue("Change");
+});
+
+test("detects and removes duplicate considerations", async ({ page }) => {
+  await page.goto("/");
+
+  const prosA = page.locator("[data-group='prosA']");
+  await prosA.getByPlaceholder(PRO_PLACEHOLDER).first().fill("Higher salary");
+  await prosA.locator(".prosA").first().fill("6");
+
+  await prosA.getByRole("button", { name: "Add a pro for decision A" }).click();
+  await prosA
+    .getByPlaceholder(PRO_PLACEHOLDER)
+    .nth(1)
+    .fill("More disposable income");
+  await prosA.locator(".prosA").nth(1).fill("9");
+
+  await page.getByRole("button", { name: DETECT_DUPLICATES_LABEL }).click();
+  await page.getByRole("button", { name: DUPLICATE_PRIVACY_CONTINUE }).click();
+
+  const warningText = duplicateWarningText([
+    "Higher salary",
+    "More disposable income",
+  ]);
+  await expect(
+    prosA.getByText(warningText),
+    "Expected duplicate warning to appear (ensure the duplicate detector is configured, e.g. in .env)",
+  ).toBeVisible();
+
+  await prosA.getByRole("button", { name: DUPLICATE_WARNING_REMOVE }).click();
+
+  await expect(prosA.getByText(warningText)).toHaveCount(0);
+  await expect(prosA.getByPlaceholder(PRO_PLACEHOLDER)).toHaveCount(1);
+  await expect(prosA.getByPlaceholder(PRO_PLACEHOLDER).first()).toHaveValue(
+    "More disposable income",
+  );
+  await expect(prosA.locator(".prosA").first()).toHaveValue("9");
 });
