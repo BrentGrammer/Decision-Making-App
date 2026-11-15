@@ -80,7 +80,7 @@ export function handleGoogleAuthStart(request, env) {
         `${url.origin}/api/auth/google/callback`,
     );
     redirectUrl.searchParams.set("response_type", "code");
-    redirectUrl.searchParams.set("scope", "openid email profile");
+    redirectUrl.searchParams.set("scope", "openid email");
     redirectUrl.searchParams.set("state", state);
 
     const headers = new Headers({ Location: redirectUrl.toString() });
