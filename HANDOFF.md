@@ -1,6 +1,6 @@
 # Handoff: Duplicate Consideration Warning (Decision-Making-App)
 
-Last updated: 2026-11-14
+Last updated: 2026-11-15
 
 ## Goal
 
@@ -20,21 +20,24 @@ This branch started from `/home/amddesktop/Work/learning-jev/README.md` (how Jev
 ## Where we are
 
 * **Branch:** `feature/jev-duplicate-detection`, up to date with `master` (which now has the Vitest 5 upgrade and the Docker dev setup).
-* **Done:** Behavior tests written first and confirmed failing: `test/duplicate-warning.test.js`, committed as WIP (`788790a`).
-* **Test status:** 13 new tests fail with assertion errors (warning never appears / detector never called), as expected. 1 passes vacuously (`does not detect until two pros or cons of the same decision have text`). All 175 other tests pass.
+* **Done:**
+  * Behavior tests in `test/duplicate-warning.test.js` updated for `duplicateConsiderationDetector` terminology, the **Find duplicate considerations** button, and the privacy confirmation dialog (committed).
+  * Jev learning notes (`docs/learning-jev.md`, Lessons 1–3) and batched Jev spike (`spike/try-jev.mjs`) completed.
+* **Test status:** 16 tests in `test/duplicate-warning.test.js` fail as expected (button doesn't exist yet), 1 passes vacuously (`does not detect automatically before the user clicks Find duplicate considerations`). All 175 other tests pass.
 * **No production code for the feature exists yet**, except the constant `DUPLICATE_WARNING_CLASS = "duplicate-warning"` in `js/constants/decision-table.js`.
 
-## Jev spike results (2026-11-14)
+## Jev spike results (2026-11-14 – 2026-11-15)
 
 * Script: `spike/try-jev.mjs` (local only; `spike/` is in `.git/info/exclude`). Saved requests/replies are in `spike/runs/`, with the auth header masked. The script stops before printing or saving anything that contains the key.
-* Verified API: `POST https://openrouter.ai/api/alpha/decisions`, `Authorization: Bearer <key>`, body `{ model, state, questions }`. Model pinned to `typesafe/jev-1.14`. Reply: `answers.<question>.noul` (0–1), `answers.<question>.score` plus `probabilities`, `legend` and `confidence`, and `usage.cost` in USD. It does return output tokens (~36), but they're free.
-* One request per pair, 11 labelled pairs, about $0.0002 total. Clean split:
-  * same: noul 0.70–0.95, overlap 1.65–2.00
-  * related but different: noul 0.03–0.34, overlap 0.72–1.12
-  * unrelated: noul 0.03, overlap ~0.23
-  * Closest call: "Shorter commute / Can bike to work" (0.34 / 1.12).
-* Cutoffs that work on this sample: noul ≥ 0.5 or overlap ≥ 1.5.
-* Not tried yet: all pairs in one request, harder or ambiguous pairs, cons.
+* Verified API: `POST https://openrouter.ai/api/alpha/decisions`, `Authorization: Bearer <key>`, body `{ model, state, questions }`. Model pinned to `typesafe/jev-1.14`. Reply: `answers.<question>.score` (plus `probabilities`, `legend`, `confidence`) and `usage.cost` in USD.
+* **Question type chosen: `score` (`0–2` scale) with cutoff `>= 1.5`.** Level `1` (*"Related area, but separate considerations"*) gives Jev a dedicated middle bucket so related-but-distinct pairs (e.g. "Shorter commute" / "Can bike to work") don't get forced into duplicate.
+* **Batched production-shape spike (2026-11-15):** Sent 6 pros (15 pairs in 1 request, `$0.000062`) and 5 cons (10 pairs in 1 request, `$0.000046`) using neutral `"consideration"` wording and quoting both consideration strings directly in each question's `instructions`:
+  * **Key finding:** Using indirect key pointers (`row_0 and row_2`) in a 6-item `state` dropped "Higher salary / Better finances" to `1.23` (missed). Quoting both consideration strings directly in each question's `instructions` restored a clean split across all 25 pairs:
+    * Pros duplicates: `1.58`, `1.63`, `1.78`
+    * Pros related/unrelated: `0.13–1.38` (closest: "Shorter commute / Can bike to work" at `1.38`)
+    * Cons duplicates: `1.93` ("Long commute / Time spent in the car"), `1.80` ("Long hours / Working late most nights")
+    * Cons related/unrelated: `0.46–1.02`
+* **Ready for implementation** — no further spiking needed before wiring it up.
 
 ## Contract the tests define
 
@@ -57,11 +60,10 @@ This branch started from `/home/amddesktop/Work/learning-jev/README.md` (how Jev
 
 ## Next steps
 
-1. **Make the 13 tests pass.** Wire the detector, triggers, warning rendering, dismiss, and reset into the app (`js/scripts.js`, `js/consideration-rows.js`, likely a new module for the warning). User-facing warning text goes in `js/constants/strings.js`. Add CSS in `css/`.
-2. **Spike the real Jev call.** Find the real full URL and request/response shape for `POST /api/alpha/decisions` on OpenRouter (README shapes and path are **unverified**). Send labelled sample pairs (clear duplicates, related-but-different, unrelated) and look at their `noul` and `overlap_degree` to see where a cutoff falls. Keep the spike out of the app code and uncommitted. The key is in `.env` as `VITE_OPENROUTER_API_KEY` (template: `.env.template`). Never read or print the key value.
-3. **Build the real Jev detector** (the only place the name "Jev" should appear). Compare pairs within one list with `noul` (`is_duplicate`) and/or `score` (`overlap_degree`, 0 distinct / 1 related but separate / 2 same benefit), then merge pairs into groups. Test it against mocked `fetch` responses in the real Jev format. Tune thresholds (starting guess: `overlap_degree ≥ 1.5`).
-4. **Default wiring.** Production `initApp()` uses the Jev detector when the key is set. With no key it is a no-op that makes no network calls. This matters because the GitHub Pages build has no key.
-5. Optionally, add a Playwright e2e test that routes the OpenRouter request.
+1. **Make the 17 tests in `test/duplicate-warning.test.js` pass.** Add the **Find duplicate considerations** button (in `.action-buttons`), privacy confirmation `<dialog>` (`Continue` / `Cancel`, remembered for the current page session), detector triggers, per-list warning rendering, dismiss, clear-on-edit/remove, and reset (`index.html`, `js/scripts.js`, `js/consideration-rows.js`, likely a new module for the warning). User-facing strings go in `js/constants/strings.js`. Add CSS in `css/`.
+2. **Build the real Jev detector** (the only place the name "Jev" should appear). Send all pairs for one list in a single `POST https://openrouter.ai/api/alpha/decisions` (`typesafe/jev-1.14`) request using `score` (`0–2`), neutral `"consideration"` wording, and inline quoted texts in `instructions`. Flag pairs with `score >= 1.5`, then merge connected pairs into groups (`number[][]`). Test against mocked `fetch` responses in the real Jev format.
+3. **Default wiring.** Production `initApp()` uses the Jev detector when `VITE_OPENROUTER_API_KEY` is set. With no key it is a no-op that makes no network calls (important because the GitHub Pages build has no key).
+4. Optionally, add a Playwright e2e test that routes the OpenRouter request.
 
 ## Decided
 

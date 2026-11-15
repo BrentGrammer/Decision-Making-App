@@ -123,4 +123,96 @@ Jev has no scratchpad to think out loud — it matches `state + instructions` di
 
 ---
 
-*Next (Lesson 3): Asking about **all pairs in one request** (branch-isolated attention), and testing **harder/borderline pairs** where Jev might get confused.*
+## Lesson 3: Checking a whole list of considerations in one request
+
+Why can't we just hand Jev a list of considerations and ask *"Which of these are duplicates?"*
+
+Because **Jev can never write text or return a list of items** — it only returns a `0`–`2` score for each question you ask.
+
+So to check a list of considerations, we have to ask Jev to compare them **two considerations at a time**. For example, if a user enters **3 considerations** in the same list:
+
+* `0`: `"Higher salary"`
+* `1`: `"More disposable income"`
+* `2`: `"Shorter commute"`
+
+To check every consideration against every other consideration in that list, there are **3 two-way comparisons**:
+* Compare `0` and `1`: `"Higher salary"` vs `"More disposable income"`
+* Compare `0` and `2`: `"Higher salary"` vs `"Shorter commute"`
+* Compare `1` and `2`: `"More disposable income"` vs `"Shorter commute"`
+
+Instead of making 3 separate HTTP calls, we put **all 3 comparison questions inside `questions` in a single request**:
+
+```json
+{
+  "state": {
+    "context": "Considerations listed for the same option in a pros/cons decision.",
+    "considerations": [
+      "Higher salary",
+      "More disposable income",
+      "Shorter commute"
+    ]
+  },
+  "questions": {
+    "pair_0_1": {
+      "type": "score",
+      "instructions": "To what extent do \"Higher salary\" and \"More disposable income\" double-count the same consideration?",
+      "criteria": [
+        "Completely distinct considerations",
+        "Related area, but separate considerations",
+        "Same underlying consideration worded differently (counting both double-counts it)"
+      ]
+    },
+    "pair_0_2": {
+      "type": "score",
+      "instructions": "To what extent do \"Higher salary\" and \"Shorter commute\" double-count the same consideration?",
+      "criteria": [
+        "Completely distinct considerations",
+        "Related area, but separate considerations",
+        "Same underlying consideration worded differently (counting both double-counts it)"
+      ]
+    },
+    "pair_1_2": {
+      "type": "score",
+      "instructions": "To what extent do \"More disposable income\" and \"Shorter commute\" double-count the same consideration?",
+      "criteria": [
+        "Completely distinct considerations",
+        "Related area, but separate considerations",
+        "Same underlying consideration worded differently (counting both double-counts it)"
+      ]
+    }
+  }
+}
+```
+
+And Jev answers **all 3 questions in one reply**:
+
+```json
+{
+  "answers": {
+    "pair_0_1": { "score": 1.58, "probabilities": { ... } },
+    "pair_0_2": { "score": 0.23, "probabilities": { ... } },
+    "pair_1_2": { "score": 0.33, "probabilities": { ... } }
+  }
+}
+```
+
+Our code then checks which `pair_i_j` answers came back with `score >= 1.5` (here, only `pair_0_1`, so considerations `0` and `1` are duplicates).
+
+### Why put the actual consideration text in `instructions` instead of `row_0` and `row_1`?
+
+When we first tried writing `"instructions": "To what extent do row_0 and row_2 double-count the same consideration?"` with 6 considerations in `state`, `"Higher salary"` vs `"Better finances"` dropped from **`1.78`** down to **`1.23`** (missing our `1.5` cutoff).
+
+Why? Because Jev has **no scratchpad** — it scores in a single pass. Making it look up variable names (`row_0`, `row_2`) inside a 6-item `state` and compare them in the same single step muddies the score.
+
+Putting the actual consideration texts directly in each question (`"Higher salary"` and `"Better finances"`) — and dropping `row_0` / `row_2` completely — fixed it immediately. Here are the results from our batched run (15 pro pairs in 1 request for `$0.000062`, and 10 con pairs in 1 request for `$0.000046`):
+
+| List | Pairquestion | Considerations compared | `score` (0–2) | Flagged (`≥ 1.5`)? |
+|---|---|---|---|---|
+| Pros | `pair_0_1` | Higher salary / More disposable income | **1.58** | **YES** |
+| Pros | `pair_0_2` | Higher salary / Better finances | **1.63** | **YES** |
+| Pros | `pair_1_2` | More disposable income / Better finances | **1.78** | **YES** |
+| Pros | `pair_0_3` | Higher salary / Better health insurance | 0.68 | no |
+| Pros | `pair_4_5` | Shorter commute / Can bike to work | 1.38 | no |
+| Cons | `pair_0_1` | Long commute / Time spent in the car | **1.93** | **YES** |
+| Cons | `pair_0_2` | Long commute / Higher gas and car wear | 1.02 | no |
+| Cons | `pair_3_4` | Long hours / Working late most nights | **1.80** | **YES** |
