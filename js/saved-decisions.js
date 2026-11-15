@@ -114,6 +114,15 @@ export function createCloudDecisionsStore({ fetch = globalThis.fetch } = {}) {
             await fetch("/api/auth/logout", { method: "POST" });
         },
 
+        async deleteAccount() {
+            const response = await fetch("/api/auth/account", {
+                method: "DELETE",
+            });
+            if (!response.ok) {
+                throw new Error("Could not delete account");
+            }
+        },
+
         async list() {
             const response = await fetch("/api/decisions");
             if (!response.ok) {

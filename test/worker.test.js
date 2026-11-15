@@ -535,5 +535,80 @@ describe("application server", () => {
             );
             expect(afterDelete.status).toBe(404);
         });
+
+        it("deletes a user's account, sessions, and saved decisions", async () => {
+            const unauthenticated = await worker.fetch(
+                new Request("https://example.com/api/auth/account", {
+                    method: "DELETE",
+                }),
+                { DB: db },
+            );
+            expect(unauthenticated.status).toBe(401);
+
+            const alice = await signInTestUser({
+                sub: "google-alice-delete",
+                email: "alice-delete@example.com",
+                name: "Alice Delete",
+            });
+            const bob = await signInTestUser({
+                sub: "google-bob-keep",
+                email: "bob-keep@example.com",
+                name: "Bob Keep",
+            });
+
+            await worker.fetch(
+                new Request("https://example.com/api/decisions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: alice.sessionCookie,
+                    },
+                    body: JSON.stringify(validSavedDecisions("Alpha", "Beta")),
+                }),
+                alice.env,
+            );
+            const bobCreate = await worker.fetch(
+                new Request("https://example.com/api/decisions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: bob.sessionCookie,
+                    },
+                    body: JSON.stringify(validSavedDecisions("Keep A", "Keep B")),
+                }),
+                bob.env,
+            );
+            expect(bobCreate.status).toBe(201);
+
+            const deleteResponse = await worker.fetch(
+                new Request("https://example.com/api/auth/account", {
+                    method: "DELETE",
+                    headers: { Cookie: alice.sessionCookie },
+                }),
+                alice.env,
+            );
+            expect(deleteResponse.status).toBe(200);
+            expect(await deleteResponse.json()).toEqual({ ok: true });
+            expect(
+                cookiePair(deleteResponse.headers.getSetCookie(), "session_token"),
+            ).toBe("session_token=");
+
+            const aliceMe = await worker.fetch(
+                new Request("https://example.com/api/auth/me", {
+                    headers: { Cookie: alice.sessionCookie },
+                }),
+                alice.env,
+            );
+            expect(await aliceMe.json()).toEqual({ user: null });
+
+            const bobDecisions = await worker.fetch(
+                new Request("https://example.com/api/decisions", {
+                    headers: { Cookie: bob.sessionCookie },
+                }),
+                bob.env,
+            );
+            expect(bobDecisions.status).toBe(200);
+            expect((await bobDecisions.json()).decisions).toHaveLength(1);
+        });
     });
 });

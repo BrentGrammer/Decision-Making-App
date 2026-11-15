@@ -1,4 +1,7 @@
 import {
+    DELETE_ACCOUNT_CONFIRMATION,
+    DELETE_ACCOUNT_ERROR,
+    DELETE_ACCOUNT_LABEL,
     DELETE_SAVED_DECISION_LABEL,
     LOAD_ERROR,
     LOAD_LABEL,
@@ -30,6 +33,7 @@ import {
     CONSIDERATION_LISTS,
     DECISION_IDS,
 } from "./constants/decision-table.js";
+import { CLASS_NAMES, ELEMENT_IDS, SELECTORS } from "./constants/selectors.js";
 
 let hasUnsavedChanges = false;
 let currentUser = null;
@@ -37,7 +41,7 @@ let activeDecisionId = null;
 let activeStore = null;
 
 function savedDecisionsDialog() {
-    return document.getElementById("saved-decisions-dialog");
+    return document.getElementById(ELEMENT_IDS.savedDecisionsDialog);
 }
 
 function openSavedDecisionsDialog() {
@@ -69,7 +73,7 @@ function currentDecision(id) {
 
 function currentDecisions() {
     return {
-        model: document.getElementById("model").value,
+        model: document.getElementById(ELEMENT_IDS.model).value,
         decisions: DECISION_IDS.map(currentDecision),
     };
 }
@@ -90,13 +94,14 @@ function downloadSavedDecisionsFile() {
 }
 
 function showLoadError(message) {
-    const error = document.getElementById("load-decisions-error");
+    const error = document.getElementById(ELEMENT_IDS.loadDecisionsError);
     error.textContent = message;
     error.hidden = !message;
 }
 
 function showLoadStatus(message) {
-    document.getElementById("load-decisions-status").textContent = message;
+    document.getElementById(ELEMENT_IDS.loadDecisionsStatus).textContent =
+        message;
 }
 
 async function saveDecisions() {
@@ -158,14 +163,16 @@ async function loadDecisionsFromFile(event, setSelectedModel) {
 }
 
 function updateEmptyDialogState() {
-    const listElement = document.getElementById("saved-decisions-list");
-    const emptyMessage = document.getElementById("saved-decisions-empty");
+    const listElement = document.getElementById(ELEMENT_IDS.savedDecisionsList);
+    const emptyMessage = document.getElementById(
+        ELEMENT_IDS.savedDecisionsEmpty,
+    );
     emptyMessage.hidden = listElement.children.length > 0;
 }
 
 function createSavedDecisionItem(item, setSelectedModel) {
     const row = document.createElement("li");
-    row.className = "saved-decision-item";
+    row.className = CLASS_NAMES.savedDecisionItem;
 
     const title = document.createElement("span");
     title.className = "saved-decision-title";
@@ -219,7 +226,9 @@ async function openCloudLoadDialog(setSelectedModel) {
     showLoadError("");
     try {
         const items = await activeStore.list();
-        const listElement = document.getElementById("saved-decisions-list");
+        const listElement = document.getElementById(
+            ELEMENT_IDS.savedDecisionsList,
+        );
         listElement.replaceChildren(
             ...items.map((item) =>
                 createSavedDecisionItem(item, setSelectedModel),
@@ -232,44 +241,55 @@ async function openCloudLoadDialog(setSelectedModel) {
     }
 }
 
+function setAccountMenuOpen(open) {
+    const trigger = document.getElementById(ELEMENT_IDS.accountMenuTrigger);
+    const dropdown = document.getElementById(ELEMENT_IDS.accountMenuDropdown);
+    if (!trigger || !dropdown) {
+        return;
+    }
+    dropdown.hidden = !open;
+    trigger.setAttribute("aria-expanded", String(open));
+}
+
 function renderAuthState(user) {
     currentUser = user;
-    const signInLink = document.getElementById("sign-in-google");
-    const signedInUser = document.getElementById("signed-in-user");
-    const signOutButton = document.getElementById("sign-out");
-    if (!signInLink || !signedInUser || !signOutButton) {
+    setAccountMenuOpen(false);
+    const signInLink = document.getElementById(ELEMENT_IDS.signInGoogle);
+    const accountMenu = document.getElementById(ELEMENT_IDS.accountMenu);
+    const signedInUser = document.getElementById(ELEMENT_IDS.signedInUser);
+    if (!signInLink || !accountMenu || !signedInUser) {
         return;
     }
 
     if (user) {
         signInLink.hidden = true;
         signedInUser.textContent = user.name || user.email;
-        signedInUser.hidden = false;
-        signOutButton.hidden = false;
+        accountMenu.hidden = false;
         return;
     }
 
     signInLink.hidden = false;
     signedInUser.textContent = "";
-    signedInUser.hidden = true;
-    signOutButton.hidden = true;
+    accountMenu.hidden = true;
 }
 
 function trackChanges() {
-    const form = document.querySelector("form");
+    const form = document.querySelector(SELECTORS.form);
     form.addEventListener("input", (event) => {
-        if (event.target.id !== "load-decisions-file") {
+        if (event.target.id !== ELEMENT_IDS.loadDecisionsFile) {
             hasUnsavedChanges = true;
         }
     });
     form.addEventListener("click", (event) => {
-        if (event.target.closest(".add-row, .remove-row")) {
+        if (event.target.closest(`${SELECTORS.addRow}, ${SELECTORS.removeRow}`)) {
             hasUnsavedChanges = true;
         }
     });
-    document.getElementById("model").addEventListener("change", () => {
-        hasUnsavedChanges = true;
-    });
+    document
+        .getElementById(ELEMENT_IDS.model)
+        .addEventListener("change", () => {
+            hasUnsavedChanges = true;
+        });
 }
 
 export function resetSavedDecisionsState() {
@@ -285,37 +305,79 @@ export function initSavedDecisions({ setSelectedModel, decisionsStore } = {}) {
     trackChanges();
     renderAuthState(null);
 
-    const signInLink = document.getElementById("sign-in-google");
-    const signOutButton = document.getElementById("sign-out");
+    const signInLink = document.getElementById(ELEMENT_IDS.signInGoogle);
+    const accountMenu = document.getElementById(ELEMENT_IDS.accountMenu);
+    const menuTrigger = document.getElementById(ELEMENT_IDS.accountMenuTrigger);
+    const menuDropdown = document.getElementById(
+        ELEMENT_IDS.accountMenuDropdown,
+    );
+    const signOutButton = document.getElementById(ELEMENT_IDS.signOut);
+    const deleteAccountButton = document.getElementById(
+        ELEMENT_IDS.deleteAccount,
+    );
     if (signInLink) {
         signInLink.textContent = SIGN_IN_WITH_GOOGLE_LABEL;
+    }
+    if (menuTrigger && menuDropdown) {
+        menuTrigger.addEventListener("click", () => {
+            setAccountMenuOpen(menuDropdown.hidden);
+        });
+        document.addEventListener("click", (event) => {
+            if (accountMenu.isConnected && !accountMenu.contains(event.target)) {
+                setAccountMenuOpen(false);
+            }
+        });
+        document.addEventListener("keydown", (event) => {
+            if (accountMenu.isConnected && event.key === "Escape") {
+                setAccountMenuOpen(false);
+            }
+        });
     }
     if (signOutButton) {
         signOutButton.textContent = SIGN_OUT_LABEL;
         signOutButton.addEventListener("click", async () => {
+            setAccountMenuOpen(false);
             await activeStore.logout();
             activeDecisionId = null;
             renderAuthState(null);
         });
     }
+    if (deleteAccountButton) {
+        deleteAccountButton.textContent = DELETE_ACCOUNT_LABEL;
+        deleteAccountButton.addEventListener("click", async () => {
+            setAccountMenuOpen(false);
+            if (!window.confirm(DELETE_ACCOUNT_CONFIRMATION)) {
+                return;
+            }
+            showLoadStatus("");
+            showLoadError("");
+            try {
+                await activeStore.deleteAccount();
+                activeDecisionId = null;
+                renderAuthState(null);
+            } catch {
+                showLoadError(DELETE_ACCOUNT_ERROR);
+            }
+        });
+    }
 
     const dialog = savedDecisionsDialog();
     if (dialog) {
-        dialog.querySelector(".dialog-title").textContent =
+        dialog.querySelector(SELECTORS.dialogTitle).textContent =
             SAVED_DECISIONS_DIALOG_TITLE;
-        document.getElementById("saved-decisions-empty").textContent =
+        document.getElementById(ELEMENT_IDS.savedDecisionsEmpty).textContent =
             SAVED_DECISIONS_EMPTY;
-        const closeButton = dialog.querySelector(".dialog-close");
+        const closeButton = dialog.querySelector(SELECTORS.dialogClose);
         closeButton.textContent = SAVED_DECISIONS_CLOSE;
         closeButton.addEventListener("click", closeSavedDecisionsDialog);
     }
 
-    const saveButton = document.getElementById("save-decisions");
+    const saveButton = document.getElementById(ELEMENT_IDS.saveDecisions);
     saveButton.textContent = SAVE_LABEL;
     saveButton.addEventListener("click", saveDecisions);
 
-    const loadButton = document.getElementById("load-decisions");
-    const loadInput = document.getElementById("load-decisions-file");
+    const loadButton = document.getElementById(ELEMENT_IDS.loadDecisions);
+    const loadInput = document.getElementById(ELEMENT_IDS.loadDecisionsFile);
     loadButton.textContent = LOAD_LABEL;
     loadButton.addEventListener("click", () => {
         if (currentUser) {

@@ -197,3 +197,29 @@ export async function handleLogout(request, env) {
     );
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 }
+
+export async function handleDeleteAccount(request, env) {
+    const user = await authenticatedUser(request, env);
+    if (!user) {
+        return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await env.DB.batch([
+        env.DB.prepare("DELETE FROM saved_decisions WHERE user_id = ?").bind(
+            user.id,
+        ),
+        env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(user.id),
+        env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),
+    ]);
+
+    const url = new URL(request.url);
+    const headers = new Headers({ "Content-Type": "application/json" });
+    headers.append(
+        "Set-Cookie",
+        formatCookie(SESSION_COOKIE, "", {
+            maxAge: 0,
+            secure: url.protocol === "https:",
+        }),
+    );
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
+}

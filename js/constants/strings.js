@@ -35,6 +35,10 @@ export const REPLACE_CONFIRMATION =
     "Loading this file will replace your unsaved changes. Continue?";
 export const SIGN_IN_WITH_GOOGLE_LABEL = "Sign in with Google";
 export const SIGN_OUT_LABEL = "Sign out";
+export const DELETE_ACCOUNT_LABEL = "Delete account";
+export const DELETE_ACCOUNT_CONFIRMATION =
+    "Delete your account and all saved decisions? This cannot be undone.";
+export const DELETE_ACCOUNT_ERROR = "Account could not be deleted.";
 export const SAVED_DECISIONS_DIALOG_TITLE = "Saved decisions";
 export const SAVED_DECISIONS_EMPTY = "No saved decisions yet.";
 export const DELETE_SAVED_DECISION_LABEL = "Delete";

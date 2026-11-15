@@ -1,5 +1,6 @@
 import {
     authenticatedUser,
+    handleDeleteAccount,
     handleGoogleAuthCallback,
     handleGoogleAuthStart,
     handleLogout,
@@ -58,6 +59,10 @@ async function routeRequest(request, env, options) {
 
     if (request.method === "POST" && pathname === "/api/auth/logout") {
         return handleLogout(request, env);
+    }
+
+    if (request.method === "DELETE" && pathname === "/api/auth/account") {
+        return handleDeleteAccount(request, env);
     }
 
     if (

@@ -18,8 +18,24 @@
       <h1>Decision calculator</h1>
       <div class="auth-controls">
         <a id="sign-in-google" class="auth-button" href="/api/auth/google"></a>
-        <span id="signed-in-user" class="signed-in-user" hidden></span>
-        <button type="button" id="sign-out" class="auth-button" hidden></button>
+        <div id="account-menu" class="account-menu" hidden>
+          <button
+            type="button"
+            id="account-menu-trigger"
+            class="account-menu-trigger"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="account-menu-dropdown"
+          >
+            <svg class="account-avatar" aria-hidden="true"><use href="#icon-user"/></svg>
+            <span id="signed-in-user" class="signed-in-user"></span>
+            <svg class="account-chevron" aria-hidden="true"><use href="#icon-chevron-down"/></svg>
+          </button>
+          <div id="account-menu-dropdown" class="account-menu-dropdown" role="menu" hidden>
+            <button type="button" id="sign-out" class="account-menu-item" role="menuitem"></button>
+            <button type="button" id="delete-account" class="account-menu-item account-menu-item-danger" role="menuitem"></button>
+          </div>
+        </div>
       </div>
     </header>
     <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg">
@@ -28,6 +44,12 @@
       </symbol>
       <symbol id="icon-close" viewBox="0 0 24 24">
         <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </symbol>
+      <symbol id="icon-user" viewBox="0 0 24 24">
+        <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/>
+      </symbol>
+      <symbol id="icon-chevron-down" viewBox="0 0 24 24">
+        <path d="M7 10l5 5 5-5z"/>
       </symbol>
     </svg>
     <main class="page">

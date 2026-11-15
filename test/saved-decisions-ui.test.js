@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+    DELETE_ACCOUNT_CONFIRMATION,
+    DELETE_ACCOUNT_ERROR,
+    DELETE_ACCOUNT_LABEL,
     DELETE_SAVED_DECISION_LABEL,
     LOAD_ERROR,
     LOAD_LABEL,
@@ -13,6 +16,7 @@ import {
     SIGN_OUT_LABEL,
 } from "../js/constants/strings.js";
 import { enterConsideration, loadApp, setDecisionNames } from "./loadApp.js";
+import { ELEMENT_IDS, SELECTORS } from "../js/constants/selectors.js";
 
 const MAX_FILE_SIZE = 1_000_000;
 const GOOGLE_AUTH_PATH = "/api/auth/google";
@@ -43,7 +47,7 @@ function sampleSavedPayload(nameA = "Stay", nameB = "Leave") {
 }
 
 function selectSavedDecisions(saved, size = JSON.stringify(saved).length) {
-    const input = document.getElementById("load-decisions-file");
+    const input = document.getElementById(ELEMENT_IDS.loadDecisionsFile);
     Object.defineProperty(input, "files", {
         configurable: true,
         value: [
@@ -62,20 +66,20 @@ describe("loading saved decisions when signed out", () => {
     });
 
     it("offers to sign in with Google when signed out", () => {
-        const signInLink = document.getElementById("sign-in-google");
-        const signOutButton = document.getElementById("sign-out");
+        const signInLink = document.getElementById(ELEMENT_IDS.signInGoogle);
+        const accountMenu = document.getElementById(ELEMENT_IDS.accountMenu);
 
         expect(signInLink.textContent).toBe(SIGN_IN_WITH_GOOGLE_LABEL);
         expect(signInLink.getAttribute("href")).toBe(GOOGLE_AUTH_PATH);
         expect(signInLink.hidden).toBe(false);
-        expect(signOutButton.hidden).toBe(true);
+        expect(accountMenu.hidden).toBe(true);
     });
 
     it("announces a successful load to assistive technology", async () => {
         selectSavedDecisions(sampleSavedPayload(), MAX_FILE_SIZE);
 
         await vi.waitFor(() => {
-            const announcement = document.querySelector('[role="status"]');
+            const announcement = document.querySelector(SELECTORS.statusRole);
             expect(announcement).not.toBeNull();
             expect(announcement.textContent.trim()).not.toBe("");
         });
@@ -83,7 +87,7 @@ describe("loading saved decisions when signed out", () => {
 
     it("rejects an oversized file with an accessible error", async () => {
         const initialDecisionName = "Keep this decision";
-        const currentName = document.getElementById("A");
+        const currentName = document.getElementById(ELEMENT_IDS.decisionA);
         currentName.value = initialDecisionName;
 
         selectSavedDecisions(
@@ -92,7 +96,7 @@ describe("loading saved decisions when signed out", () => {
         );
 
         await vi.waitFor(() => {
-            const error = document.querySelector('[role="alert"]');
+            const error = document.querySelector(SELECTORS.alertRole);
             expect(error.hidden).toBe(false);
             expect(error.textContent).toBe(LOAD_ERROR);
             expect(currentName.value).toBe(initialDecisionName);
@@ -110,6 +114,7 @@ describe("saving and loading decisions when signed in", () => {
         return {
             getUser: vi.fn().mockResolvedValue(TEST_USER),
             logout: vi.fn().mockResolvedValue(),
+            deleteAccount: vi.fn().mockResolvedValue(),
             list: vi.fn().mockResolvedValue([]),
             get: vi.fn().mockResolvedValue(
                 sampleSavedPayload(decisionA, decisionB),
@@ -123,29 +128,45 @@ describe("saving and loading decisions when signed in", () => {
         };
     }
 
-    it("shows who is signed in and lets them sign out", async () => {
+    it("shows who is signed in in an account menu and lets them sign out", async () => {
         const decisionsStore = createMockStore();
         loadApp({ decisionsStore });
 
-        const signInLink = document.getElementById("sign-in-google");
-        const signedInUser = document.getElementById("signed-in-user");
-        const signOutButton = document.getElementById("sign-out");
+        const signInLink = document.getElementById(ELEMENT_IDS.signInGoogle);
+        const accountMenu = document.getElementById(ELEMENT_IDS.accountMenu);
+        const menuTrigger = document.getElementById(
+            ELEMENT_IDS.accountMenuTrigger,
+        );
+        const menuDropdown = document.getElementById(
+            ELEMENT_IDS.accountMenuDropdown,
+        );
+        const signedInUser = document.getElementById(ELEMENT_IDS.signedInUser);
+        const signOutButton = document.getElementById(ELEMENT_IDS.signOut);
+        const deleteAccountButton = document.getElementById(
+            ELEMENT_IDS.deleteAccount,
+        );
 
         await vi.waitFor(() => {
             expect(signInLink.hidden).toBe(true);
-            expect(signedInUser.hidden).toBe(false);
+            expect(accountMenu.hidden).toBe(false);
             expect(signedInUser.textContent).toBe(TEST_USER.name);
-            expect(signOutButton.hidden).toBe(false);
+            expect(menuTrigger.getAttribute("aria-expanded")).toBe("false");
+            expect(menuDropdown.hidden).toBe(true);
             expect(signOutButton.textContent).toBe(SIGN_OUT_LABEL);
+            expect(deleteAccountButton.textContent).toBe(DELETE_ACCOUNT_LABEL);
         });
+
+        menuTrigger.click();
+        expect(menuTrigger.getAttribute("aria-expanded")).toBe("true");
+        expect(menuDropdown.hidden).toBe(false);
 
         signOutButton.click();
 
         await vi.waitFor(() => {
             expect(decisionsStore.logout).toHaveBeenCalledTimes(1);
             expect(signInLink.hidden).toBe(false);
-            expect(signedInUser.hidden).toBe(true);
-            expect(signOutButton.hidden).toBe(true);
+            expect(accountMenu.hidden).toBe(true);
+            expect(menuDropdown.hidden).toBe(true);
         });
     });
 
@@ -154,7 +175,9 @@ describe("saving and loading decisions when signed in", () => {
         loadApp({ decisionsStore });
 
         await vi.waitFor(() => {
-            expect(document.getElementById("sign-out").hidden).toBe(false);
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
         });
 
         setDecisionNames(decisionA, decisionB);
@@ -168,7 +191,8 @@ describe("saving and loading decisions when signed in", () => {
         await vi.waitFor(() => {
             expect(decisionsStore.save).toHaveBeenCalledTimes(1);
             expect(
-                document.getElementById("load-decisions-status").textContent,
+                document.getElementById(ELEMENT_IDS.loadDecisionsStatus)
+                    .textContent,
             ).toBe(SAVE_SUCCESS);
         });
         const [firstJson, firstId] = decisionsStore.save.mock.calls[0];
@@ -206,7 +230,9 @@ describe("saving and loading decisions when signed in", () => {
         loadApp({ decisionsStore });
 
         await vi.waitFor(() => {
-            expect(document.getElementById("sign-out").hidden).toBe(false);
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
         });
 
         const loadButton = [...document.querySelectorAll("button")].find(
@@ -214,18 +240,20 @@ describe("saving and loading decisions when signed in", () => {
         );
         loadButton.click();
 
-        const dialog = document.getElementById("saved-decisions-dialog");
+        const dialog = document.getElementById(
+            ELEMENT_IDS.savedDecisionsDialog,
+        );
         await vi.waitFor(() => {
             expect(dialog.open).toBe(true);
             expect(
-                dialog.querySelector(".dialog-title").textContent,
+                dialog.querySelector(SELECTORS.dialogTitle).textContent,
             ).toBe(SAVED_DECISIONS_DIALOG_TITLE);
             expect(
-                dialog.querySelectorAll(".saved-decision-item"),
+                dialog.querySelectorAll(SELECTORS.savedDecisionItem),
             ).toHaveLength(2);
         });
 
-        const items = dialog.querySelectorAll(".saved-decision-item");
+        const items = dialog.querySelectorAll(SELECTORS.savedDecisionItem);
         const secondDeleteButton = [...items[1].querySelectorAll("button")].find(
             (button) => button.textContent === DELETE_SAVED_DECISION_LABEL,
         );
@@ -234,7 +262,7 @@ describe("saving and loading decisions when signed in", () => {
         await vi.waitFor(() => {
             expect(decisionsStore.remove).toHaveBeenCalledWith(secondSavedId);
             expect(
-                dialog.querySelectorAll(".saved-decision-item"),
+                dialog.querySelectorAll(SELECTORS.savedDecisionItem),
             ).toHaveLength(1);
         });
 
@@ -251,10 +279,15 @@ describe("saving and loading decisions when signed in", () => {
         await vi.waitFor(() => {
             expect(confirmSpy).toHaveBeenCalledWith(REPLACE_CONFIRMATION);
             expect(decisionsStore.get).toHaveBeenCalledWith(savedId);
-            expect(document.getElementById("A").value).toBe(decisionA);
-            expect(document.getElementById("B").value).toBe(decisionB);
             expect(
-                document.getElementById("load-decisions-status").textContent,
+                document.getElementById(ELEMENT_IDS.decisionA).value,
+            ).toBe(decisionA);
+            expect(
+                document.getElementById(ELEMENT_IDS.decisionB).value,
+            ).toBe(decisionB);
+            expect(
+                document.getElementById(ELEMENT_IDS.loadDecisionsStatus)
+                    .textContent,
             ).toBe(LOAD_SUCCESS);
             expect(dialog.open).toBe(false);
         });
@@ -269,17 +302,97 @@ describe("saving and loading decisions when signed in", () => {
         loadApp({ decisionsStore });
 
         await vi.waitFor(() => {
-            expect(document.getElementById("sign-out").hidden).toBe(false);
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
         });
 
-        document.getElementById("load-decisions").click();
+        document.getElementById(ELEMENT_IDS.loadDecisions).click();
 
-        const dialog = document.getElementById("saved-decisions-dialog");
+        const dialog = document.getElementById(
+            ELEMENT_IDS.savedDecisionsDialog,
+        );
         await vi.waitFor(() => {
             expect(dialog.open).toBe(true);
-            const empty = document.getElementById("saved-decisions-empty");
+            const empty = document.getElementById(
+                ELEMENT_IDS.savedDecisionsEmpty,
+            );
             expect(empty.hidden).toBe(false);
             expect(empty.textContent).toBe(SAVED_DECISIONS_EMPTY);
         });
+    });
+
+    it("prompts for confirmation before deleting the user's account", async () => {
+        const decisionsStore = createMockStore();
+        loadApp({ decisionsStore });
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        const menuTrigger = document.getElementById(
+            ELEMENT_IDS.accountMenuTrigger,
+        );
+        const deleteButton = document.getElementById(ELEMENT_IDS.deleteAccount);
+
+        const confirmSpy = vi
+            .spyOn(window, "confirm")
+            .mockReturnValueOnce(false)
+            .mockReturnValueOnce(true);
+
+        menuTrigger.click();
+        deleteButton.click();
+
+        expect(confirmSpy).toHaveBeenCalledWith(DELETE_ACCOUNT_CONFIRMATION);
+        expect(decisionsStore.deleteAccount).not.toHaveBeenCalled();
+        expect(document.getElementById(ELEMENT_IDS.accountMenu).hidden).toBe(
+            false,
+        );
+
+        menuTrigger.click();
+        deleteButton.click();
+
+        await vi.waitFor(() => {
+            expect(decisionsStore.deleteAccount).toHaveBeenCalledTimes(1);
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(true);
+            expect(
+                document.getElementById(ELEMENT_IDS.signInGoogle).hidden,
+            ).toBe(false);
+        });
+
+        confirmSpy.mockRestore();
+    });
+
+    it("shows an error if deleting the account fails", async () => {
+        const decisionsStore = createMockStore({
+            deleteAccount: vi.fn().mockRejectedValue(new Error("boom")),
+        });
+        loadApp({ decisionsStore });
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+        document.getElementById(ELEMENT_IDS.accountMenuTrigger).click();
+        document.getElementById(ELEMENT_IDS.deleteAccount).click();
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.loadDecisionsError)
+                    .textContent,
+            ).toBe(DELETE_ACCOUNT_ERROR);
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        confirmSpy.mockRestore();
     });
 });

@@ -58,6 +58,76 @@ body {
     background: rgba(255, 255, 255, 0.12);
 }
 
+.account-menu {
+    position: relative;
+}
+
+.account-menu-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: inherit;
+    color: var(--color-on-primary);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: var(--radius);
+    padding: 0.35rem 0.65rem;
+    cursor: pointer;
+}
+
+.account-menu-trigger:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.account-avatar {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    flex-shrink: 0;
+}
+
+.account-chevron {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    flex-shrink: 0;
+}
+
+.account-menu-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.35rem);
+    min-width: 170px;
+    background: #fff;
+    color: var(--color-on-surface);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-raised);
+    padding: 0.25rem 0;
+    z-index: 20;
+}
+
+.account-menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    padding: 0.55rem 0.9rem;
+    cursor: pointer;
+}
+
+.account-menu-item:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.account-menu-item-danger {
+    color: var(--color-con);
+}
+
 .icon-sprite {
     position: absolute;
     width: 0;

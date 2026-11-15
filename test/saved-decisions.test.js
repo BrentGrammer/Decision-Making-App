@@ -230,4 +230,18 @@ describe("account decisions store", () => {
         expect(fetchMock.mock.calls[4][0]).toBe(itemPath);
         expect(fetchMock.mock.calls[4][1].method).toBe("DELETE");
     });
+
+    it("deletes the signed-in user's account", async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce({ ok: true })
+            .mockResolvedValueOnce({ ok: false, status: 500 });
+        const store = createCloudDecisionsStore({ fetch: fetchMock });
+
+        await store.deleteAccount();
+        expect(fetchMock.mock.calls[0][0]).toBe("/api/auth/account");
+        expect(fetchMock.mock.calls[0][1].method).toBe("DELETE");
+
+        await expect(store.deleteAccount()).rejects.toThrow();
+    });
 });
