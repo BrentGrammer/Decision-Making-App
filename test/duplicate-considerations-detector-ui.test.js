@@ -395,18 +395,17 @@ describe("duplicate consideration warning", () => {
     expect(sliders[0].value).toBe("7");
   });
 
-  it("keeps a dismissed warning hidden when other considerations change and scanned again", async () => {
+  it("shows a dismissed warning again when scanned again", async () => {
     enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
     scanForDuplicates();
     await vi.waitFor(() =>
       expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(1),
     );
     dismissDuplicateWarning(DECISION_A_PROS);
+    expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(0);
     const detectionsBefore =
       duplicateConsiderationsDetector.mock.calls.length;
 
-    addConsideration(DECISION_A_PROS);
-    enterConsideration(DECISION_A_PROS, 2, "Stable team");
     scanForDuplicates();
 
     await vi.waitFor(() =>
@@ -414,8 +413,9 @@ describe("duplicate consideration warning", () => {
         detectionsBefore,
       ),
     );
-    await waitForPendingDetections();
-    expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(0);
+    await vi.waitFor(() =>
+      expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(1),
+    );
   });
 
   it("shows no warning and no error when detection fails", async () => {

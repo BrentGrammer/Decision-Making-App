@@ -25,7 +25,6 @@ const noopDetector = async () => [];
 let detectDuplicates = noopDetector;
 let privacyConfirmed = false;
 let scanGeneration = 0;
-const dismissedWarnings = new Set();
 
 function privacyDialog() {
     return document.getElementById("duplicate-privacy-dialog");
@@ -61,10 +60,6 @@ function warningContainer(groupId) {
     );
 }
 
-function dismissedKey(groupId, considerations) {
-    return `${groupId}:${JSON.stringify([...considerations].sort())}`;
-}
-
 function createWarningElement(groupId, considerations) {
     const warning = document.createElement("div");
     warning.className = DUPLICATE_WARNING_CLASS;
@@ -92,7 +87,6 @@ function createWarningElement(groupId, considerations) {
     dismiss.className = "duplicate-warning-dismiss";
     dismiss.textContent = DUPLICATE_WARNING_DISMISS;
     dismiss.addEventListener("click", () => {
-        dismissedWarnings.add(dismissedKey(groupId, considerations));
         warning.remove();
     });
 
@@ -108,7 +102,6 @@ function renderGroupWarnings(groupId, duplicateGroups) {
     }
     const elements = duplicateGroups
         .filter((group) => group.length >= 2)
-        .filter((group) => !dismissedWarnings.has(dismissedKey(groupId, group)))
         .map((group) => createWarningElement(groupId, group));
     container.replaceChildren(...elements);
 }
@@ -215,7 +208,6 @@ export function pruneDuplicateWarnings(groupId) {
 
 export function clearDuplicateWarnings() {
     scanGeneration += 1;
-    dismissedWarnings.clear();
     for (const group of Object.values(CONSIDERATION_GROUPS)) {
         warningContainer(group.id)?.replaceChildren();
     }
