@@ -23,17 +23,20 @@
       <p><strong>Decision calculator</strong> is a tool for comparing options by rating pros and cons.</p>
 
       <h3>Using the app without signing in</h3>
-      <p>Calculations run in your browser. When signed out, <strong>Save</strong> and <strong>Load</strong> only read and write <code>.json</code> files on your device.</p>
+      <p>The app can be used without signing in or saving data to application servers. When signed out, <strong>Save</strong> and <strong>Load</strong> download and read local <code>.json</code> files on the device.</p>
 
       <h3>Signing in with Google</h3>
-      <p>If you choose to sign in with Google, we request only your Google account identifier and email address (<code>openid email</code>). We do not request your profile picture, contacts, or access to any other Google services.</p>
-      <p>We store your account record, an HTTP-only session cookie, and any decision comparisons you explicitly save in our database (Cloudflare D1).</p>
+      <p>When signing in with Google, only the Google account identifier and email address are requested. Profile pictures, contacts, and access to other Google services are not requested.</p>
+      <p>The account record, a session cookie, and any explicitly saved decision comparisons are stored in the application database.</p>
 
       <h3>Duplicate consideration detection</h3>
-      <p>If you click <strong>Detect duplicate considerations</strong> and confirm the prompt, the text of your pros and cons is sent to an external AI API solely to check for duplicate items.</p>
+      <p>Clicking <strong>Detect duplicate considerations</strong> and confirming the prompt sends the text of the pros and cons to an external AI API solely to check for duplicate items.</p>
 
-      <h3>Deleting your data</h3>
-      <p>You can delete individual saved comparisons from the <strong>Load</strong> dialog, or delete your account and all associated sessions and saved comparisons at any time from the account menu (<strong>Delete account</strong>).</p>
+      <h3>Deleting data</h3>
+      <p>Use <strong>Load → Delete</strong> to remove a saved comparison, or open the account menu and click <strong>Delete account</strong> to remove the account and all saved data from application servers.</p>
+
+      <h3>Disclaimer</h3>
+      <p>The application is provided as-is, without warranty or liability of any kind. Data sent when signed in or stored on application servers is not guaranteed to remain private, intact, or available. Use of the application is at the user's own risk of data loss or exposure.</p>
     </main>
   </body>
 </html>

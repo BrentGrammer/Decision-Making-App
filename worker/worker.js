@@ -62,7 +62,7 @@ async function routeRequest(request, env, options) {
     }
 
     if (request.method === "DELETE" && pathname === "/api/auth/account") {
-        return handleDeleteAccount(request, env);
+        return handleDeleteAccount(request, env, options);
     }
 
     if (

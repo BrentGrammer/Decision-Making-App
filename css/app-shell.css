@@ -144,11 +144,21 @@ body {
 
 .privacy-page {
     max-width: 720px;
-    line-height: 1.6;
+    line-height: 1.45;
 }
 
 .privacy-page h2 {
-    margin-top: 0;
+    margin: 0 0 0.5rem;
+}
+
+.privacy-page h3 {
+    margin: 1.15rem 0 0.2rem;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.privacy-page p {
+    margin: 0 0 0.5rem;
 }
 
 .icon-sprite {

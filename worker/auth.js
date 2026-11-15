@@ -1,5 +1,6 @@
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 const OAUTH_STATE_COOKIE = "oauth_state";
 const SESSION_COOKIE = "session_token";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
@@ -81,6 +82,7 @@ export function handleGoogleAuthStart(request, env) {
     );
     redirectUrl.searchParams.set("response_type", "code");
     redirectUrl.searchParams.set("scope", "openid email");
+    redirectUrl.searchParams.set("prompt", "select_account");
     redirectUrl.searchParams.set("state", state);
 
     const headers = new Headers({ Location: redirectUrl.toString() });
@@ -155,10 +157,15 @@ export async function handleGoogleAuthCallback(request, env, options = {}) {
     const sessionToken = `${crypto.randomUUID()}-${crypto.randomUUID()}`;
     const tokenHash = await sha256Hex(sessionToken);
     await env.DB.prepare(
-        `INSERT INTO sessions (id, user_id, token_hash, expires_at)
-         VALUES (?, ?, ?, datetime('now', '+30 days'))`,
+        `INSERT INTO sessions (id, user_id, token_hash, google_access_token, expires_at)
+         VALUES (?, ?, ?, ?, datetime('now', '+30 days'))`,
     )
-        .bind(crypto.randomUUID(), userRow.id, tokenHash)
+        .bind(
+            crypto.randomUUID(),
+            userRow.id,
+            tokenHash,
+            tokenPayload.access_token ?? null,
+        )
         .run();
 
     const secure = url.protocol === "https:";
@@ -198,11 +205,19 @@ export async function handleLogout(request, env) {
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 }
 
-export async function handleDeleteAccount(request, env) {
+export async function handleDeleteAccount(request, env, options = {}) {
     const user = await authenticatedUser(request, env);
     if (!user) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { results: tokenRows = [] } = await env.DB.prepare(
+        `SELECT google_access_token
+         FROM sessions
+         WHERE user_id = ? AND google_access_token IS NOT NULL`,
+    )
+        .bind(user.id)
+        .all();
 
     await env.DB.batch([
         env.DB.prepare("DELETE FROM saved_decisions WHERE user_id = ?").bind(
@@ -211,6 +226,23 @@ export async function handleDeleteAccount(request, env) {
         env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(user.id),
         env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),
     ]);
+
+    const fetchFn = options.fetch ?? globalThis.fetch;
+    for (const row of tokenRows) {
+        try {
+            await fetchFn(GOOGLE_REVOKE_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: new URLSearchParams({
+                    token: row.google_access_token,
+                }).toString(),
+            });
+        } catch {
+            // Best-effort revocation; local account deletion already succeeded.
+        }
+    }
 
     const url = new URL(request.url);
     const headers = new Headers({ "Content-Type": "application/json" });

@@ -87,6 +87,7 @@ describe("application server", () => {
         sub = "google-sub-123",
         email = "alex@example.com",
         name = "Alex Rivera",
+        accessToken = "google-access-token",
     } = {}) {
         const env = {
             DB: db,
@@ -107,6 +108,7 @@ describe("application server", () => {
             ok: true,
             status: 200,
             json: async () => ({
+                access_token: accessToken,
                 id_token: buildJwtIdToken({ sub, email, name }),
             }),
         }));
@@ -309,6 +311,7 @@ describe("application server", () => {
                 `${origin}/api/auth/google/callback`,
             );
             expect(location.searchParams.get("response_type")).toBe("code");
+            expect(location.searchParams.get("prompt")).toBe("select_account");
             const state = location.searchParams.get("state");
             expect(state).toBeTruthy();
             expect(
@@ -580,15 +583,27 @@ describe("application server", () => {
             );
             expect(bobCreate.status).toBe(201);
 
+            const revokeFetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
             const deleteResponse = await worker.fetch(
                 new Request("https://example.com/api/auth/account", {
                     method: "DELETE",
                     headers: { Cookie: alice.sessionCookie },
                 }),
                 alice.env,
+                { fetch: revokeFetch },
             );
             expect(deleteResponse.status).toBe(200);
             expect(await deleteResponse.json()).toEqual({ ok: true });
+            expect(revokeFetch).toHaveBeenCalledWith(
+                "https://oauth2.googleapis.com/revoke",
+                expect.objectContaining({
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: "token=google-access-token",
+                }),
+            );
             expect(
                 cookiePair(deleteResponse.headers.getSetCookie(), "session_token"),
             ).toBe("session_token=");
@@ -609,6 +624,29 @@ describe("application server", () => {
             );
             expect(bobDecisions.status).toBe(200);
             expect((await bobDecisions.json()).decisions).toHaveLength(1);
+        });
+
+        it("still deletes the account if revoking the Google token fails", async () => {
+            const alice = await signInTestUser({
+                sub: "google-alice-revoke-fail",
+                email: "alice-revoke-fail@example.com",
+                name: "Alice Revoke Fail",
+                accessToken: "expired-access-token",
+            });
+
+            const deleteResponse = await worker.fetch(
+                new Request("https://example.com/api/auth/account", {
+                    method: "DELETE",
+                    headers: { Cookie: alice.sessionCookie },
+                }),
+                alice.env,
+                {
+                    fetch: vi.fn().mockRejectedValue(new Error("network error")),
+                },
+            );
+
+            expect(deleteResponse.status).toBe(200);
+            expect(await deleteResponse.json()).toEqual({ ok: true });
         });
     });
 });
