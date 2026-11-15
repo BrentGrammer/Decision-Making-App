@@ -9,12 +9,17 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "serve": "vite",
-    "stop-server": "fuser -k 5173/tcp 2>/dev/null || npx --yes kill-port 5173 2>/dev/null || true"
+    "stop-server": "fuser -k 5173/tcp 2>/dev/null || npx --yes kill-port 5173 2>/dev/null || true",
+    "db:migrate:local": "wrangler d1 execute decision-making-app-db --local --file=./schema.sql",
+    "db:migrate:remote": "wrangler d1 execute decision-making-app-db --remote --file=./schema.sql",
+    "dev:cf": "vite build && wrangler dev",
+    "deploy": "vite build && wrangler deploy"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "jsdom": "^26.1.0",
     "vite": "^7.3.6",
-    "vitest": "5.1.0"
+    "vitest": "5.1.0",
+    "wrangler": "4.162.0"
   }
 }

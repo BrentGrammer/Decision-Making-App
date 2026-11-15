@@ -53,7 +53,7 @@ function extractDuplicatePairs(count, answers = {}) {
 }
 
 export function createJevDuplicatePairsDetector({
-    apiKey = import.meta.env?.VITE_OPENROUTER_API_KEY,
+    apiKey,
     fetch = globalThis.fetch,
 } = {}) {
     return async function detectDuplicatePairs(considerations) {

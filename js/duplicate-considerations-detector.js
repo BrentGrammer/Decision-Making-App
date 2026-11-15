@@ -1,4 +1,4 @@
-import { createJevDuplicatePairsDetector } from "./jev-duplicate-detector.js";
+const DUPLICATE_CONSIDERATIONS_ENDPOINT = "/api/duplicate-considerations";
 
 function mergeConnectedPairs(count, pairs) {
     const adjacency = Array.from({ length: count }, () => []);
@@ -32,13 +32,40 @@ function mergeConnectedPairs(count, pairs) {
     return groups;
 }
 
+function createApiDuplicatePairsDetector({ fetch = globalThis.fetch } = {}) {
+    return async function detectDuplicatePairs(considerations) {
+        if (considerations.length < 2) {
+            return [];
+        }
+
+        const response = await fetch(DUPLICATE_CONSIDERATIONS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ considerations }),
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                `Duplicate detection request failed (${response.status})`,
+            );
+        }
+
+        const reply = await response.json();
+        return Array.isArray(reply?.duplicatePairs)
+            ? reply.duplicatePairs
+            : [];
+    };
+}
+
 export function createDuplicateConsiderationsDetector({
     detectDuplicatePairs,
     ...providerOptions
 } = {}) {
     const findPairs =
         detectDuplicatePairs ??
-        createJevDuplicatePairsDetector(providerOptions);
+        createApiDuplicatePairsDetector(providerOptions);
 
     return async function detectDuplicateConsiderations(considerations) {
         if (considerations.length < 2) {
