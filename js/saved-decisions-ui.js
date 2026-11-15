@@ -17,6 +17,7 @@ import {
     SIGN_OUT_LABEL,
 } from "./constants/strings.js";
 import { clearDecisionValidation } from "./decision-validation.js";
+import { withButtonLoading } from "./loading-spinner.js";
 import { showResult } from "./result-view.js";
 import {
     MAX_SAVED_DECISIONS_FILE_SIZE,
@@ -111,17 +112,28 @@ async function saveDecisions() {
         downloadSavedDecisionsFile();
         return;
     }
-    showLoadStatus("");
-    showLoadError("");
-    try {
-        const json = serializeSavedDecisions(currentDecisions());
-        const savedRecord = await activeStore.save(json, activeDecisionId);
-        activeDecisionId = savedRecord?.id ?? activeDecisionId;
-        hasUnsavedChanges = false;
-        showLoadStatus(SAVE_SUCCESS);
-    } catch {
-        showLoadError(SAVE_ERROR);
-    }
+    const saveButton = document.getElementById(ELEMENT_IDS.saveDecisions);
+    const loadButton = document.getElementById(ELEMENT_IDS.loadDecisions);
+    await withButtonLoading(
+        saveButton,
+        async () => {
+            showLoadStatus("");
+            showLoadError("");
+            try {
+                const json = serializeSavedDecisions(currentDecisions());
+                const savedRecord = await activeStore.save(
+                    json,
+                    activeDecisionId,
+                );
+                activeDecisionId = savedRecord?.id ?? activeDecisionId;
+                hasUnsavedChanges = false;
+                showLoadStatus(SAVE_SUCCESS);
+            } catch {
+                showLoadError(SAVE_ERROR);
+            }
+        },
+        { alsoDisable: [loadButton] },
+    );
 }
 
 function restoreSavedDecisions({ model, decisions }, setSelectedModel) {
@@ -172,6 +184,16 @@ function updateEmptyDialogState() {
     emptyMessage.hidden = listElement.children.length > 0;
 }
 
+function dialogActionButtons(excludeButton) {
+    const listElement = document.getElementById(ELEMENT_IDS.savedDecisionsList);
+    if (!listElement) {
+        return [];
+    }
+    return [...listElement.querySelectorAll("button")].filter(
+        (button) => button !== excludeButton,
+    );
+}
+
 function createSavedDecisionItem(item, setSelectedModel) {
     const row = document.createElement("li");
     row.className = CLASS_NAMES.savedDecisionItem;
@@ -188,21 +210,30 @@ function createSavedDecisionItem(item, setSelectedModel) {
     loadButton.className = "button";
     loadButton.textContent = LOAD_LABEL;
     loadButton.addEventListener("click", async () => {
-        showLoadStatus("");
-        showLoadError("");
-        try {
-            const saved = await activeStore.get(item.id);
-            if (hasUnsavedChanges && !window.confirm(REPLACE_CONFIRMATION)) {
-                return;
-            }
-            restoreSavedDecisions(saved, setSelectedModel);
-            activeDecisionId = item.id;
-            closeSavedDecisionsDialog();
-            showLoadStatus(LOAD_SUCCESS);
-        } catch {
-            closeSavedDecisionsDialog();
-            showLoadError(LOAD_ERROR);
-        }
+        await withButtonLoading(
+            loadButton,
+            async () => {
+                showLoadStatus("");
+                showLoadError("");
+                try {
+                    const saved = await activeStore.get(item.id);
+                    if (
+                        hasUnsavedChanges &&
+                        !window.confirm(REPLACE_CONFIRMATION)
+                    ) {
+                        return;
+                    }
+                    restoreSavedDecisions(saved, setSelectedModel);
+                    activeDecisionId = item.id;
+                    closeSavedDecisionsDialog();
+                    showLoadStatus(LOAD_SUCCESS);
+                } catch {
+                    closeSavedDecisionsDialog();
+                    showLoadError(LOAD_ERROR);
+                }
+            },
+            { alsoDisable: dialogActionButtons(loadButton) },
+        );
     });
 
     const deleteButton = document.createElement("button");
@@ -210,12 +241,18 @@ function createSavedDecisionItem(item, setSelectedModel) {
     deleteButton.className = "button button-secondary";
     deleteButton.textContent = DELETE_SAVED_DECISION_LABEL;
     deleteButton.addEventListener("click", async () => {
-        await activeStore.remove(item.id);
-        if (activeDecisionId === item.id) {
-            activeDecisionId = null;
-        }
-        row.remove();
-        updateEmptyDialogState();
+        await withButtonLoading(
+            deleteButton,
+            async () => {
+                await activeStore.remove(item.id);
+                if (activeDecisionId === item.id) {
+                    activeDecisionId = null;
+                }
+                row.remove();
+                updateEmptyDialogState();
+            },
+            { alsoDisable: dialogActionButtons(deleteButton) },
+        );
     });
 
     actions.append(loadButton, deleteButton);
@@ -224,23 +261,31 @@ function createSavedDecisionItem(item, setSelectedModel) {
 }
 
 async function openCloudLoadDialog(setSelectedModel) {
-    showLoadStatus("");
-    showLoadError("");
-    try {
-        const items = await activeStore.list();
-        const listElement = document.getElementById(
-            ELEMENT_IDS.savedDecisionsList,
-        );
-        listElement.replaceChildren(
-            ...items.map((item) =>
-                createSavedDecisionItem(item, setSelectedModel),
-            ),
-        );
-        updateEmptyDialogState();
-        openSavedDecisionsDialog();
-    } catch {
-        showLoadError(LOAD_ERROR);
-    }
+    const loadButton = document.getElementById(ELEMENT_IDS.loadDecisions);
+    const saveButton = document.getElementById(ELEMENT_IDS.saveDecisions);
+    await withButtonLoading(
+        loadButton,
+        async () => {
+            showLoadStatus("");
+            showLoadError("");
+            try {
+                const items = await activeStore.list();
+                const listElement = document.getElementById(
+                    ELEMENT_IDS.savedDecisionsList,
+                );
+                listElement.replaceChildren(
+                    ...items.map((item) =>
+                        createSavedDecisionItem(item, setSelectedModel),
+                    ),
+                );
+                updateEmptyDialogState();
+                openSavedDecisionsDialog();
+            } catch {
+                showLoadError(LOAD_ERROR);
+            }
+        },
+        { alsoDisable: [saveButton] },
+    );
 }
 
 function setAccountMenuOpen(open) {
@@ -367,10 +412,16 @@ export function initSavedDecisions({ setSelectedModel, decisionsStore } = {}) {
     if (signOutButton) {
         signOutButton.textContent = SIGN_OUT_LABEL;
         signOutButton.addEventListener("click", async () => {
-            setAccountMenuOpen(false);
-            await activeStore.logout();
-            activeDecisionId = null;
-            renderAuthState(null);
+            await withButtonLoading(
+                signOutButton,
+                async () => {
+                    setAccountMenuOpen(false);
+                    await activeStore.logout();
+                    activeDecisionId = null;
+                    renderAuthState(null);
+                },
+                { alsoDisable: [menuTrigger, deleteAccountButton] },
+            );
         });
     }
     if (deleteAccountButton) {
@@ -380,15 +431,21 @@ export function initSavedDecisions({ setSelectedModel, decisionsStore } = {}) {
             if (!window.confirm(DELETE_ACCOUNT_CONFIRMATION)) {
                 return;
             }
-            showLoadStatus("");
-            showLoadError("");
-            try {
-                await activeStore.deleteAccount();
-                activeDecisionId = null;
-                renderAuthState(null);
-            } catch {
-                showLoadError(DELETE_ACCOUNT_ERROR);
-            }
+            await withButtonLoading(
+                deleteAccountButton,
+                async () => {
+                    showLoadStatus("");
+                    showLoadError("");
+                    try {
+                        await activeStore.deleteAccount();
+                        activeDecisionId = null;
+                        renderAuthState(null);
+                    } catch {
+                        showLoadError(DELETE_ACCOUNT_ERROR);
+                    }
+                },
+                { alsoDisable: [menuTrigger, signOutButton] },
+            );
         });
     }
 

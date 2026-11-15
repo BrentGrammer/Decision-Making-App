@@ -19,6 +19,7 @@ import {
     removeDuplicateConsiderations,
 } from "./consideration-rows.js";
 import { showValidationDialog } from "./decision-validation.js";
+import { withButtonLoading } from "./loading-spinner.js";
 
 const noopDetector = async () => [];
 
@@ -136,9 +137,12 @@ async function scanGroup(groupId, generation) {
 async function scanAllGroups() {
     scanGeneration += 1;
     const generation = scanGeneration;
-    await Promise.all(
-        Object.values(CONSIDERATION_GROUPS).map((group) =>
-            scanGroup(group.id, generation),
+    const trigger = document.getElementById("detect-duplicates");
+    await withButtonLoading(trigger, () =>
+        Promise.all(
+            Object.values(CONSIDERATION_GROUPS).map((group) =>
+                scanGroup(group.id, generation),
+            ),
         ),
     );
 }

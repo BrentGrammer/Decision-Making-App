@@ -230,6 +230,36 @@ body {
     box-shadow: none;
 }
 
+.button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.button.is-loading {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: loading-spin 0.65s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .button-secondary {
     background: var(--color-panel);
     color: var(--color-pro);

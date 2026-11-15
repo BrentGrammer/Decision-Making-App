@@ -454,4 +454,32 @@ describe("duplicate consideration warning", () => {
 
     expect(allDuplicateWarnings()).toHaveLength(0);
   });
+
+  it("disables the detect button and shows a spinner while detection is running", async () => {
+    let resolveDetect;
+    const pendingDetector = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveDetect = resolve;
+        }),
+    );
+    startAppWith(pendingDetector);
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
+
+    const detectButton = document.getElementById("detect-duplicates");
+    scanForDuplicates();
+
+    expect(pendingDetector).toHaveBeenCalledTimes(1);
+    expect(detectButton.disabled).toBe(true);
+    expect(detectButton.getAttribute("aria-busy")).toBe("true");
+    expect(detectButton.querySelector(".loading-spinner")).not.toBeNull();
+
+    resolveDetect([]);
+
+    await vi.waitFor(() => {
+      expect(detectButton.disabled).toBe(false);
+    });
+    expect(detectButton.getAttribute("aria-busy")).toBeNull();
+    expect(detectButton.querySelector(".loading-spinner")).toBeNull();
+  });
 });

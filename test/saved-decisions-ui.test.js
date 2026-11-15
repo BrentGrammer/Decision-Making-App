@@ -441,4 +441,136 @@ describe("saving and loading decisions when signed in", () => {
 
         confirmSpy.mockRestore();
     });
+
+    it("disables save and load buttons and shows a spinner while saving", async () => {
+        let resolveSave;
+        const decisionsStore = createMockStore({
+            save: vi.fn(
+                () =>
+                    new Promise((resolve) => {
+                        resolveSave = resolve;
+                    }),
+            ),
+        });
+        loadApp({ decisionsStore });
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        const saveButton = document.getElementById(ELEMENT_IDS.saveDecisions);
+        const loadButton = document.getElementById(ELEMENT_IDS.loadDecisions);
+
+        saveButton.click();
+        saveButton.click();
+
+        expect(decisionsStore.save).toHaveBeenCalledTimes(1);
+        expect(saveButton.disabled).toBe(true);
+        expect(loadButton.disabled).toBe(true);
+        expect(saveButton.getAttribute("aria-busy")).toBe("true");
+        expect(saveButton.querySelector(".loading-spinner")).not.toBeNull();
+
+        resolveSave({ id: savedId });
+
+        await vi.waitFor(() => {
+            expect(saveButton.disabled).toBe(false);
+            expect(loadButton.disabled).toBe(false);
+        });
+        expect(saveButton.getAttribute("aria-busy")).toBeNull();
+        expect(saveButton.querySelector(".loading-spinner")).toBeNull();
+    });
+
+    it("disables load and save buttons and shows a spinner while fetching saved decisions", async () => {
+        let resolveList;
+        const decisionsStore = createMockStore({
+            list: vi.fn(
+                () =>
+                    new Promise((resolve) => {
+                        resolveList = resolve;
+                    }),
+            ),
+        });
+        loadApp({ decisionsStore });
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        const saveButton = document.getElementById(ELEMENT_IDS.saveDecisions);
+        const loadButton = document.getElementById(ELEMENT_IDS.loadDecisions);
+
+        loadButton.click();
+
+        expect(loadButton.disabled).toBe(true);
+        expect(saveButton.disabled).toBe(true);
+        expect(loadButton.getAttribute("aria-busy")).toBe("true");
+        expect(loadButton.querySelector(".loading-spinner")).not.toBeNull();
+
+        resolveList([]);
+
+        await vi.waitFor(() => {
+            expect(loadButton.disabled).toBe(false);
+            expect(saveButton.disabled).toBe(false);
+        });
+        expect(loadButton.getAttribute("aria-busy")).toBeNull();
+        expect(loadButton.querySelector(".loading-spinner")).toBeNull();
+    });
+
+    it("disables dialog actions and shows a spinner while loading a saved decision", async () => {
+        let resolveGet;
+        const decisionsStore = createMockStore({
+            list: vi.fn().mockResolvedValue([
+                {
+                    id: savedId,
+                    title: `${decisionA} vs ${decisionB}`,
+                    updatedAt: "2026-11-14T12:00:00.000Z",
+                },
+            ]),
+            get: vi.fn(
+                () =>
+                    new Promise((resolve) => {
+                        resolveGet = resolve;
+                    }),
+            ),
+        });
+        loadApp({ decisionsStore });
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        document.getElementById(ELEMENT_IDS.loadDecisions).click();
+
+        await vi.waitFor(() => {
+            expect(
+                document.querySelectorAll(SELECTORS.savedDecisionItem),
+            ).toHaveLength(1);
+        });
+
+        const item = document.querySelector(SELECTORS.savedDecisionItem);
+        const [itemLoadButton, itemDeleteButton] =
+            item.querySelectorAll("button");
+
+        itemLoadButton.click();
+
+        expect(itemLoadButton.disabled).toBe(true);
+        expect(itemDeleteButton.disabled).toBe(true);
+        expect(itemLoadButton.getAttribute("aria-busy")).toBe("true");
+        expect(itemLoadButton.querySelector(".loading-spinner")).not.toBeNull();
+
+        resolveGet(sampleSavedPayload(decisionA, decisionB));
+
+        await vi.waitFor(() => {
+            expect(itemLoadButton.disabled).toBe(false);
+            expect(itemDeleteButton.disabled).toBe(false);
+        });
+        expect(itemLoadButton.getAttribute("aria-busy")).toBeNull();
+        expect(itemLoadButton.querySelector(".loading-spinner")).toBeNull();
+    });
 });
