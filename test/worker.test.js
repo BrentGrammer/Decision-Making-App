@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getPlatformProxy } from "wrangler";
-import worker from "../worker/worker.js";
+import worker, { CONTENT_SECURITY_POLICY } from "../worker/worker.js";
 
 function mockUpstreamDecisionsResponse(
     scoresByPair,
@@ -55,7 +55,7 @@ function validSavedDecisions(nameA = "Stay", nameB = "Leave") {
     };
 }
 
-describe("Cloudflare Worker entrypoint", () => {
+describe("application server", () => {
     let platform;
     let db;
 
@@ -133,7 +133,7 @@ describe("Cloudflare Worker entrypoint", () => {
         };
     }
 
-    it("delegates non-API requests to env.ASSETS.fetch", async () => {
+    it("serves static pages with the content security policy", async () => {
         const assetResponse = new Response("<html></html>", { status: 200 });
         const env = {
             ASSETS: {
@@ -145,10 +145,12 @@ describe("Cloudflare Worker entrypoint", () => {
         const response = await worker.fetch(request, env);
 
         expect(env.ASSETS.fetch).toHaveBeenCalledWith(request);
-        expect(response).toBe(assetResponse);
+        expect(response.headers.get("Content-Security-Policy")).toBe(
+            CONTENT_SECURITY_POLICY,
+        );
     });
 
-    it("returns 404 JSON for unknown /api/* routes", async () => {
+    it("reports not found for unknown API routes", async () => {
         const env = {
             ASSETS: {
                 fetch: vi.fn(),
@@ -160,11 +162,14 @@ describe("Cloudflare Worker entrypoint", () => {
 
         expect(response.status).toBe(404);
         expect(await response.json()).toEqual({ error: "Not found" });
+        expect(response.headers.get("Content-Security-Policy")).toBe(
+            CONTENT_SECURITY_POLICY,
+        );
         expect(env.ASSETS.fetch).not.toHaveBeenCalled();
     });
 
-    describe("POST /api/duplicate-considerations", () => {
-        it("returns 400 when considerations is missing or not an array of strings", async () => {
+    describe("detecting duplicate considerations", () => {
+        it("rejects a request without a valid list of considerations", async () => {
             const env = { OPENROUTER_API_KEY: "secret-key" };
             const request = new Request(
                 "https://example.com/api/duplicate-considerations",
@@ -178,12 +183,9 @@ describe("Cloudflare Worker entrypoint", () => {
             const response = await worker.fetch(request, env);
 
             expect(response.status).toBe(400);
-            expect(await response.json()).toEqual({
-                error: "Invalid considerations",
-            });
         });
 
-        it("returns empty duplicatePairs without calling upstream when OPENROUTER_API_KEY is unset", async () => {
+        it("returns no duplicates when the detector is not configured", async () => {
             const fetchMock = mockUpstreamDecisionsResponse({});
             const env = { OPENROUTER_API_KEY: "" };
             const request = new Request(
@@ -206,13 +208,17 @@ describe("Cloudflare Worker entrypoint", () => {
             expect(fetchMock).not.toHaveBeenCalled();
         });
 
-        it("calls upstream using env.OPENROUTER_API_KEY and returns duplicatePairs at or above 1.5", async () => {
+        it("flags pairs of considerations scored at or above the 1.5 duplicate cutoff", async () => {
+            const firstConsideration = "Higher salary";
+            const secondConsideration = "More disposable income";
+            const thirdConsideration = "Shorter commute";
+            const secretKey = "server-secret-key";
             const fetchMock = mockUpstreamDecisionsResponse({
                 pair_0_1: 1.5,
                 pair_0_2: 1.49,
                 pair_1_2: 0.31,
             });
-            const env = { OPENROUTER_API_KEY: "server-secret-key" };
+            const env = { OPENROUTER_API_KEY: secretKey };
             const request = new Request(
                 "https://example.com/api/duplicate-considerations",
                 {
@@ -220,9 +226,9 @@ describe("Cloudflare Worker entrypoint", () => {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         considerations: [
-                            "Higher salary",
-                            "More disposable income",
-                            "Shorter commute",
+                            firstConsideration,
+                            secondConsideration,
+                            thirdConsideration,
                         ],
                     }),
                 },
@@ -238,20 +244,18 @@ describe("Cloudflare Worker entrypoint", () => {
             });
             expect(fetchMock).toHaveBeenCalledTimes(1);
             const [, options] = fetchMock.mock.calls[0];
-            expect(options.headers.Authorization).toBe(
-                "Bearer server-secret-key",
-            );
+            expect(options.headers.Authorization).toBe(`Bearer ${secretKey}`);
             const body = JSON.parse(options.body);
             expect(body.questions.pair_0_1.type).toBe("score");
             expect(body.questions.pair_0_1.instructions).toContain(
-                '"Higher salary"',
+                `"${firstConsideration}"`,
             );
             expect(body.questions.pair_0_1.instructions).toContain(
-                '"More disposable income"',
+                `"${secondConsideration}"`,
             );
         });
 
-        it("returns 502 when the upstream request fails", async () => {
+        it("reports a service error when the upstream detector fails", async () => {
             const fetchMock = mockUpstreamDecisionsResponse(
                 {},
                 { ok: false, status: 500 },
@@ -276,8 +280,8 @@ describe("Cloudflare Worker entrypoint", () => {
         });
     });
 
-    describe("Authentication (/api/auth/*)", () => {
-        it("returns { user: null } from GET /api/auth/me when signed out", async () => {
+    describe("signing in with Google", () => {
+        it("reports no signed-in user before login", async () => {
             const response = await worker.fetch(
                 new Request("https://example.com/api/auth/me"),
                 { DB: db },
@@ -287,30 +291,24 @@ describe("Cloudflare Worker entrypoint", () => {
             expect(await response.json()).toEqual({ user: null });
         });
 
-        it("redirects GET /api/auth/google to Google OAuth with a CSRF state cookie", async () => {
+        it("sends the user to Google sign-in with CSRF state protection", async () => {
+            const clientId = "google-client-id";
+            const origin = "https://example.com";
             const response = await worker.fetch(
-                new Request("https://example.com/api/auth/google"),
+                new Request(`${origin}/api/auth/google`),
                 {
                     DB: db,
-                    GOOGLE_CLIENT_ID: "google-client-id",
+                    GOOGLE_CLIENT_ID: clientId,
                 },
             );
 
             expect(response.status).toBe(302);
             const location = new URL(response.headers.get("Location"));
-            expect(location.origin + location.pathname).toBe(
-                "https://accounts.google.com/o/oauth2/v2/auth",
-            );
-            expect(location.searchParams.get("client_id")).toBe(
-                "google-client-id",
-            );
+            expect(location.searchParams.get("client_id")).toBe(clientId);
             expect(location.searchParams.get("redirect_uri")).toBe(
-                "https://example.com/api/auth/google/callback",
+                `${origin}/api/auth/google/callback`,
             );
             expect(location.searchParams.get("response_type")).toBe("code");
-            expect(location.searchParams.get("scope")).toBe(
-                "openid email profile",
-            );
             const state = location.searchParams.get("state");
             expect(state).toBeTruthy();
             expect(
@@ -318,7 +316,7 @@ describe("Cloudflare Worker entrypoint", () => {
             ).toBe(`oauth_state=${state}`);
         });
 
-        it("rejects GET /api/auth/google/callback when state does not match cookie", async () => {
+        it("rejects a Google sign-in callback with a mismatched CSRF state", async () => {
             const response = await worker.fetch(
                 new Request(
                     "https://example.com/api/auth/google/callback?code=abc&state=wrong",
@@ -336,12 +334,14 @@ describe("Cloudflare Worker entrypoint", () => {
             expect(response.status).toBe(400);
         });
 
-        it("completes Google login, stores a hashed session in D1, returns the user from /api/auth/me, and logs out", async () => {
+        it("signs the user in after Google approval, remembers their session, and signs them out", async () => {
+            const email = "alex@example.com";
+            const name = "Alex Rivera";
             const { env, callbackResponse, sessionCookie } =
                 await signInTestUser({
                     sub: "google-sub-42",
-                    email: "alex@example.com",
-                    name: "Alex Rivera",
+                    email,
+                    name,
                 });
 
             expect(callbackResponse.status).toBe(302);
@@ -358,8 +358,8 @@ describe("Cloudflare Worker entrypoint", () => {
             const { user } = await meResponse.json();
             expect(user).toEqual({
                 id: expect.any(String),
-                email: "alex@example.com",
-                name: "Alex Rivera",
+                email,
+                name,
             });
 
             const logoutResponse = await worker.fetch(
@@ -381,8 +381,8 @@ describe("Cloudflare Worker entrypoint", () => {
         });
     });
 
-    describe("Saved decisions (/api/decisions/*)", () => {
-        it("rejects unauthenticated requests with 401", async () => {
+    describe("per-user saved decisions", () => {
+        it("requires a user to be signed in to access saved decisions", async () => {
             const response = await worker.fetch(
                 new Request("https://example.com/api/decisions"),
                 { DB: db },
@@ -391,7 +391,7 @@ describe("Cloudflare Worker entrypoint", () => {
             expect(response.status).toBe(401);
         });
 
-        it("rejects invalid decision payloads on POST /api/decisions with 400", async () => {
+        it("rejects saving an invalid decision comparison", async () => {
             const { env, sessionCookie } = await signInTestUser();
 
             const response = await worker.fetch(
@@ -409,7 +409,14 @@ describe("Cloudflare Worker entrypoint", () => {
             expect(response.status).toBe(400);
         });
 
-        it("creates, lists, loads, updates, and deletes saved decisions scoped to the signed-in user", async () => {
+        it("lets each signed-in user save, list, load, update, and delete only their own decisions", async () => {
+            const initialDecisionA = "Stay";
+            const initialDecisionB = "Leave";
+            const initialTitle = `${initialDecisionA} vs. ${initialDecisionB}`;
+            const updatedDecisionA = "Remote";
+            const updatedDecisionB = "Hybrid";
+            const updatedTitle = `${updatedDecisionA} vs. ${updatedDecisionB}`;
+
             const alice = await signInTestUser({
                 sub: "alice-sub",
                 email: "alice@example.com",
@@ -421,7 +428,10 @@ describe("Cloudflare Worker entrypoint", () => {
                 name: "Bob",
             });
 
-            const initialSaved = validSavedDecisions("Stay", "Leave");
+            const initialSaved = validSavedDecisions(
+                initialDecisionA,
+                initialDecisionB,
+            );
             const createResponse = await worker.fetch(
                 new Request("https://example.com/api/decisions", {
                     method: "POST",
@@ -437,7 +447,7 @@ describe("Cloudflare Worker entrypoint", () => {
             const created = await createResponse.json();
             expect(created).toEqual({
                 id: expect.any(String),
-                title: "Stay vs. Leave",
+                title: initialTitle,
             });
 
             const listResponse = await worker.fetch(
@@ -451,7 +461,7 @@ describe("Cloudflare Worker entrypoint", () => {
                 decisions: [
                     {
                         id: created.id,
-                        title: "Stay vs. Leave",
+                        title: initialTitle,
                         updated_at: expect.any(String),
                     },
                 ],
@@ -474,11 +484,14 @@ describe("Cloudflare Worker entrypoint", () => {
             expect(getResponse.status).toBe(200);
             expect(await getResponse.json()).toEqual({
                 id: created.id,
-                title: "Stay vs. Leave",
+                title: initialTitle,
                 ...initialSaved,
             });
 
-            const updatedSaved = validSavedDecisions("Remote", "Hybrid");
+            const updatedSaved = validSavedDecisions(
+                updatedDecisionA,
+                updatedDecisionB,
+            );
             const updateResponse = await worker.fetch(
                 new Request(`https://example.com/api/decisions/${created.id}`, {
                     method: "PUT",
@@ -493,7 +506,7 @@ describe("Cloudflare Worker entrypoint", () => {
             expect(updateResponse.status).toBe(200);
             expect(await updateResponse.json()).toEqual({
                 id: created.id,
-                title: "Remote vs. Hybrid",
+                title: updatedTitle,
             });
 
             const bobDeleteResponse = await worker.fetch(

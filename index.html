@@ -89,12 +89,12 @@
           </div>
           <div class="actions">
             <div class="action-buttons">
-              <button type="button" class="button" onclick="calculate()">Calculate</button>
+              <button type="button" id="calculate-decisions" class="button">Calculate</button>
               <button type="button" id="detect-duplicates" class="button button-secondary"></button>
               <button type="button" id="save-decisions" class="button button-secondary"></button>
               <button type="button" id="load-decisions" class="button button-secondary"></button>
               <input id="load-decisions-file" type="file" accept=".json,application/json" hidden>
-              <button type="reset" class="button button-secondary" onclick="resetSliders()">Reset</button>
+              <button type="reset" id="reset-decisions" class="button button-secondary">Reset</button>
               <p id="load-decisions-status" class="load-status" role="status"></p>
               <p id="load-decisions-error" class="load-error" role="alert" hidden></p>
             </div>
@@ -107,7 +107,6 @@
                   class="custom-dropdown-trigger"
                   aria-haspopup="listbox"
                   aria-expanded="false"
-                  aria-labelledby="model-label model-trigger-text"
                 >
                   <span id="model-trigger-text" class="custom-dropdown-label">Squared</span>
                   <svg class="custom-dropdown-arrow" aria-hidden="true" viewBox="0 0 24 24">
@@ -118,7 +117,6 @@
                   id="model-menu"
                   class="custom-dropdown-menu"
                   role="listbox"
-                  aria-labelledby="model-label"
                   tabindex="-1"
                   hidden
                 ></ul>
@@ -173,9 +171,6 @@
       </dialog>
     </main>
     
-    <script type="module">
-      import { initApp } from "./js/scripts.js";
-      initApp();
-    </script>
+    <script type="module" src="./js/main.js"></script>
   </body>
 </html>

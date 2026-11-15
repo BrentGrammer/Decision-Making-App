@@ -15,6 +15,12 @@ import {
 import { enterConsideration, loadApp, setDecisionNames } from "./loadApp.js";
 
 const MAX_FILE_SIZE = 1_000_000;
+const GOOGLE_AUTH_PATH = "/api/auth/google";
+const TEST_USER = Object.freeze({
+    id: "user-1",
+    email: "alex@example.com",
+    name: "Alex Rivera",
+});
 
 function sampleSavedPayload(nameA = "Stay", nameB = "Leave") {
     return {
@@ -50,17 +56,17 @@ function selectSavedDecisions(saved, size = JSON.stringify(saved).length) {
     input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-describe("loading saved decisions (signed out file fallback)", () => {
+describe("loading saved decisions when signed out", () => {
     beforeEach(() => {
         loadApp();
     });
 
-    it("shows Sign in with Google in the app bar when signed out", () => {
+    it("offers to sign in with Google when signed out", () => {
         const signInLink = document.getElementById("sign-in-google");
         const signOutButton = document.getElementById("sign-out");
 
         expect(signInLink.textContent).toBe(SIGN_IN_WITH_GOOGLE_LABEL);
-        expect(signInLink.getAttribute("href")).toBe("/api/auth/google");
+        expect(signInLink.getAttribute("href")).toBe(GOOGLE_AUTH_PATH);
         expect(signInLink.hidden).toBe(false);
         expect(signOutButton.hidden).toBe(true);
     });
@@ -76,8 +82,9 @@ describe("loading saved decisions (signed out file fallback)", () => {
     });
 
     it("rejects an oversized file with an accessible error", async () => {
+        const initialDecisionName = "Keep this decision";
         const currentName = document.getElementById("A");
-        currentName.value = "Keep this decision";
+        currentName.value = initialDecisionName;
 
         selectSavedDecisions(
             sampleSavedPayload("Replacement A", "Replacement B"),
@@ -88,32 +95,35 @@ describe("loading saved decisions (signed out file fallback)", () => {
             const error = document.querySelector('[role="alert"]');
             expect(error.hidden).toBe(false);
             expect(error.textContent).toBe(LOAD_ERROR);
-            expect(currentName.value).toBe("Keep this decision");
+            expect(currentName.value).toBe(initialDecisionName);
         });
     });
 });
 
-describe("cloud saved decisions when signed in", () => {
+describe("saving and loading decisions when signed in", () => {
+    const savedId = "dec-1";
+    const secondSavedId = "dec-2";
+    const decisionA = "Stay";
+    const decisionB = "Leave";
+
     function createMockStore(overrides = {}) {
         return {
-            getUser: vi.fn().mockResolvedValue({
-                id: "user-1",
-                email: "alex@example.com",
-                name: "Alex Rivera",
-            }),
+            getUser: vi.fn().mockResolvedValue(TEST_USER),
             logout: vi.fn().mockResolvedValue(),
             list: vi.fn().mockResolvedValue([]),
-            get: vi.fn().mockResolvedValue(sampleSavedPayload()),
+            get: vi.fn().mockResolvedValue(
+                sampleSavedPayload(decisionA, decisionB),
+            ),
             save: vi.fn().mockResolvedValue({
-                id: "dec-1",
-                title: "Stay vs. Leave",
+                id: savedId,
+                title: `${decisionA} vs. ${decisionB}`,
             }),
             remove: vi.fn().mockResolvedValue(),
             ...overrides,
         };
     }
 
-    it("shows the signed-in user and signs out when Sign out is clicked", async () => {
+    it("shows who is signed in and lets them sign out", async () => {
         const decisionsStore = createMockStore();
         loadApp({ decisionsStore });
 
@@ -124,7 +134,7 @@ describe("cloud saved decisions when signed in", () => {
         await vi.waitFor(() => {
             expect(signInLink.hidden).toBe(true);
             expect(signedInUser.hidden).toBe(false);
-            expect(signedInUser.textContent).toBe("Alex Rivera");
+            expect(signedInUser.textContent).toBe(TEST_USER.name);
             expect(signOutButton.hidden).toBe(false);
             expect(signOutButton.textContent).toBe(SIGN_OUT_LABEL);
         });
@@ -139,7 +149,7 @@ describe("cloud saved decisions when signed in", () => {
         });
     });
 
-    it("saves the decision table to the cloud store and updates the same record on subsequent saves", async () => {
+    it("saves the decision table to the user's account and updates it when saved again", async () => {
         const decisionsStore = createMockStore();
         loadApp({ decisionsStore });
 
@@ -147,7 +157,7 @@ describe("cloud saved decisions when signed in", () => {
             expect(document.getElementById("sign-out").hidden).toBe(false);
         });
 
-        setDecisionNames("Stay", "Leave");
+        setDecisionNames(decisionA, decisionB);
         enterConsideration("prosA", 0, "Good team", 8);
 
         const saveButton = [...document.querySelectorAll("button")].find(
@@ -163,33 +173,35 @@ describe("cloud saved decisions when signed in", () => {
         });
         const [firstJson, firstId] = decisionsStore.save.mock.calls[0];
         expect(firstId).toBeNull();
-        expect(JSON.parse(firstJson).decisions[0].name).toBe("Stay");
+        expect(JSON.parse(firstJson).decisions[0].name).toBe(decisionA);
 
-        setDecisionNames("Stay Here", "Leave");
+        setDecisionNames("Stay Here", decisionB);
         saveButton.click();
 
         await vi.waitFor(() => {
             expect(decisionsStore.save).toHaveBeenCalledTimes(2);
         });
         const [, secondId] = decisionsStore.save.mock.calls[1];
-        expect(secondId).toBe("dec-1");
+        expect(secondId).toBe(savedId);
     });
 
-    it("opens the saved decisions dialog on Load, loads a chosen comparison, and deletes comparisons", async () => {
+    it("lets the user browse, load, and delete their saved decisions", async () => {
         const decisionsStore = createMockStore({
             list: vi.fn().mockResolvedValue([
                 {
-                    id: "dec-1",
-                    title: "Stay vs. Leave",
+                    id: savedId,
+                    title: `${decisionA} vs. ${decisionB}`,
                     updated_at: "2026-11-15T10:00:00Z",
                 },
                 {
-                    id: "dec-2",
+                    id: secondSavedId,
                     title: "Buy vs. Rent",
                     updated_at: "2026-11-14T10:00:00Z",
                 },
             ]),
-            get: vi.fn().mockResolvedValue(sampleSavedPayload("Stay", "Leave")),
+            get: vi.fn().mockResolvedValue(
+                sampleSavedPayload(decisionA, decisionB),
+            ),
         });
         loadApp({ decisionsStore });
 
@@ -220,7 +232,7 @@ describe("cloud saved decisions when signed in", () => {
         secondDeleteButton.click();
 
         await vi.waitFor(() => {
-            expect(decisionsStore.remove).toHaveBeenCalledWith("dec-2");
+            expect(decisionsStore.remove).toHaveBeenCalledWith(secondSavedId);
             expect(
                 dialog.querySelectorAll(".saved-decision-item"),
             ).toHaveLength(1);
@@ -238,9 +250,9 @@ describe("cloud saved decisions when signed in", () => {
 
         await vi.waitFor(() => {
             expect(confirmSpy).toHaveBeenCalledWith(REPLACE_CONFIRMATION);
-            expect(decisionsStore.get).toHaveBeenCalledWith("dec-1");
-            expect(document.getElementById("A").value).toBe("Stay");
-            expect(document.getElementById("B").value).toBe("Leave");
+            expect(decisionsStore.get).toHaveBeenCalledWith(savedId);
+            expect(document.getElementById("A").value).toBe(decisionA);
+            expect(document.getElementById("B").value).toBe(decisionB);
             expect(
                 document.getElementById("load-decisions-status").textContent,
             ).toBe(LOAD_SUCCESS);
@@ -250,7 +262,7 @@ describe("cloud saved decisions when signed in", () => {
         confirmSpy.mockRestore();
     });
 
-    it("shows an empty message when the signed-in user has no saved decisions", async () => {
+    it("tells the user when they have no saved decisions yet", async () => {
         const decisionsStore = createMockStore({
             list: vi.fn().mockResolvedValue([]),
         });

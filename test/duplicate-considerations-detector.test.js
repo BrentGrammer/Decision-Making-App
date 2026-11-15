@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { createDuplicateConsiderationsDetector } from "../js/duplicate-considerations-detector.js";
 
+const DUPLICATE_CONSIDERATIONS_ENDPOINT = "/api/duplicate-considerations";
+
 function mockDuplicatePairsResponse(
     duplicatePairs,
     { status = 200, ok = true } = {},
@@ -13,7 +15,7 @@ function mockDuplicatePairsResponse(
 }
 
 describe("duplicate considerations detector", () => {
-    it("returns no groups without calling fetch when fewer than two considerations are given", async () => {
+    it("returns no groups when fewer than two considerations are given", async () => {
         const fetchMock = mockDuplicatePairsResponse([]);
         const detect = createDuplicateConsiderationsDetector({
             fetch: fetchMock,
@@ -24,33 +26,28 @@ describe("duplicate considerations detector", () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it("posts considerations to /api/duplicate-considerations without exposing an API key", async () => {
+    it("detects duplicate considerations without exposing credentials in the browser", async () => {
+        const considerations = [
+            "Higher salary",
+            "More disposable income",
+            "Shorter commute",
+        ];
         const fetchMock = mockDuplicatePairsResponse([[0, 1]]);
         const detect = createDuplicateConsiderationsDetector({
             fetch: fetchMock,
         });
 
-        const groups = await detect([
-            "Higher salary",
-            "More disposable income",
-            "Shorter commute",
-        ]);
+        const groups = await detect(considerations);
 
         expect(groups).toEqual([[0, 1]]);
         expect(fetchMock).toHaveBeenCalledTimes(1);
         const [url, options] = fetchMock.mock.calls[0];
-        expect(url).toBe("/api/duplicate-considerations");
+        expect(url).toBe(DUPLICATE_CONSIDERATIONS_ENDPOINT);
         expect(options.method).toBe("POST");
         expect(options.headers).toEqual({
             "Content-Type": "application/json",
         });
-        expect(JSON.parse(options.body)).toEqual({
-            considerations: [
-                "Higher salary",
-                "More disposable income",
-                "Shorter commute",
-            ],
-        });
+        expect(JSON.parse(options.body)).toEqual({ considerations });
     });
 
     it("merges connected duplicate pairs into one group and keeps separate groups apart", async () => {
@@ -77,7 +74,7 @@ describe("duplicate considerations detector", () => {
         ]);
     });
 
-    it("throws when the API returns a non-OK response", async () => {
+    it("reports an error when duplicate detection is unavailable", async () => {
         const fetchMock = mockDuplicatePairsResponse([], {
             ok: false,
             status: 502,

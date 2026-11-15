@@ -165,43 +165,41 @@ describe("saving decisions", () => {
     });
 });
 
-describe("cloud decisions store", () => {
-    it("fetches the current user and returns null when unauthenticated or offline", async () => {
+describe("account decisions store", () => {
+    it("identifies the signed-in user and treats offline or signed-out sessions as anonymous", async () => {
+        const testUser = { id: "u1", email: "a@b.com", name: "Alex" };
         const fetchMock = vi
             .fn()
             .mockResolvedValueOnce({
                 ok: true,
-                json: async () => ({
-                    user: { id: "u1", email: "a@b.com", name: "Alex" },
-                }),
+                json: async () => ({ user: testUser }),
             })
             .mockRejectedValueOnce(new Error("offline"));
         const store = createCloudDecisionsStore({ fetch: fetchMock });
 
-        expect(await store.getUser()).toEqual({
-            id: "u1",
-            email: "a@b.com",
-            name: "Alex",
-        });
+        expect(await store.getUser()).toEqual(testUser);
         expect(await store.getUser()).toBeNull();
     });
 
-    it("creates, updates, lists, loads, and removes saved decisions via /api/decisions", async () => {
+    it("saves, updates, lists, loads, and deletes a user's saved decisions", async () => {
         const saved = validSavedDecisions();
+        const savedSummary = { id: "d1", title: "Stay vs. Leave" };
+        const decisionsPath = "/api/decisions";
+        const itemPath = `${decisionsPath}/${savedSummary.id}`;
         const fetchMock = vi
             .fn()
             .mockResolvedValueOnce({
                 ok: true,
-                json: async () => ({ id: "d1", title: "Stay vs. Leave" }),
+                json: async () => savedSummary,
             })
             .mockResolvedValueOnce({
                 ok: true,
-                json: async () => ({ id: "d1", title: "Stay vs. Leave" }),
+                json: async () => savedSummary,
             })
             .mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
-                    decisions: [{ id: "d1", title: "Stay vs. Leave" }],
+                    decisions: [savedSummary],
                 }),
             })
             .mockResolvedValueOnce({
@@ -214,26 +212,22 @@ describe("cloud decisions store", () => {
             });
         const store = createCloudDecisionsStore({ fetch: fetchMock });
 
-        expect(await store.save(JSON.stringify(saved), null)).toEqual({
-            id: "d1",
-            title: "Stay vs. Leave",
-        });
-        expect(fetchMock.mock.calls[0][0]).toBe("/api/decisions");
+        expect(await store.save(JSON.stringify(saved), null)).toEqual(
+            savedSummary,
+        );
+        expect(fetchMock.mock.calls[0][0]).toBe(decisionsPath);
         expect(fetchMock.mock.calls[0][1].method).toBe("POST");
 
-        expect(await store.save(JSON.stringify(saved), "d1")).toEqual({
-            id: "d1",
-            title: "Stay vs. Leave",
-        });
-        expect(fetchMock.mock.calls[1][0]).toBe("/api/decisions/d1");
+        expect(
+            await store.save(JSON.stringify(saved), savedSummary.id),
+        ).toEqual(savedSummary);
+        expect(fetchMock.mock.calls[1][0]).toBe(itemPath);
         expect(fetchMock.mock.calls[1][1].method).toBe("PUT");
 
-        expect(await store.list()).toEqual([
-            { id: "d1", title: "Stay vs. Leave" },
-        ]);
-        expect(await store.get("d1")).toEqual(saved);
-        await store.remove("d1");
-        expect(fetchMock.mock.calls[4][0]).toBe("/api/decisions/d1");
+        expect(await store.list()).toEqual([savedSummary]);
+        expect(await store.get(savedSummary.id)).toEqual(saved);
+        await store.remove(savedSummary.id);
+        expect(fetchMock.mock.calls[4][0]).toBe(itemPath);
         expect(fetchMock.mock.calls[4][1].method).toBe("DELETE");
     });
 });

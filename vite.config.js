@@ -20,21 +20,21 @@ function cloudflareWorkerApiPlugin() {
   return {
     name: "cloudflare-worker-api",
     configureServer(server) {
+      platformPromise = createLocalPlatform();
       server.middlewares.use(async (req, res, next) => {
         if (!req.url?.startsWith("/api/")) {
           next();
           return;
         }
-        platformPromise ??= createLocalPlatform();
         const platform = await platformPromise;
-        const chunks = [];
-        for await (const chunk of req) {
-          chunks.push(chunk);
+        let body;
+        if (req.method !== "GET" && req.method !== "HEAD") {
+          const chunks = [];
+          for await (const chunk of req) {
+            chunks.push(chunk);
+          }
+          body = Buffer.concat(chunks);
         }
-        const body =
-          req.method === "GET" || req.method === "HEAD"
-            ? undefined
-            : Buffer.concat(chunks);
         const url = new URL(
           req.url,
           `http://${req.headers.host || "localhost:5173"}`,

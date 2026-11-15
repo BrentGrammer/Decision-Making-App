@@ -22,18 +22,13 @@ import {
   selectScoringModel,
 } from "./loadApp.js";
 
-describe("test harness", () => {
+describe("initial decision table", () => {
   beforeEach(() => {
     loadApp();
     selectScoringModel(MODELS.linear.id);
   });
 
-  it("loads the page script onto window", () => {
-    expect(typeof globalThis.calculate).toBe("function");
-    expect(typeof globalThis.resetSliders).toBe("function");
-  });
-
-  it("starts sliders at 0", () => {
+  it("starts every rating at 0", () => {
     const sliders = document.getElementsByClassName("sliders");
     expect(sliders.length).toBeGreaterThan(0);
     for (let i = 0; i < sliders.length; i++) {

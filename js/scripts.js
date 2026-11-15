@@ -118,6 +118,12 @@ function initApp({ duplicateConsiderationsDetector, decisionsStore } = {}) {
     const form = document.querySelector("form");
     form.addEventListener("input", onFormInput);
     form.addEventListener("click", onFormClick);
+    document
+        .getElementById("calculate-decisions")
+        .addEventListener("click", calculate);
+    document
+        .getElementById("reset-decisions")
+        .addEventListener("click", resetSliders);
 
     restoreDefaultRows();
     initModelControls();
