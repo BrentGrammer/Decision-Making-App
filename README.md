@@ -1,6 +1,6 @@
 # DECISION MAKING APP
 
-[TRY IT OUT](https://brentgrammer.github.io/Decision-Making-App/)
+[TRY IT OUT](https://decision-making-app.bmapps.workers.dev)
 
 Compare two options by listing pros and cons and rating each one from 0–10. Each rating is both how important that consideration is and how much it would affect you. Empty rows are ignored.
 
@@ -32,7 +32,7 @@ The last column is that row's **share of all points entered** — how much of th
 
 ## Use the App
 
-- Run `docker compose up --build` (Vite on http://localhost:5173/) and open that URL, or visit [the hosted page](https://brentgrammer.github.io/Decision-Making-App/).
+- Run `docker compose up --build` (Vite on http://localhost:5173/) and open that URL, or visit [the hosted page](https://decision-making-app.bmapps.workers.dev).
 
 ### Development
 
