@@ -10,16 +10,17 @@ Last updated: 2026-11-15
 ## Where we are
 
 * **Branch:** `feature/cloudflare` (branched with `feature/jev-duplicate-detection` merged in).
-* **Status:** **Phases 1–4 of the Cloudflare migration are implemented and unit/integration-tested locally.**
-  * **Vitest:** 218 passed across 13 test files (`npx vitest run`), including:
-    * 13 Worker + real local D1 SQLite tests in [`test/worker.test.js`](/home/amddesktop/Work/Decision-Making-App/test/worker.test.js) covering `/api/duplicate-considerations`, `/api/auth/*`, and `/api/decisions/*`.
-    * 7 UI behavior tests in [`test/saved-decisions-ui.test.js`](/home/amddesktop/Work/Decision-Making-App/test/saved-decisions-ui.test.js) covering signed-out file fallback, `.app-bar` Sign in with Google / Sign out, and signed-in cloud save/load/delete dialog.
-    * 14 unit tests in [`test/saved-decisions.test.js`](/home/amddesktop/Work/Decision-Making-App/test/saved-decisions.test.js) covering serialization, validation, and `createCloudDecisionsStore`.
+* **Status:** **Phases 1–4 of the Cloudflare migration, account menu/deletion, privacy page, and test wrappers are implemented and unit/integration-tested locally.**
+  * **Vitest:** 222 passed across 13 test files (`npx vitest run`), including:
+    * 15 Worker + real local D1 SQLite tests in [`test/worker.test.js`](/home/amddesktop/Work/Decision-Making-App/test/worker.test.js) covering `/api/duplicate-considerations`, `/api/auth/*` (including `DELETE /api/auth/account` with best-effort Google token revocation), and `/api/decisions/*`.
+    * 9 UI behavior tests in [`test/saved-decisions-ui.test.js`](/home/amddesktop/Work/Decision-Making-App/test/saved-decisions-ui.test.js) covering signed-out file fallback, `.app-bar` Sign in with Google, account menu dropdown (**Sign out** / **Delete account**), and signed-in cloud save/load/delete dialog.
+    * 15 unit tests in [`test/saved-decisions.test.js`](/home/amddesktop/Work/Decision-Making-App/test/saved-decisions.test.js) covering serialization, validation, and `createCloudDecisionsStore` (including `deleteAccount`).
     * 20 UI behavior tests in [`test/duplicate-considerations-detector-ui.test.js`](/home/amddesktop/Work/Decision-Making-App/test/duplicate-considerations-detector-ui.test.js) and 4 detector unit tests in [`test/duplicate-considerations-detector.test.js`](/home/amddesktop/Work/Decision-Making-App/test/duplicate-considerations-detector.test.js).
-  * **Build & Wrangler verification:** `npm run build` produces a browser bundle (`dist/`) with zero references to OpenRouter, Jev, or `OPENROUTER_API_KEY`, and `npx wrangler deploy --dry-run` succeeds with `env.DB` and `env.ASSETS` bound.
+  * **Playwright e2e:** 21 passed (`sudo ./run-e2e.sh`).
+  * **Build & scripts:** `npm run build` outputs `dist/index.html`, `dist/privacy.html`, and `dist/favicon.svg` cleanly. Added [`run-tests.sh`](/home/amddesktop/Work/Decision-Making-App/run-tests.sh) and [`run-e2e.sh`](/home/amddesktop/Work/Decision-Making-App/run-e2e.sh) (without `sudo`) and updated [`README.md`](/home/amddesktop/Work/Decision-Making-App/README.md).
 * **Next steps:**
-  1. Run Playwright e2e verification (`sudo docker compose run --rm app npx playwright test`) against the updated stack (and optionally add an e2e test for signed-in cloud save/load).
-  2. Provision remote Cloudflare D1 & Google OAuth credentials and deploy (`npx wrangler login`, `npx wrangler d1 create decision-making-app-db`, update `database_id` in `wrangler.toml`, `npm run db:migrate:remote`, set Worker secrets `OPENROUTER_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and run `npm run deploy`).
+  1. *(Optional)* Add a Playwright e2e test for signed-in cloud save/load.
+  2. Provision remote Cloudflare D1 & Google OAuth credentials (including production redirect URI and `https://<domain>/privacy.html` when publishing OAuth beyond Testing mode) and deploy (`npx wrangler login`, `npx wrangler d1 create decision-making-app-db`, update `database_id` in `wrangler.toml`, `npm run db:migrate:remote`, set Worker secrets `OPENROUTER_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and run `npm run deploy`).
 
 ## Architecture & directory layout
 
@@ -28,7 +29,7 @@ Last updated: 2026-11-15
   * [`schema.sql`](/home/amddesktop/Work/Decision-Making-App/schema.sql) defines idempotent D1 tables (`users`, `sessions`, `saved_decisions`) and index (`idx_saved_decisions_user_updated`).
 * **`worker/` (Cloudflare Worker backend — server-only):**
   * **[`worker/worker.js`](/home/amddesktop/Work/Decision-Making-App/worker/worker.js):** Thin request router dispatching `/api/*` routes and delegating static requests to `env.ASSETS.fetch(request)`.
-  * **[`worker/auth.js`](/home/amddesktop/Work/Decision-Making-App/worker/auth.js):** Google OAuth 2.0 flow (`GET /api/auth/google`, `GET /api/auth/google/callback`), SHA-256 hashed session token lookup (`GET /api/auth/me`, `authenticatedUser`), and `POST /api/auth/logout`.
+  * **[`worker/auth.js`](/home/amddesktop/Work/Decision-Making-App/worker/auth.js):** Google OAuth 2.0 flow (`GET /api/auth/google` with `openid email` scope and `prompt=select_account`, `GET /api/auth/google/callback`), SHA-256 hashed session token lookup (`GET /api/auth/me`, `authenticatedUser`), `POST /api/auth/logout`, and `DELETE /api/auth/account` (deletes user data + best-effort Google token revocation).
   * **[`worker/decisions-api.js`](/home/amddesktop/Work/Decision-Making-App/worker/decisions-api.js):** Per-user CRUD routes (`GET /api/decisions`, `POST /api/decisions`, `GET /api/decisions/:id`, `PUT /api/decisions/:id`, `DELETE /api/decisions/:id`) validated with `parseSavedDecisions()`.
   * **[`worker/duplicate-considerations-api.js`](/home/amddesktop/Work/Decision-Making-App/worker/duplicate-considerations-api.js):** Handles `POST /api/duplicate-considerations` using `env.OPENROUTER_API_KEY`.
   * **[`worker/jev-duplicate-detector.js`](/home/amddesktop/Work/Decision-Making-App/worker/jev-duplicate-detector.js):** Jev provider adapter (`createJevDuplicatePairsDetector`) — the only file that knows about Jev (`typesafe/jev-1.14`) or OpenRouter (`POST https://openrouter.ai/api/alpha/decisions`, `score` `0–2` with cutoff `>= 1.5`).
@@ -37,10 +38,12 @@ Last updated: 2026-11-15
   * **[`js/duplicate-considerations-detector-ui.js`](/home/amddesktop/Work/Decision-Making-App/js/duplicate-considerations-detector-ui.js)** & **[`css/duplicate-considerations-detector-ui.css`](/home/amddesktop/Work/Decision-Making-App/css/duplicate-considerations-detector-ui.css):** Wires `#detect-duplicates`, validation/privacy dialogs, `.duplicate-warning` banners, **Remove duplicates** (`removeDuplicateConsiderations`), and **Dismiss**.
   * **[`js/saved-decisions.js`](/home/amddesktop/Work/Decision-Making-App/js/saved-decisions.js)** & **[`js/saved-decisions-ui.js`](/home/amddesktop/Work/Decision-Making-App/js/saved-decisions-ui.js):**
     * Shared `serializeSavedDecisions()` and `parseSavedDecisions()` plus `createCloudDecisionsStore()`.
-    * Renders **Sign in with Google** (`#sign-in-google`) when signed out, or the user's name (`#signed-in-user`) + **Sign out** (`#sign-out`) when signed in.
+    * Renders **Sign in with Google** (`#sign-in-google`) when signed out, or an `#account-menu` dropdown (generic avatar + `#signed-in-user` + **Sign out** + **Delete account**) when signed in.
     * **Signed out:** **Save** and **Load** use local `.json` file download/upload.
     * **Signed in:** **Save** creates/updates in `/api/decisions`; **Load** opens `#saved-decisions-dialog` to load or delete saved comparisons.
-* **[`vite.config.js`](/home/amddesktop/Work/Decision-Making-App/vite.config.js):** Includes a dev-server middleware backed by Wrangler's `getPlatformProxy()` so `npm run serve` (and Playwright e2e) routes `/api/*` requests through `worker/worker.js` with local D1 and `.env` secrets.
+  * **[`js/constants/selectors.js`](/home/amddesktop/Work/Decision-Making-App/js/constants/selectors.js):** Frozen `ELEMENT_IDS`, `CLASS_NAMES`, and `SELECTORS` dictionaries (used by `js/scripts.js`, `js/saved-decisions-ui.js`, and `test/saved-decisions-ui.test.js`).
+  * **[`privacy.html`](/home/amddesktop/Work/Decision-Making-App/privacy.html)** & **[`public/favicon.svg`](/home/amddesktop/Work/Decision-Making-App/public/favicon.svg):** Privacy policy page (linked from `index.html` footer) and tilted balance-scale SVG favicon.
+* **[`vite.config.js`](/home/amddesktop/Work/Decision-Making-App/vite.config.js):** Includes a dev-server middleware backed by Wrangler's `getPlatformProxy()` so `npm run serve` (and Playwright e2e) routes `/api/*` requests through `worker/worker.js` with local D1 and `.env` secrets, and builds both `index.html` and `privacy.html`.
 
 ## Jev spike findings (2026-11-14 – 2026-11-15)
 
