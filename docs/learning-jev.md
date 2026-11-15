@@ -87,9 +87,16 @@ For `"Shorter commute"` vs `"Can bike to work"`, Jev returned:
 
 Because `criteria` has 3 levels (`0`, `1`, `2`), `score` is always a single number from `0.00` to `2.00` summarizing where the probability mass sits.
 
-### What all 11 pairs from our first run looked like
+### Comparing `score` (0–2 scale) vs `noul` (Yes/No) on 11 pairs
 
-| Pair | My label | `noul` (0–1) | `score` (0–2) |
+In our spike (`spike/try-jev.mjs`), we actually sent **two separate questions** for each pair to see which question type works better for catching duplicates:
+
+1. **`overlap_degree` (`"type": "score"`):** our 3-step scale (`0` distinct, `1` related, `2` same) → returns `"score"` from `0.00` to `2.00`.
+2. **`is_duplicate` (`"type": "noul"`):** a simple Yes/No (`true` = same, `false` = separate) → returns `"noul"` from `0.00` to `1.00` (the probability of `true`). `noul` is **only** returned for `"type": "noul"` questions; it is not part of `score` or `choice`.
+
+Here is what both questions returned across all 11 pairs:
+
+| Pair | My label | `is_duplicate` (`noul`, 0–1) | `overlap_degree` (`score`, 0–2) |
 |---|---|---|---|
 | Higher salary / More disposable income | same | 0.70 | 1.65 |
 | Higher salary / Better finances | same | 0.80 | 1.78 |
