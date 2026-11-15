@@ -20,23 +20,33 @@ import {
     validateConsiderationRow,
 } from "./consideration-rows.js";
 import { CONSIDERATION_GROUPS } from "./constants/decision-table.js";
+import { CLASS_NAMES, ELEMENT_IDS, SELECTORS } from "./constants/selectors.js";
 import {
     initModelControls,
     resetModel,
     selectedModel,
     setSelectedModel,
 } from "./model-controls.js";
+import {
+    clearDuplicateWarnings,
+    initDuplicateConsiderationsDetector,
+    pruneDuplicateWarnings,
+} from "./duplicate-considerations-detector-ui.js";
+import { createDuplicateConsiderationsDetector } from "./duplicate-considerations-detector.js";
 
 function resetSliders() {
     restoreDefaultRows();
-    for (const field of document.getElementsByClassName("sliderStatus")) {
+    for (const field of document.getElementsByClassName(
+        CLASS_NAMES.sliderStatus,
+    )) {
         field.value = "0";
     }
-    const inputA = document.getElementById("A");
-    const inputB = document.getElementById("B");
+    const inputA = document.getElementById(ELEMENT_IDS.decisionA);
+    const inputB = document.getElementById(ELEMENT_IDS.decisionB);
     inputA.value = "";
     inputB.value = "";
     clearDecisionValidation();
+    clearDuplicateWarnings();
     resetModel();
     showResult([]);
     resetSavedDecisionsState();
@@ -53,12 +63,12 @@ function calculate() {
         showResult([]);
         return;
     }
-    const result = document.getElementById("finalResult");
+    const result = document.getElementById(ELEMENT_IDS.finalResult);
     showResult(
         formatComparison(
             compareDecisions({
-                decisionA: document.getElementById("A").value,
-                decisionB: document.getElementById("B").value,
+                decisionA: document.getElementById(ELEMENT_IDS.decisionA).value,
+                decisionB: document.getElementById(ELEMENT_IDS.decisionB).value,
                 ...considerations,
                 model: selectedModel(),
             }),
@@ -68,52 +78,68 @@ function calculate() {
 }
 
 function onFormInput(event) {
-    if (event.target.classList.contains("sliders")) {
+    if (event.target.classList.contains(CLASS_NAMES.sliders)) {
         sliderChange(event.target);
         validateConsiderationRow(event.target);
         return;
     }
-    if (event.target.classList.contains("sliderStatus")) {
+    if (event.target.classList.contains(CLASS_NAMES.sliderStatus)) {
         validateConsiderationRow(ratingChange(event.target));
         return;
     }
     if (
-        event.target.matches("input[type='text']") &&
-        event.target.closest(".consideration-text")
+        event.target.matches(SELECTORS.textInput) &&
+        event.target.closest(SELECTORS.considerationText)
     ) {
         const slider = event.target
-            .closest(".consideration-row")
-            .querySelector(".sliders");
+            .closest(SELECTORS.considerationRow)
+            .querySelector(SELECTORS.sliders);
         validateConsiderationRow(slider);
+        pruneDuplicateWarnings(
+            event.target.closest(SELECTORS.list)?.dataset.group,
+        );
     }
 }
 
 function onFormClick(event) {
-    const add = event.target.closest(".add-row");
+    const add = event.target.closest(SELECTORS.addRow);
     if (add) {
         addConsiderationRow(add.dataset.group);
         return;
     }
-    const remove = event.target.closest(".remove-row");
+    const remove = event.target.closest(SELECTORS.removeRow);
     if (remove) {
+        const groupId = remove.closest(SELECTORS.list)?.dataset.group;
         removeConsiderationRow(remove);
+        pruneDuplicateWarnings(groupId);
     }
 }
 
-function initApp() {
+function initApp({ duplicateConsiderationsDetector, decisionsStore } = {}) {
     window.sliderChange = sliderChange;
     window.resetSliders = resetSliders;
     window.calculate = calculate;
 
-    const form = document.querySelector("form");
+    const form = document.querySelector(SELECTORS.form);
     form.addEventListener("input", onFormInput);
     form.addEventListener("click", onFormClick);
+    document
+        .getElementById(ELEMENT_IDS.calculateDecisions)
+        .addEventListener("click", calculate);
+    document
+        .getElementById(ELEMENT_IDS.resetDecisions)
+        .addEventListener("click", resetSliders);
 
     restoreDefaultRows();
     initModelControls();
-    initSavedDecisions({ setSelectedModel });
+    initSavedDecisions({ setSelectedModel, decisionsStore });
 
     initDecisionValidation();
+    initDuplicateConsiderationsDetector({
+        duplicateConsiderationsDetector:
+            duplicateConsiderationsDetector ??
+            createDuplicateConsiderationsDetector(),
+    });
 }
 
 export { sliderChange, resetSliders, calculate, initApp };

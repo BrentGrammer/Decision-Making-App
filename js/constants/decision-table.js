@@ -1,5 +1,6 @@
 export const DECISION_IDS = Object.freeze(["A", "B"]);
 export const CONSIDERATION_LISTS = Object.freeze(["pros", "cons"]);
+export const DUPLICATE_WARNING_CLASS = "duplicate-warning";
 
 export const CONSIDERATION_KIND = Object.freeze({
     pro: "pro",

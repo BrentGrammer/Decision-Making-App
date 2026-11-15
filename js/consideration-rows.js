@@ -184,6 +184,49 @@ export function removeConsiderationRow(removeButton) {
     syncRemoveButtons(groupId);
 }
 
+/**
+ * Removes duplicate considerations in a group by keeping the consideration
+ * with the highest 0–10 slider rating (or the first consideration on a tie)
+ * and removing the rest.
+ */
+export function removeDuplicateConsiderations(groupId, duplicateTexts) {
+    const remaining = new Map();
+    for (const text of duplicateTexts) {
+        remaining.set(text, (remaining.get(text) ?? 0) + 1);
+    }
+
+    const matched = [];
+    for (const row of listRows(groupId)) {
+        const slider = row.querySelector(".sliders");
+        const text = considerationText(slider);
+        const count = remaining.get(text) ?? 0;
+        if (count > 0) {
+            remaining.set(text, count - 1);
+            matched.push({
+                row,
+                rating: parseInt(slider.value, 10) || 0,
+            });
+        }
+    }
+
+    if (matched.length < 2) {
+        return;
+    }
+
+    let kept = matched[0];
+    for (const candidate of matched) {
+        if (candidate.rating > kept.rating) {
+            kept = candidate;
+        }
+    }
+
+    for (const candidate of matched) {
+        if (candidate !== kept) {
+            removeConsiderationRow(candidate.row.querySelector(".remove-row"));
+        }
+    }
+}
+
 export function restoreDefaultRows() {
     for (const group of Object.values(CONSIDERATION_GROUPS)) {
         const rows = document.querySelector(

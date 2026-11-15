@@ -91,3 +91,81 @@ export function parseSavedDecisions(json) {
     }
     return saved;
 }
+
+export function createCloudDecisionsStore({ fetch = globalThis.fetch } = {}) {
+    return {
+        async getUser() {
+            if (typeof fetch !== "function") {
+                return null;
+            }
+            try {
+                const response = await fetch("/api/auth/me");
+                if (!response.ok) {
+                    return null;
+                }
+                const data = await response.json();
+                return data?.user ?? null;
+            } catch {
+                return null;
+            }
+        },
+
+        async logout() {
+            await fetch("/api/auth/logout", { method: "POST" });
+        },
+
+        async deleteAccount() {
+            const response = await fetch("/api/auth/account", {
+                method: "DELETE",
+            });
+            if (!response.ok) {
+                throw new Error("Could not delete account");
+            }
+        },
+
+        async list() {
+            const response = await fetch("/api/decisions");
+            if (!response.ok) {
+                throw new Error("Could not list saved decisions");
+            }
+            const data = await response.json();
+            return Array.isArray(data?.decisions) ? data.decisions : [];
+        },
+
+        async get(id) {
+            const response = await fetch(
+                `/api/decisions/${encodeURIComponent(id)}`,
+            );
+            if (!response.ok) {
+                throw new Error(INVALID_FILE_ERROR);
+            }
+            return parseSavedDecisions(await response.text());
+        },
+
+        async save(json, id = null) {
+            const url = id
+                ? `/api/decisions/${encodeURIComponent(id)}`
+                : "/api/decisions";
+            const method = id ? "PUT" : "POST";
+            const response = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: json,
+            });
+            if (!response.ok) {
+                throw new Error("Could not save decisions");
+            }
+            return response.json();
+        },
+
+        async remove(id) {
+            const response = await fetch(
+                `/api/decisions/${encodeURIComponent(id)}`,
+                { method: "DELETE" },
+            );
+            if (!response.ok) {
+                throw new Error("Could not delete saved decision");
+            }
+        },
+    };
+}

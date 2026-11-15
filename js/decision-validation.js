@@ -111,6 +111,15 @@ function closeValidationDialog() {
     dialog.open = false;
 }
 
+export function showValidationDialog(
+    messages,
+    { title = VALIDATION_ERROR_TITLE } = {},
+) {
+    validationDialog().querySelector(".dialog-title").textContent = title;
+    showValidationErrors(messages);
+    openValidationDialog();
+}
+
 export function validateDecisionTable(considerations) {
     validateDecisionNames();
     const validationErrors = decisionTableValidationErrors(
@@ -118,8 +127,7 @@ export function validateDecisionTable(considerations) {
         validateConsiderationRows(),
     );
     if (validationErrors.length > 0) {
-        showValidationErrors(validationErrors);
-        openValidationDialog();
+        showValidationDialog(validationErrors);
         return false;
     }
     closeValidationDialog();

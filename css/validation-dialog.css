@@ -29,3 +29,44 @@
     margin: 0;
     color: var(--color-on-surface);
 }
+
+#saved-decisions-dialog {
+    min-width: min(28rem, 90vw);
+}
+
+#saved-decisions-dialog .dialog-title {
+    color: var(--color-on-surface);
+}
+
+.saved-decisions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.75rem 0 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 18rem;
+    overflow-y: auto;
+}
+
+.saved-decision-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-outline);
+    border-radius: var(--radius);
+}
+
+.saved-decision-title {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.saved-decision-actions {
+    display: flex;
+    gap: 0.5rem;
+}

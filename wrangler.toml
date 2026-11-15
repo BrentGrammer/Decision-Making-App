@@ -1,0 +1,14 @@
+name = "decision-making-app"
+main = "worker/worker.js"
+compatibility_date = "2026-11-01"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "decision-making-app-db"
+database_id = "e66bfa6e-b95d-4cc8-a291-410caad6b3ef"

@@ -8,6 +8,7 @@
       <meta http-equiv="Pragma" content="no-cache">
       <meta http-equiv="Expires" content="0">
       <title>Decision calculator</title>
+      <link rel="icon" type="image/svg+xml" href="./favicon.svg">
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
@@ -16,6 +17,27 @@
   <body>
     <header class="app-bar">
       <h1>Decision calculator</h1>
+      <div class="auth-controls">
+        <a id="sign-in-google" class="auth-button" href="/api/auth/google"></a>
+        <div id="account-menu" class="account-menu" hidden>
+          <button
+            type="button"
+            id="account-menu-trigger"
+            class="account-menu-trigger"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="account-menu-dropdown"
+          >
+            <svg class="account-avatar" aria-hidden="true"><use href="#icon-user"/></svg>
+            <span id="signed-in-user" class="signed-in-user"></span>
+            <svg class="account-chevron" aria-hidden="true"><use href="#icon-chevron-down"/></svg>
+          </button>
+          <div id="account-menu-dropdown" class="account-menu-dropdown" role="menu" hidden>
+            <button type="button" id="sign-out" class="account-menu-item" role="menuitem"></button>
+            <button type="button" id="delete-account" class="account-menu-item account-menu-item-danger" role="menuitem"></button>
+          </div>
+        </div>
+      </div>
     </header>
     <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg">
       <symbol id="icon-info" viewBox="0 0 24 24">
@@ -23,6 +45,12 @@
       </symbol>
       <symbol id="icon-close" viewBox="0 0 24 24">
         <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </symbol>
+      <symbol id="icon-user" viewBox="0 0 24 24">
+        <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/>
+      </symbol>
+      <symbol id="icon-chevron-down" viewBox="0 0 24 24">
+        <path d="M7 10l5 5 5-5z"/>
       </symbol>
     </svg>
     <main class="page">
@@ -59,10 +87,12 @@
               <div class="list" data-group="prosA" data-kind="pro">
                 <div class="consideration-rows"></div>
                 <button type="button" class="add-row" data-group="prosA" aria-label="Add a pro for decision A">Add pro</button>
+                <div class="duplicate-warnings" aria-live="polite"></div>
               </div>
               <div class="list" data-group="consA" data-kind="con">
                 <div class="consideration-rows"></div>
                 <button type="button" class="add-row" data-group="consA" aria-label="Add a con for decision A">Add con</button>
+                <div class="duplicate-warnings" aria-live="polite"></div>
               </div>
 
               <div class="decision-name">
@@ -72,19 +102,22 @@
               <div class="list" data-group="prosB" data-kind="pro">
                 <div class="consideration-rows"></div>
                 <button type="button" class="add-row" data-group="prosB" aria-label="Add a pro for decision B">Add pro</button>
+                <div class="duplicate-warnings" aria-live="polite"></div>
               </div>
               <div class="list" data-group="consB" data-kind="con">
                 <div class="consideration-rows"></div>
                 <button type="button" class="add-row" data-group="consB" aria-label="Add a con for decision B">Add con</button>
+                <div class="duplicate-warnings" aria-live="polite"></div>
               </div>
           </div>
           <div class="actions">
             <div class="action-buttons">
-              <button type="button" class="button" onclick="calculate()">Calculate</button>
+              <button type="button" id="calculate-decisions" class="button">Calculate</button>
+              <button type="button" id="detect-duplicates" class="button button-secondary"></button>
               <button type="button" id="save-decisions" class="button button-secondary"></button>
               <button type="button" id="load-decisions" class="button button-secondary"></button>
               <input id="load-decisions-file" type="file" accept=".json,application/json" hidden>
-              <button type="reset" class="button button-secondary" onclick="resetSliders()">Reset</button>
+              <button type="reset" id="reset-decisions" class="button button-secondary">Reset</button>
               <p id="load-decisions-status" class="load-status" role="status"></p>
               <p id="load-decisions-error" class="load-error" role="alert" hidden></p>
             </div>
@@ -97,7 +130,6 @@
                   class="custom-dropdown-trigger"
                   aria-haspopup="listbox"
                   aria-expanded="false"
-                  aria-labelledby="model-label model-trigger-text"
                 >
                   <span id="model-trigger-text" class="custom-dropdown-label">Squared</span>
                   <svg class="custom-dropdown-arrow" aria-hidden="true" viewBox="0 0 24 24">
@@ -108,7 +140,6 @@
                   id="model-menu"
                   class="custom-dropdown-menu"
                   role="listbox"
-                  aria-labelledby="model-label"
                   tabindex="-1"
                   hidden
                 ></ul>
@@ -143,11 +174,32 @@
         <div class="validation-errors"></div>
         <button type="button" class="button dialog-dismiss"></button>
       </dialog>
+
+      <dialog id="duplicate-privacy-dialog" class="dialog" aria-labelledby="duplicate-privacy-dialog-title">
+        <h2 id="duplicate-privacy-dialog-title" class="dialog-title"></h2>
+        <p class="dialog-message"></p>
+        <div class="dialog-actions">
+          <button type="button" class="button dialog-continue"></button>
+          <button type="button" class="button button-secondary dialog-cancel"></button>
+        </div>
+      </dialog>
+
+      <dialog id="saved-decisions-dialog" class="dialog" aria-labelledby="saved-decisions-dialog-title">
+        <h2 id="saved-decisions-dialog-title" class="dialog-title"></h2>
+        <p id="saved-decisions-empty" class="dialog-message" hidden></p>
+        <ul id="saved-decisions-list" class="saved-decisions-list"></ul>
+        <div class="dialog-actions">
+          <button type="button" class="button button-secondary dialog-close"></button>
+        </div>
+      </dialog>
     </main>
+    <footer class="page-footer">
+      <span>&copy; 2018 Brent Marquez</span>
+      <nav class="page-footer-links" aria-label="Footer">
+        <a href="./privacy.html">Privacy Policy</a>
+      </nav>
+    </footer>
     
-    <script type="module">
-      import { initApp } from "./js/scripts.js";
-      initApp();
-    </script>
+    <script type="module" src="./js/main.js"></script>
   </body>
 </html>

@@ -4,6 +4,9 @@
 
 body {
     margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     font-family: var(--font);
     background: var(--color-surface);
     color: var(--color-on-surface);
@@ -16,6 +19,8 @@ body {
     min-height: 56px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
     box-shadow: var(--shadow-raised);
 }
 
@@ -24,6 +29,157 @@ body {
     font-size: 1.25rem;
     font-weight: 500;
     letter-spacing: 0.02em;
+}
+
+.auth-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.signed-in-user {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.auth-button {
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--color-on-primary);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: var(--radius);
+    padding: 0.4rem 0.85rem;
+    cursor: pointer;
+}
+
+.auth-button:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.account-menu {
+    position: relative;
+}
+
+.account-menu-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: inherit;
+    color: var(--color-on-primary);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: var(--radius);
+    padding: 0.35rem 0.65rem;
+    cursor: pointer;
+}
+
+.account-menu-trigger:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.account-avatar {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    flex-shrink: 0;
+}
+
+.account-chevron {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    flex-shrink: 0;
+}
+
+.account-menu-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.35rem);
+    min-width: 170px;
+    background: #fff;
+    color: var(--color-on-surface);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-raised);
+    padding: 0.25rem 0;
+    z-index: 20;
+}
+
+.account-menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    padding: 0.55rem 0.9rem;
+    cursor: pointer;
+}
+
+.account-menu-item:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.account-menu-item-danger {
+    color: var(--color-con);
+}
+
+.page-footer {
+    margin-top: auto;
+    padding: 1rem 1.5rem;
+    background: var(--color-panel);
+    border-top: 1px solid var(--color-outline);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    font-size: 0.9375rem;
+    color: var(--color-muted);
+}
+
+.page-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.page-footer a {
+    color: var(--color-pro);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.page-footer a:hover,
+.page-footer a:focus-visible {
+    text-decoration: underline;
+}
+
+.privacy-page {
+    max-width: 720px;
+    line-height: 1.45;
+}
+
+.privacy-page h2 {
+    margin: 0 0 0.5rem;
+}
+
+.privacy-page h3 {
+    margin: 1.15rem 0 0.2rem;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.privacy-page p {
+    margin: 0 0 0.5rem;
 }
 
 .icon-sprite {
@@ -35,6 +191,7 @@ body {
 
 .page {
     width: 100%;
+    flex: 1;
     padding: 1.5rem 1.5rem 2rem;
     display: flex;
     flex-direction: column;

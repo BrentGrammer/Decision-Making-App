@@ -1,11 +1,53 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { LOAD_ERROR } from "../js/constants/strings.js";
-import { loadApp } from "./loadApp.js";
+import {
+    DELETE_ACCOUNT_CONFIRMATION,
+    DELETE_ACCOUNT_ERROR,
+    DELETE_ACCOUNT_LABEL,
+    DELETE_SAVED_DECISION_LABEL,
+    LOAD_ERROR,
+    LOAD_LABEL,
+    LOAD_SUCCESS,
+    REPLACE_CONFIRMATION,
+    SAVED_DECISIONS_DIALOG_TITLE,
+    SAVED_DECISIONS_EMPTY,
+    SAVE_LABEL,
+    SAVE_SUCCESS,
+    SIGN_IN_WITH_GOOGLE_LABEL,
+    SIGN_OUT_LABEL,
+} from "../js/constants/strings.js";
+import { enterConsideration, loadApp, setDecisionNames } from "./loadApp.js";
+import { ELEMENT_IDS, SELECTORS } from "../js/constants/selectors.js";
 
 const MAX_FILE_SIZE = 1_000_000;
+const GOOGLE_AUTH_PATH = "/api/auth/google";
+const TEST_USER = Object.freeze({
+    id: "user-1",
+    email: "alex@example.com",
+    name: "Alex Rivera",
+});
+
+function sampleSavedPayload(nameA = "Stay", nameB = "Leave") {
+    return {
+        format: "decision-making-app-saved-decisions",
+        version: 1,
+        model: "squared",
+        decisions: [
+            {
+                name: nameA,
+                pros: [{ text: "Good team", rating: 8 }],
+                cons: [{ text: "Long commute", rating: 4 }],
+            },
+            {
+                name: nameB,
+                pros: [{ text: "New challenge", rating: 7 }],
+                cons: [{ text: "", rating: 0 }],
+            },
+        ],
+    };
+}
 
 function selectSavedDecisions(saved, size = JSON.stringify(saved).length) {
-    const input = document.getElementById("load-decisions-file");
+    const input = document.getElementById(ELEMENT_IDS.loadDecisionsFile);
     Object.defineProperty(input, "files", {
         configurable: true,
         value: [
@@ -18,70 +60,339 @@ function selectSavedDecisions(saved, size = JSON.stringify(saved).length) {
     input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-describe("loading saved decisions", () => {
+describe("loading saved decisions when signed out", () => {
     beforeEach(() => {
         loadApp();
     });
 
+    it("offers to sign in with Google when signed out", () => {
+        const signInLink = document.getElementById(ELEMENT_IDS.signInGoogle);
+        const accountMenu = document.getElementById(ELEMENT_IDS.accountMenu);
+
+        expect(signInLink.textContent).toBe(SIGN_IN_WITH_GOOGLE_LABEL);
+        expect(signInLink.getAttribute("href")).toBe(GOOGLE_AUTH_PATH);
+        expect(signInLink.hidden).toBe(false);
+        expect(accountMenu.hidden).toBe(true);
+    });
+
     it("announces a successful load to assistive technology", async () => {
-        selectSavedDecisions(
-            {
-                format: "decision-making-app-saved-decisions",
-                version: 1,
-                model: "squared",
-                decisions: [
-                    {
-                        name: "Stay",
-                        pros: [{ text: "Good team", rating: 8 }],
-                        cons: [{ text: "Long commute", rating: 4 }],
-                    },
-                    {
-                        name: "Leave",
-                        pros: [{ text: "New challenge", rating: 7 }],
-                        cons: [{ text: "", rating: 0 }],
-                    },
-                ],
-            },
-            MAX_FILE_SIZE,
-        );
+        selectSavedDecisions(sampleSavedPayload(), MAX_FILE_SIZE);
 
         await vi.waitFor(() => {
-            const announcement = document.querySelector('[role="status"]');
+            const announcement = document.querySelector(SELECTORS.statusRole);
             expect(announcement).not.toBeNull();
             expect(announcement.textContent.trim()).not.toBe("");
         });
     });
 
     it("rejects an oversized file with an accessible error", async () => {
-        const currentName = document.getElementById("A");
-        currentName.value = "Keep this decision";
+        const initialDecisionName = "Keep this decision";
+        const currentName = document.getElementById(ELEMENT_IDS.decisionA);
+        currentName.value = initialDecisionName;
 
         selectSavedDecisions(
-            {
-                format: "decision-making-app-saved-decisions",
-                version: 1,
-                model: "squared",
-                decisions: [
-                    {
-                        name: "Replacement A",
-                        pros: [{ text: "Pro", rating: 1 }],
-                        cons: [{ text: "Con", rating: 1 }],
-                    },
-                    {
-                        name: "Replacement B",
-                        pros: [{ text: "Pro", rating: 1 }],
-                        cons: [{ text: "Con", rating: 1 }],
-                    },
-                ],
-            },
+            sampleSavedPayload("Replacement A", "Replacement B"),
             MAX_FILE_SIZE + 1,
         );
 
         await vi.waitFor(() => {
-            const error = document.querySelector('[role="alert"]');
+            const error = document.querySelector(SELECTORS.alertRole);
             expect(error.hidden).toBe(false);
             expect(error.textContent).toBe(LOAD_ERROR);
-            expect(currentName.value).toBe("Keep this decision");
+            expect(currentName.value).toBe(initialDecisionName);
         });
+    });
+});
+
+describe("saving and loading decisions when signed in", () => {
+    const savedId = "dec-1";
+    const secondSavedId = "dec-2";
+    const decisionA = "Stay";
+    const decisionB = "Leave";
+
+    function createMockStore(overrides = {}) {
+        return {
+            getUser: vi.fn().mockResolvedValue(TEST_USER),
+            logout: vi.fn().mockResolvedValue(),
+            deleteAccount: vi.fn().mockResolvedValue(),
+            list: vi.fn().mockResolvedValue([]),
+            get: vi.fn().mockResolvedValue(
+                sampleSavedPayload(decisionA, decisionB),
+            ),
+            save: vi.fn().mockResolvedValue({
+                id: savedId,
+                title: `${decisionA} vs. ${decisionB}`,
+            }),
+            remove: vi.fn().mockResolvedValue(),
+            ...overrides,
+        };
+    }
+
+    it("shows who is signed in in an account menu and lets them sign out", async () => {
+        const decisionsStore = createMockStore();
+        loadApp({ decisionsStore });
+
+        const signInLink = document.getElementById(ELEMENT_IDS.signInGoogle);
+        const accountMenu = document.getElementById(ELEMENT_IDS.accountMenu);
+        const menuTrigger = document.getElementById(
+            ELEMENT_IDS.accountMenuTrigger,
+        );
+        const menuDropdown = document.getElementById(
+            ELEMENT_IDS.accountMenuDropdown,
+        );
+        const signedInUser = document.getElementById(ELEMENT_IDS.signedInUser);
+        const signOutButton = document.getElementById(ELEMENT_IDS.signOut);
+        const deleteAccountButton = document.getElementById(
+            ELEMENT_IDS.deleteAccount,
+        );
+
+        await vi.waitFor(() => {
+            expect(signInLink.hidden).toBe(true);
+            expect(accountMenu.hidden).toBe(false);
+            expect(signedInUser.textContent).toBe(TEST_USER.name);
+            expect(menuTrigger.getAttribute("aria-expanded")).toBe("false");
+            expect(menuDropdown.hidden).toBe(true);
+            expect(signOutButton.textContent).toBe(SIGN_OUT_LABEL);
+            expect(deleteAccountButton.textContent).toBe(DELETE_ACCOUNT_LABEL);
+        });
+
+        menuTrigger.click();
+        expect(menuTrigger.getAttribute("aria-expanded")).toBe("true");
+        expect(menuDropdown.hidden).toBe(false);
+
+        signOutButton.click();
+
+        await vi.waitFor(() => {
+            expect(decisionsStore.logout).toHaveBeenCalledTimes(1);
+            expect(signInLink.hidden).toBe(false);
+            expect(accountMenu.hidden).toBe(true);
+            expect(menuDropdown.hidden).toBe(true);
+        });
+    });
+
+    it("saves the decision table to the user's account and updates it when saved again", async () => {
+        const decisionsStore = createMockStore();
+        loadApp({ decisionsStore });
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        setDecisionNames(decisionA, decisionB);
+        enterConsideration("prosA", 0, "Good team", 8);
+
+        const saveButton = [...document.querySelectorAll("button")].find(
+            (button) => button.textContent === SAVE_LABEL,
+        );
+        saveButton.click();
+
+        await vi.waitFor(() => {
+            expect(decisionsStore.save).toHaveBeenCalledTimes(1);
+            expect(
+                document.getElementById(ELEMENT_IDS.loadDecisionsStatus)
+                    .textContent,
+            ).toBe(SAVE_SUCCESS);
+        });
+        const [firstJson, firstId] = decisionsStore.save.mock.calls[0];
+        expect(firstId).toBeNull();
+        expect(JSON.parse(firstJson).decisions[0].name).toBe(decisionA);
+
+        setDecisionNames("Stay Here", decisionB);
+        saveButton.click();
+
+        await vi.waitFor(() => {
+            expect(decisionsStore.save).toHaveBeenCalledTimes(2);
+        });
+        const [, secondId] = decisionsStore.save.mock.calls[1];
+        expect(secondId).toBe(savedId);
+    });
+
+    it("lets the user browse, load, and delete their saved decisions", async () => {
+        const decisionsStore = createMockStore({
+            list: vi.fn().mockResolvedValue([
+                {
+                    id: savedId,
+                    title: `${decisionA} vs. ${decisionB}`,
+                    updated_at: "2026-11-15T10:00:00Z",
+                },
+                {
+                    id: secondSavedId,
+                    title: "Buy vs. Rent",
+                    updated_at: "2026-11-14T10:00:00Z",
+                },
+            ]),
+            get: vi.fn().mockResolvedValue(
+                sampleSavedPayload(decisionA, decisionB),
+            ),
+        });
+        loadApp({ decisionsStore });
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        const loadButton = [...document.querySelectorAll("button")].find(
+            (button) => button.textContent === LOAD_LABEL,
+        );
+        loadButton.click();
+
+        const dialog = document.getElementById(
+            ELEMENT_IDS.savedDecisionsDialog,
+        );
+        await vi.waitFor(() => {
+            expect(dialog.open).toBe(true);
+            expect(
+                dialog.querySelector(SELECTORS.dialogTitle).textContent,
+            ).toBe(SAVED_DECISIONS_DIALOG_TITLE);
+            expect(
+                dialog.querySelectorAll(SELECTORS.savedDecisionItem),
+            ).toHaveLength(2);
+        });
+
+        const items = dialog.querySelectorAll(SELECTORS.savedDecisionItem);
+        const secondDeleteButton = [...items[1].querySelectorAll("button")].find(
+            (button) => button.textContent === DELETE_SAVED_DECISION_LABEL,
+        );
+        secondDeleteButton.click();
+
+        await vi.waitFor(() => {
+            expect(decisionsStore.remove).toHaveBeenCalledWith(secondSavedId);
+            expect(
+                dialog.querySelectorAll(SELECTORS.savedDecisionItem),
+            ).toHaveLength(1);
+        });
+
+        enterConsideration("prosA", 0, "Unsaved pro", 5);
+        const confirmSpy = vi
+            .spyOn(window, "confirm")
+            .mockReturnValue(true);
+
+        const firstLoadButton = [...items[0].querySelectorAll("button")].find(
+            (button) => button.textContent === LOAD_LABEL,
+        );
+        firstLoadButton.click();
+
+        await vi.waitFor(() => {
+            expect(confirmSpy).toHaveBeenCalledWith(REPLACE_CONFIRMATION);
+            expect(decisionsStore.get).toHaveBeenCalledWith(savedId);
+            expect(
+                document.getElementById(ELEMENT_IDS.decisionA).value,
+            ).toBe(decisionA);
+            expect(
+                document.getElementById(ELEMENT_IDS.decisionB).value,
+            ).toBe(decisionB);
+            expect(
+                document.getElementById(ELEMENT_IDS.loadDecisionsStatus)
+                    .textContent,
+            ).toBe(LOAD_SUCCESS);
+            expect(dialog.open).toBe(false);
+        });
+
+        confirmSpy.mockRestore();
+    });
+
+    it("tells the user when they have no saved decisions yet", async () => {
+        const decisionsStore = createMockStore({
+            list: vi.fn().mockResolvedValue([]),
+        });
+        loadApp({ decisionsStore });
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        document.getElementById(ELEMENT_IDS.loadDecisions).click();
+
+        const dialog = document.getElementById(
+            ELEMENT_IDS.savedDecisionsDialog,
+        );
+        await vi.waitFor(() => {
+            expect(dialog.open).toBe(true);
+            const empty = document.getElementById(
+                ELEMENT_IDS.savedDecisionsEmpty,
+            );
+            expect(empty.hidden).toBe(false);
+            expect(empty.textContent).toBe(SAVED_DECISIONS_EMPTY);
+        });
+    });
+
+    it("prompts for confirmation before deleting the user's account", async () => {
+        const decisionsStore = createMockStore();
+        loadApp({ decisionsStore });
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        const menuTrigger = document.getElementById(
+            ELEMENT_IDS.accountMenuTrigger,
+        );
+        const deleteButton = document.getElementById(ELEMENT_IDS.deleteAccount);
+
+        const confirmSpy = vi
+            .spyOn(window, "confirm")
+            .mockReturnValueOnce(false)
+            .mockReturnValueOnce(true);
+
+        menuTrigger.click();
+        deleteButton.click();
+
+        expect(confirmSpy).toHaveBeenCalledWith(DELETE_ACCOUNT_CONFIRMATION);
+        expect(decisionsStore.deleteAccount).not.toHaveBeenCalled();
+        expect(document.getElementById(ELEMENT_IDS.accountMenu).hidden).toBe(
+            false,
+        );
+
+        menuTrigger.click();
+        deleteButton.click();
+
+        await vi.waitFor(() => {
+            expect(decisionsStore.deleteAccount).toHaveBeenCalledTimes(1);
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(true);
+            expect(
+                document.getElementById(ELEMENT_IDS.signInGoogle).hidden,
+            ).toBe(false);
+        });
+
+        confirmSpy.mockRestore();
+    });
+
+    it("shows an error if deleting the account fails", async () => {
+        const decisionsStore = createMockStore({
+            deleteAccount: vi.fn().mockRejectedValue(new Error("boom")),
+        });
+        loadApp({ decisionsStore });
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+        document.getElementById(ELEMENT_IDS.accountMenuTrigger).click();
+        document.getElementById(ELEMENT_IDS.deleteAccount).click();
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.loadDecisionsError)
+                    .textContent,
+            ).toBe(DELETE_ACCOUNT_ERROR);
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        confirmSpy.mockRestore();
     });
 });

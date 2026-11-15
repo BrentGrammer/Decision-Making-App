@@ -1,10 +1,10 @@
 # DECISION MAKING APP
 
-[TRY IT OUT](https://brentgrammer.github.io/Decision-Making-App/)
+[TRY IT OUT](https://decision-making-app.bmapps.workers.dev)
 
 Compare two options by listing pros and cons and rating each one from 0–10. Each rating is both how important that consideration is and how much it would affect you. Empty rows are ignored.
 
-The app scores each option as **pros minus cons**, then reports which decision is better, by how many points, and which considerations favour each decision. A tie, or missing names, is stated in plain language.
+The app scores each option as **pros minus cons**, then reports which decision is better, by how many points, and which considerations favour each decision. A tie, or missing names, is stated in plain language. You can also **Detect duplicates** within a decision's pros or cons, and **Save** / **Load** comparisons (locally as `.json`, or in the cloud when signed in with Google).
 
 ## Scoring models
 
@@ -32,19 +32,20 @@ The last column is that row's **share of all points entered** — how much of th
 
 ## Use the App
 
-- Run `docker compose up --build` (Vite on http://localhost:5173/) and open that URL, or visit [the hosted page](https://brentgrammer.github.io/Decision-Making-App/).
+- Run `docker compose up --build` (Vite on http://localhost:5173/) and open that URL, or visit [the hosted page](https://decision-making-app.bmapps.workers.dev).
 
 ### Development
 
+Copy `.env.template` to `.env` and run `npm run db:migrate:local` for local API/auth and D1 database support.
+
 ```bash
-docker compose up                                 # install dependencies, then serve on http://localhost:5173/
-docker compose run --rm app npm test              # unit tests
-docker compose run --rm app npx playwright test   # end-to-end tests
-docker compose down                               # stop
+docker compose up      # install dependencies, then serve on http://localhost:5173/
+./run-tests.sh         # unit tests (prefix with sudo if Docker requires it)
+./run-e2e.sh           # end-to-end Playwright tests (prefix with sudo if Docker requires it)
+docker compose down    # stop
 ```
 
 ### Future improvements
 
 - Sensitivity: "would one point flip the winner?"
 - A table comparing every model at once (winner per model)
-- Warn when the same pro or con is listed more than once in different words ([AI duplicate detection](docs/ai-duplicate-detection.md))

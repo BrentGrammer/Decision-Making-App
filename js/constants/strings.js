@@ -17,12 +17,32 @@ export const BLANK_PRO_ERROR = "Enter a pro, or remove this row.";
 export const BLANK_CON_ERROR = "Enter a con, or remove this row.";
 
 export const SCORING_MODEL_LABEL = "Try a different model";
+export const DETECT_DUPLICATES_LABEL = "Detect duplicate considerations";
+export const DUPLICATE_PRIVACY_TITLE = "Check for duplicate considerations";
+export const DUPLICATE_PRIVACY_MESSAGE =
+    "To check for duplicate considerations, the text of your pros and cons will be sent to an external API. Do you want to continue?";
+export const DUPLICATE_PRIVACY_CONTINUE = "Continue";
+export const DUPLICATE_PRIVACY_CANCEL = "Cancel";
+export const DUPLICATE_WARNING_REMOVE = "Remove duplicates";
+export const DUPLICATE_WARNING_DISMISS = "Dismiss";
 export const SAVE_LABEL = "Save";
+export const SAVE_SUCCESS = "Decisions saved.";
+export const SAVE_ERROR = "Decisions could not be saved.";
 export const LOAD_LABEL = "Load";
 export const LOAD_SUCCESS = "Saved decisions loaded.";
 export const LOAD_ERROR = "This file could not be loaded.";
 export const REPLACE_CONFIRMATION =
     "Loading this file will replace your unsaved changes. Continue?";
+export const SIGN_IN_WITH_GOOGLE_LABEL = "Sign in with Google";
+export const SIGN_OUT_LABEL = "Sign out";
+export const DELETE_ACCOUNT_LABEL = "Delete account";
+export const DELETE_ACCOUNT_CONFIRMATION =
+    "Delete your account and all saved decisions? This cannot be undone.";
+export const DELETE_ACCOUNT_ERROR = "Account could not be deleted.";
+export const SAVED_DECISIONS_DIALOG_TITLE = "Saved decisions";
+export const SAVED_DECISIONS_EMPTY = "No saved decisions yet.";
+export const DELETE_SAVED_DECISION_LABEL = "Delete";
+export const SAVED_DECISIONS_CLOSE = "Cancel";
 
 export const MODEL_LABELS = Object.freeze({
     [MODELS.linear.id]: "Linear",
@@ -53,6 +73,9 @@ export const CONSIDERATION_ROW_VALIDATION_ERROR =
     "Some rows have a rating but no text, so they cannot be counted. Enter the missing pro or con, or remove the row.";
 export const EMPTY_TABLE_VALIDATION_ERROR =
     "Nothing has been rated yet. Enter a pro or con and rate it above 0.";
+export const DUPLICATE_VALIDATION_ERROR_TITLE = "No considerations to check";
+export const DUPLICATE_NEEDS_PAIR_VALIDATION_ERROR =
+    "Enter at least two pros or two cons for a decision before detecting duplicates.";
 export const VALIDATION_ERROR_DISMISS = "Back to the decision table";
 
 export const CONCERN_HINT =
@@ -71,6 +94,11 @@ function joinWithAnd(phrases) {
         return phrases.join("");
     }
     return `${phrases.slice(0, -1).join(", ")} and ${phrases[phrases.length - 1]}`;
+}
+
+export function duplicateWarningText(considerations) {
+    const quoted = considerations.map((text) => `"${text}"`);
+    return `Possible duplicate considerations: ${joinWithAnd(quoted)}.`;
 }
 
 export function disqualifiedResult(winner, loser, dealbreakers) {

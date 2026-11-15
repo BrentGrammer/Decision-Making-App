@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+    createCloudDecisionsStore,
     parseSavedDecisions,
     serializeSavedDecisions,
 } from "../js/saved-decisions.js";
@@ -161,5 +162,86 @@ describe("saving decisions", () => {
         ],
     ])("rejects %s", (_description, json) => {
         expect(() => parseSavedDecisions(json)).toThrow();
+    });
+});
+
+describe("account decisions store", () => {
+    it("identifies the signed-in user and treats offline or signed-out sessions as anonymous", async () => {
+        const testUser = { id: "u1", email: "a@b.com", name: "Alex" };
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ user: testUser }),
+            })
+            .mockRejectedValueOnce(new Error("offline"));
+        const store = createCloudDecisionsStore({ fetch: fetchMock });
+
+        expect(await store.getUser()).toEqual(testUser);
+        expect(await store.getUser()).toBeNull();
+    });
+
+    it("saves, updates, lists, loads, and deletes a user's saved decisions", async () => {
+        const saved = validSavedDecisions();
+        const savedSummary = { id: "d1", title: "Stay vs. Leave" };
+        const decisionsPath = "/api/decisions";
+        const itemPath = `${decisionsPath}/${savedSummary.id}`;
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => savedSummary,
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => savedSummary,
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    decisions: [savedSummary],
+                }),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                text: async () => JSON.stringify(saved),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ deleted: true }),
+            });
+        const store = createCloudDecisionsStore({ fetch: fetchMock });
+
+        expect(await store.save(JSON.stringify(saved), null)).toEqual(
+            savedSummary,
+        );
+        expect(fetchMock.mock.calls[0][0]).toBe(decisionsPath);
+        expect(fetchMock.mock.calls[0][1].method).toBe("POST");
+
+        expect(
+            await store.save(JSON.stringify(saved), savedSummary.id),
+        ).toEqual(savedSummary);
+        expect(fetchMock.mock.calls[1][0]).toBe(itemPath);
+        expect(fetchMock.mock.calls[1][1].method).toBe("PUT");
+
+        expect(await store.list()).toEqual([savedSummary]);
+        expect(await store.get(savedSummary.id)).toEqual(saved);
+        await store.remove(savedSummary.id);
+        expect(fetchMock.mock.calls[4][0]).toBe(itemPath);
+        expect(fetchMock.mock.calls[4][1].method).toBe("DELETE");
+    });
+
+    it("deletes the signed-in user's account", async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce({ ok: true })
+            .mockResolvedValueOnce({ ok: false, status: 500 });
+        const store = createCloudDecisionsStore({ fetch: fetchMock });
+
+        await store.deleteAccount();
+        expect(fetchMock.mock.calls[0][0]).toBe("/api/auth/account");
+        expect(fetchMock.mock.calls[0][1].method).toBe("DELETE");
+
+        await expect(store.deleteAccount()).rejects.toThrow();
     });
 });
