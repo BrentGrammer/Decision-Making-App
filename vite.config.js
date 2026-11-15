@@ -62,4 +62,12 @@ function cloudflareWorkerApiPlugin() {
 export default defineConfig({
   base: "./",
   plugins: [cloudflareWorkerApiPlugin()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        privacy: "privacy.html",
+      },
+    },
+  },
 });

@@ -128,6 +128,29 @@ body {
     color: var(--color-con);
 }
 
+.page-footer {
+    padding: 0 1.5rem 1.5rem;
+    font-size: 0.875rem;
+}
+
+.page-footer a {
+    color: var(--color-on-surface-muted, #5f6368);
+    text-decoration: none;
+}
+
+.page-footer a:hover {
+    text-decoration: underline;
+}
+
+.privacy-page {
+    max-width: 720px;
+    line-height: 1.6;
+}
+
+.privacy-page h2 {
+    margin-top: 0;
+}
+
 .icon-sprite {
     position: absolute;
     width: 0;
