@@ -27,14 +27,14 @@ const bodyWithoutScripts = bodyMatch[1].replace(
   "",
 );
 
-export function loadApp() {
+export function loadApp(options) {
   delete globalThis.decisionA;
   delete globalThis.decisionB;
   document.body.innerHTML = bodyWithoutScripts;
   if (typeof HTMLElement.prototype.scrollIntoView !== "function") {
     HTMLElement.prototype.scrollIntoView = function () {};
   }
-  initApp();
+  initApp(options);
   globalThis.sliderChange = sliderChange;
   globalThis.resetSliders = resetSliders;
   globalThis.calculate = calculate;
@@ -52,6 +52,13 @@ export function fillConsideration(sliderClass, rowIndex, text, weight) {
   );
   textInput.value = text;
   slider.value = String(weight);
+}
+
+export function enterConsideration(sliderClass, rowIndex, text, weight = 0) {
+  fillConsideration(sliderClass, rowIndex, text, weight);
+  const input = considerationTextInput(sliderClass, rowIndex);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 export function addConsideration(group) {
