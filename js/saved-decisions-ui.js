@@ -35,6 +35,8 @@ import {
 } from "./constants/decision-table.js";
 import { CLASS_NAMES, ELEMENT_IDS, SELECTORS } from "./constants/selectors.js";
 
+const PENDING_SIGN_IN_DRAFT_KEY = "decision-making-app-pending-sign-in-draft";
+
 let hasUnsavedChanges = false;
 let currentUser = null;
 let activeDecisionId = null;
@@ -299,9 +301,37 @@ export function resetSavedDecisionsState() {
     activeDecisionId = null;
 }
 
+function savePendingSignInDraft() {
+    try {
+        window.sessionStorage.setItem(
+            PENDING_SIGN_IN_DRAFT_KEY,
+            serializeSavedDecisions(currentDecisions()),
+        );
+    } catch {
+        // Ignore storage errors in restricted browser contexts.
+    }
+}
+
+function restorePendingSignInDraft(setSelectedModel) {
+    try {
+        const rawDraft = window.sessionStorage.getItem(
+            PENDING_SIGN_IN_DRAFT_KEY,
+        );
+        if (!rawDraft) {
+            return;
+        }
+        window.sessionStorage.removeItem(PENDING_SIGN_IN_DRAFT_KEY);
+        restoreSavedDecisions(parseSavedDecisions(rawDraft), setSelectedModel);
+        hasUnsavedChanges = true;
+    } catch {
+        // Ignore invalid or inaccessible draft data.
+    }
+}
+
 export function initSavedDecisions({ setSelectedModel, decisionsStore } = {}) {
     activeStore = decisionsStore ?? createCloudDecisionsStore();
     resetSavedDecisionsState();
+    restorePendingSignInDraft(setSelectedModel);
     trackChanges();
     renderAuthState(null);
 
@@ -317,6 +347,7 @@ export function initSavedDecisions({ setSelectedModel, decisionsStore } = {}) {
     );
     if (signInLink) {
         signInLink.textContent = SIGN_IN_WITH_GOOGLE_LABEL;
+        signInLink.addEventListener("click", savePendingSignInDraft);
     }
     if (menuTrigger && menuDropdown) {
         menuTrigger.addEventListener("click", () => {

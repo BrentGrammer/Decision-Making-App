@@ -102,6 +102,52 @@ describe("loading saved decisions when signed out", () => {
             expect(currentName.value).toBe(initialDecisionName);
         });
     });
+
+    it("preserves in-progress decisions across signing in with Google", async () => {
+        setDecisionNames("Remote job", "Office job");
+        enterConsideration("prosA", 0, "No commute", 9);
+        enterConsideration("consB", 0, "Long commute", 7);
+        const modelSelect = document.getElementById(ELEMENT_IDS.model);
+        modelSelect.value = "linear";
+        modelSelect.dispatchEvent(new Event("change", { bubbles: true }));
+
+        const signInLink = document.getElementById(ELEMENT_IDS.signInGoogle);
+        signInLink.addEventListener("click", (event) => event.preventDefault());
+        signInLink.click();
+
+        loadApp({
+            decisionsStore: {
+                getUser: vi.fn().mockResolvedValue(TEST_USER),
+                logout: vi.fn().mockResolvedValue(),
+                deleteAccount: vi.fn().mockResolvedValue(),
+                list: vi.fn().mockResolvedValue([]),
+                get: vi.fn(),
+                save: vi.fn(),
+                remove: vi.fn(),
+            },
+        });
+
+        await vi.waitFor(() => {
+            expect(document.getElementById(ELEMENT_IDS.accountMenu).hidden).toBe(
+                false,
+            );
+        });
+        expect(document.getElementById(ELEMENT_IDS.decisionA).value).toBe(
+            "Remote job",
+        );
+        expect(document.getElementById(ELEMENT_IDS.decisionB).value).toBe(
+            "Office job",
+        );
+        expect(document.getElementById(ELEMENT_IDS.model).value).toBe("linear");
+        expect(
+            document
+                .getElementsByClassName("prosA")[0]
+                .parentElement.previousElementSibling.querySelector(
+                    "input[type='text']",
+                ).value,
+        ).toBe("No commute");
+        expect(document.getElementsByClassName("consB")[0].value).toBe("7");
+    });
 });
 
 describe("saving and loading decisions when signed in", () => {
