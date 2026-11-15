@@ -8,11 +8,14 @@ import {
   DUPLICATE_NEEDS_PAIR_VALIDATION_ERROR,
   DUPLICATE_PRIVACY_CANCEL,
   DUPLICATE_PRIVACY_CONTINUE,
+  DUPLICATE_WARNING_DISMISS,
+  DUPLICATE_WARNING_REMOVE,
   leadResult,
 } from "../js/constants/strings.js";
 import { MODELS } from "../js/scoring.js";
 import {
   addConsideration,
+  considerationTextInput,
   enterConsideration,
   loadApp,
   removeConsideration,
@@ -36,9 +39,9 @@ const HIGHER_PAY_DUPLICATES = [
   BETTER_FINANCES,
 ];
 
-function mockDuplicateConsiderationDetector(...duplicateConsiderationFixtures) {
+function mockDuplicateConsiderationsDetector(...duplicateConsiderationsFixtures) {
   return vi.fn(async (considerations) =>
-    duplicateConsiderationFixtures
+    duplicateConsiderationsFixtures
       .map((duplicateConsiderations) =>
         considerations.flatMap((consideration, index) =>
           duplicateConsiderations.includes(consideration) ? [index] : [],
@@ -48,7 +51,7 @@ function mockDuplicateConsiderationDetector(...duplicateConsiderationFixtures) {
   );
 }
 
-function failingDuplicateConsiderationDetector() {
+function failingDuplicateConsiderationsDetector() {
   return vi.fn(async () => {
     throw new Error("network down");
   });
@@ -90,15 +93,25 @@ function allDuplicateWarnings() {
   return [...document.querySelectorAll(`.${DUPLICATE_WARNING_CLASS}`)];
 }
 
+function warningButton(group, label) {
+  return [...duplicateWarnings(group)[0].querySelectorAll("button")].find(
+    (button) => button.textContent.trim() === label,
+  );
+}
+
 function dismissDuplicateWarning(group) {
-  duplicateWarnings(group)[0].querySelector("button").click();
+  warningButton(group, DUPLICATE_WARNING_DISMISS).click();
+}
+
+function removeDuplicatesFromWarning(group) {
+  warningButton(group, DUPLICATE_WARNING_REMOVE).click();
 }
 
 async function waitForPendingDetections() {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-function enterRows(group, considerations) {
+function enterConsiderations(group, considerations) {
   considerations.forEach((consideration, index) => {
     if (index > 0) {
       addConsideration(group);
@@ -108,28 +121,28 @@ function enterRows(group, considerations) {
 }
 
 describe("duplicate consideration warning", () => {
-  let duplicateConsiderationDetector;
+  let duplicateConsiderationsDetector;
 
   function startAppWith(detector) {
-    duplicateConsiderationDetector = detector;
-    loadApp({ duplicateConsiderationDetector });
+    duplicateConsiderationsDetector = detector;
+    loadApp({ duplicateConsiderationsDetector });
     selectScoringModel(MODELS.linear.id);
   }
 
   beforeEach(() => {
-    startAppWith(mockDuplicateConsiderationDetector(HIGHER_PAY_DUPLICATES));
+    startAppWith(mockDuplicateConsiderationsDetector(HIGHER_PAY_DUPLICATES));
   });
 
   it("does not detect automatically before the user clicks Detect duplicate considerations", async () => {
-    enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
 
     await waitForPendingDetections();
-    expect(duplicateConsiderationDetector).not.toHaveBeenCalled();
+    expect(duplicateConsiderationsDetector).not.toHaveBeenCalled();
     expect(allDuplicateWarnings()).toHaveLength(0);
   });
 
   it("asks for privacy confirmation before sending considerations, and does nothing if cancelled", async () => {
-    enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
 
     detectDuplicateConsiderationsButton().click();
 
@@ -141,12 +154,12 @@ describe("duplicate consideration warning", () => {
     await waitForPendingDetections();
 
     expect(dialog.open).toBe(false);
-    expect(duplicateConsiderationDetector).not.toHaveBeenCalled();
+    expect(duplicateConsiderationsDetector).not.toHaveBeenCalled();
     expect(allDuplicateWarnings()).toHaveLength(0);
   });
 
   it("remembers confirmation for the current session on subsequent scans", async () => {
-    enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
     detectDuplicateConsiderationsButton().click();
     const dialog = openDialog();
     dialogButton(dialog, DUPLICATE_PRIVACY_CONTINUE).click();
@@ -155,19 +168,19 @@ describe("duplicate consideration warning", () => {
     );
 
     const detectionsBefore =
-      duplicateConsiderationDetector.mock.calls.length;
+      duplicateConsiderationsDetector.mock.calls.length;
     detectDuplicateConsiderationsButton().click();
 
     expect(openDialog()).toBeNull();
     await vi.waitFor(() =>
-      expect(duplicateConsiderationDetector.mock.calls.length).toBeGreaterThan(
+      expect(duplicateConsiderationsDetector.mock.calls.length).toBeGreaterThan(
         detectionsBefore,
       ),
     );
   });
 
   it("warns when two pros of the same decision say the same thing", async () => {
-    enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
     scanForDuplicates();
 
     await vi.waitFor(() =>
@@ -178,8 +191,8 @@ describe("duplicate consideration warning", () => {
     expect(warning).toContain(MORE_DISPOSABLE_INCOME);
   });
 
-  it("names all rows of a larger duplicate group in one warning", async () => {
-    enterRows(DECISION_A_PROS, HIGHER_PAY_DUPLICATES);
+  it("names all considerations of a larger duplicate group in one warning", async () => {
+    enterConsiderations(DECISION_A_PROS, HIGHER_PAY_DUPLICATES);
     scanForDuplicates();
 
     await vi.waitFor(() => {
@@ -195,10 +208,10 @@ describe("duplicate consideration warning", () => {
     const longCommute = "Long commute";
     const timeInTheCar = "Time in the car";
     startAppWith(
-      mockDuplicateConsiderationDetector([longCommute, timeInTheCar]),
+      mockDuplicateConsiderationsDetector([longCommute, timeInTheCar]),
     );
 
-    enterRows(DECISION_B_CONS, [longCommute, timeInTheCar]);
+    enterConsiderations(DECISION_B_CONS, [longCommute, timeInTheCar]);
     scanForDuplicates();
 
     await vi.waitFor(() =>
@@ -206,27 +219,27 @@ describe("duplicate consideration warning", () => {
     );
   });
 
-  it("does not warn when the rows are genuinely different", async () => {
-    enterRows(DECISION_A_PROS, [HIGHER_SALARY, "Shorter commute"]);
+  it("does not warn when the considerations are genuinely different", async () => {
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, "Shorter commute"]);
     scanForDuplicates();
 
     await vi.waitFor(() =>
-      expect(duplicateConsiderationDetector).toHaveBeenCalled(),
+      expect(duplicateConsiderationsDetector).toHaveBeenCalled(),
     );
     await waitForPendingDetections();
     expect(allDuplicateWarnings()).toHaveLength(0);
   });
 
-  it("does not compare rows across decisions", async () => {
+  it("does not compare considerations across decisions", async () => {
     const higherPay = "Higher pay";
-    startAppWith(mockDuplicateConsiderationDetector([higherPay]));
+    startAppWith(mockDuplicateConsiderationsDetector([higherPay]));
 
-    enterRows(DECISION_A_PROS, [higherPay, "Stable team"]);
-    enterRows(DECISION_B_PROS, [higherPay, "Shorter commute"]);
+    enterConsiderations(DECISION_A_PROS, [higherPay, "Stable team"]);
+    enterConsiderations(DECISION_B_PROS, [higherPay, "Shorter commute"]);
     scanForDuplicates();
 
     await vi.waitFor(() =>
-      expect(duplicateConsiderationDetector).toHaveBeenCalled(),
+      expect(duplicateConsiderationsDetector).toHaveBeenCalled(),
     );
     await waitForPendingDetections();
     expect(allDuplicateWarnings()).toHaveLength(0);
@@ -240,7 +253,7 @@ describe("duplicate consideration warning", () => {
     expect(validationErrorMessages()).toContain(
       DUPLICATE_NEEDS_PAIR_VALIDATION_ERROR,
     );
-    expect(duplicateConsiderationDetector).not.toHaveBeenCalled();
+    expect(duplicateConsiderationsDetector).not.toHaveBeenCalled();
     expect(allDuplicateWarnings()).toHaveLength(0);
   });
 
@@ -255,19 +268,19 @@ describe("duplicate consideration warning", () => {
     expect(validationErrorMessages()).toContain(
       DUPLICATE_NEEDS_PAIR_VALIDATION_ERROR,
     );
-    expect(duplicateConsiderationDetector).not.toHaveBeenCalled();
+    expect(duplicateConsiderationsDetector).not.toHaveBeenCalled();
     expect(allDuplicateWarnings()).toHaveLength(0);
   });
 
-  it("does not ask about blank rows", async () => {
+  it("does not ask about blank considerations", async () => {
     const blank = "";
-    enterRows(DECISION_A_PROS, [HIGHER_SALARY, blank, BETTER_FINANCES]);
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, blank, BETTER_FINANCES]);
     scanForDuplicates();
 
     await vi.waitFor(() =>
-      expect(duplicateConsiderationDetector).toHaveBeenCalled(),
+      expect(duplicateConsiderationsDetector).toHaveBeenCalled(),
     );
-    for (const [considerations] of duplicateConsiderationDetector.mock.calls) {
+    for (const [considerations] of duplicateConsiderationsDetector.mock.calls) {
       expect(considerations).not.toContain(blank);
     }
   });
@@ -293,8 +306,8 @@ describe("duplicate consideration warning", () => {
     );
   });
 
-  it("clears the warning when a row is edited to something different", async () => {
-    enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
+  it("clears the warning when a consideration is edited to something different", async () => {
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
     scanForDuplicates();
     await vi.waitFor(() =>
       expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(1),
@@ -307,8 +320,8 @@ describe("duplicate consideration warning", () => {
     );
   });
 
-  it("clears the warning when one of the duplicate rows is removed", async () => {
-    enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
+  it("clears the warning when one of the duplicate considerations is removed", async () => {
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
     scanForDuplicates();
     await vi.waitFor(() =>
       expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(1),
@@ -321,8 +334,8 @@ describe("duplicate consideration warning", () => {
     );
   });
 
-  it("lets the user dismiss a warning and keep both rows", async () => {
-    enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
+  it("lets the user dismiss a warning and keep both considerations", async () => {
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
     scanForDuplicates();
     await vi.waitFor(() =>
       expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(1),
@@ -334,22 +347,70 @@ describe("duplicate consideration warning", () => {
     expect(document.getElementsByClassName(DECISION_A_PROS)).toHaveLength(2);
   });
 
-  it("keeps a dismissed warning hidden when other rows change and scanned again", async () => {
-    enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
+  it("removes duplicate considerations by keeping the highest-rated consideration and removing the others", async () => {
+    enterConsideration(DECISION_A_PROS, 0, HIGHER_SALARY, 6);
+    addConsideration(DECISION_A_PROS);
+    enterConsideration(DECISION_A_PROS, 1, MORE_DISPOSABLE_INCOME, 9);
+    addConsideration(DECISION_A_PROS);
+    enterConsideration(DECISION_A_PROS, 2, BETTER_FINANCES, 7);
+    addConsideration(DECISION_A_PROS);
+    enterConsideration(DECISION_A_PROS, 3, "Shorter commute", 5);
+    scanForDuplicates();
+    await vi.waitFor(() =>
+      expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(1),
+    );
+
+    removeDuplicatesFromWarning(DECISION_A_PROS);
+
+    expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(0);
+    const sliders = [...document.getElementsByClassName(DECISION_A_PROS)];
+    expect(sliders).toHaveLength(2);
+    expect(considerationTextInput(DECISION_A_PROS, 0).value).toBe(
+      MORE_DISPOSABLE_INCOME,
+    );
+    expect(sliders[0].value).toBe("9");
+    expect(considerationTextInput(DECISION_A_PROS, 1).value).toBe(
+      "Shorter commute",
+    );
+    expect(sliders[1].value).toBe("5");
+  });
+
+  it("keeps the first duplicate consideration when removing duplicates with tied ratings", async () => {
+    enterConsideration(DECISION_A_PROS, 0, HIGHER_SALARY, 7);
+    addConsideration(DECISION_A_PROS);
+    enterConsideration(DECISION_A_PROS, 1, MORE_DISPOSABLE_INCOME, 7);
+    scanForDuplicates();
+    await vi.waitFor(() =>
+      expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(1),
+    );
+
+    removeDuplicatesFromWarning(DECISION_A_PROS);
+
+    expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(0);
+    const sliders = [...document.getElementsByClassName(DECISION_A_PROS)];
+    expect(sliders).toHaveLength(1);
+    expect(considerationTextInput(DECISION_A_PROS, 0).value).toBe(
+      HIGHER_SALARY,
+    );
+    expect(sliders[0].value).toBe("7");
+  });
+
+  it("keeps a dismissed warning hidden when other considerations change and scanned again", async () => {
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
     scanForDuplicates();
     await vi.waitFor(() =>
       expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(1),
     );
     dismissDuplicateWarning(DECISION_A_PROS);
     const detectionsBefore =
-      duplicateConsiderationDetector.mock.calls.length;
+      duplicateConsiderationsDetector.mock.calls.length;
 
     addConsideration(DECISION_A_PROS);
     enterConsideration(DECISION_A_PROS, 2, "Stable team");
     scanForDuplicates();
 
     await vi.waitFor(() =>
-      expect(duplicateConsiderationDetector.mock.calls.length).toBeGreaterThan(
+      expect(duplicateConsiderationsDetector.mock.calls.length).toBeGreaterThan(
         detectionsBefore,
       ),
     );
@@ -362,7 +423,7 @@ describe("duplicate consideration warning", () => {
     const leave = "Leave";
     const salaryRating = 8;
     const incomeRating = 7;
-    startAppWith(failingDuplicateConsiderationDetector());
+    startAppWith(failingDuplicateConsiderationsDetector());
     setDecisionNames(stay, leave);
     enterConsideration(DECISION_A_PROS, 0, HIGHER_SALARY, salaryRating);
     addConsideration(DECISION_A_PROS);
@@ -370,7 +431,7 @@ describe("duplicate consideration warning", () => {
     scanForDuplicates();
 
     await vi.waitFor(() =>
-      expect(duplicateConsiderationDetector).toHaveBeenCalled(),
+      expect(duplicateConsiderationsDetector).toHaveBeenCalled(),
     );
     await waitForPendingDetections();
     expect(allDuplicateWarnings()).toHaveLength(0);
@@ -382,7 +443,7 @@ describe("duplicate consideration warning", () => {
   });
 
   it("clears warnings on Reset", async () => {
-    enterRows(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
+    enterConsiderations(DECISION_A_PROS, [HIGHER_SALARY, MORE_DISPOSABLE_INCOME]);
     scanForDuplicates();
     await vi.waitFor(() =>
       expect(duplicateWarnings(DECISION_A_PROS)).toHaveLength(1),

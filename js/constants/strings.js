@@ -23,6 +23,7 @@ export const DUPLICATE_PRIVACY_MESSAGE =
     "To check for duplicate considerations, the text of your pros and cons will be sent to an external API. Do you want to continue?";
 export const DUPLICATE_PRIVACY_CONTINUE = "Continue";
 export const DUPLICATE_PRIVACY_CANCEL = "Cancel";
+export const DUPLICATE_WARNING_REMOVE = "Remove duplicates";
 export const DUPLICATE_WARNING_DISMISS = "Dismiss";
 export const SAVE_LABEL = "Save";
 export const LOAD_LABEL = "Load";

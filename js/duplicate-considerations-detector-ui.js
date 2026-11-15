@@ -11,9 +11,13 @@ import {
     DUPLICATE_PRIVACY_TITLE,
     DUPLICATE_VALIDATION_ERROR_TITLE,
     DUPLICATE_WARNING_DISMISS,
+    DUPLICATE_WARNING_REMOVE,
     duplicateWarningText,
 } from "./constants/strings.js";
-import { getConsiderations } from "./consideration-rows.js";
+import {
+    getConsiderations,
+    removeDuplicateConsiderations,
+} from "./consideration-rows.js";
 import { showValidationDialog } from "./decision-validation.js";
 
 const noopDetector = async () => [];
@@ -70,6 +74,19 @@ function createWarningElement(groupId, considerations) {
     text.className = "duplicate-warning-text";
     text.textContent = duplicateWarningText(considerations);
 
+    const actions = document.createElement("div");
+    actions.className = "duplicate-warning-actions";
+
+    const removeDuplicates = document.createElement("button");
+    removeDuplicates.type = "button";
+    removeDuplicates.className = "duplicate-warning-action";
+    removeDuplicates.textContent = DUPLICATE_WARNING_REMOVE;
+    removeDuplicates.addEventListener("click", () => {
+        removeDuplicateConsiderations(groupId, considerations);
+        warning.remove();
+        pruneDuplicateWarnings(groupId);
+    });
+
     const dismiss = document.createElement("button");
     dismiss.type = "button";
     dismiss.className = "duplicate-warning-dismiss";
@@ -79,7 +96,8 @@ function createWarningElement(groupId, considerations) {
         warning.remove();
     });
 
-    warning.append(text, dismiss);
+    actions.append(removeDuplicates, dismiss);
+    warning.append(text, actions);
     return warning;
 }
 
@@ -203,8 +221,10 @@ export function clearDuplicateWarnings() {
     }
 }
 
-export function initDuplicateWarnings({ duplicateConsiderationDetector } = {}) {
-    detectDuplicates = duplicateConsiderationDetector ?? noopDetector;
+export function initDuplicateConsiderationsDetector({
+    duplicateConsiderationsDetector,
+} = {}) {
+    detectDuplicates = duplicateConsiderationsDetector ?? noopDetector;
     privacyConfirmed = false;
     clearDuplicateWarnings();
 

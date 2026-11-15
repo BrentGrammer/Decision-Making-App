@@ -23,6 +23,13 @@
     line-height: 1.4;
 }
 
+.duplicate-warning-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.5rem;
+}
+
+.duplicate-warning-action,
 .duplicate-warning-dismiss {
     flex-shrink: 0;
     font-family: inherit;
@@ -36,6 +43,16 @@
     background: var(--color-panel);
     color: var(--color-pro);
     cursor: pointer;
+}
+
+.duplicate-warning-action {
+    background: var(--color-pro);
+    border-color: var(--color-pro);
+    color: var(--color-on-primary);
+}
+
+.duplicate-warning-action:hover {
+    background: var(--color-primary-hover);
 }
 
 .duplicate-warning-dismiss:hover {

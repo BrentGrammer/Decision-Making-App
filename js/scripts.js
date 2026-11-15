@@ -28,9 +28,10 @@ import {
 } from "./model-controls.js";
 import {
     clearDuplicateWarnings,
-    initDuplicateWarnings,
+    initDuplicateConsiderationsDetector,
     pruneDuplicateWarnings,
-} from "./duplicate-warnings.js";
+} from "./duplicate-considerations-detector-ui.js";
+import { createDuplicateConsiderationsDetector } from "./duplicate-considerations-detector.js";
 
 function resetSliders() {
     restoreDefaultRows();
@@ -109,7 +110,7 @@ function onFormClick(event) {
     }
 }
 
-function initApp(options) {
+function initApp({ duplicateConsiderationsDetector } = {}) {
     window.sliderChange = sliderChange;
     window.resetSliders = resetSliders;
     window.calculate = calculate;
@@ -123,7 +124,11 @@ function initApp(options) {
     initSavedDecisions({ setSelectedModel });
 
     initDecisionValidation();
-    initDuplicateWarnings(options);
+    initDuplicateConsiderationsDetector({
+        duplicateConsiderationsDetector:
+            duplicateConsiderationsDetector ??
+            createDuplicateConsiderationsDetector(),
+    });
 }
 
 export { sliderChange, resetSliders, calculate, initApp };
