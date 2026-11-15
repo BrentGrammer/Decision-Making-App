@@ -1,5 +1,19 @@
+import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
-import worker from "./src/worker.js";
+import worker from "./worker/worker.js";
+
+async function createLocalPlatform() {
+  const { getPlatformProxy } = await import("wrangler");
+  const platform = await getPlatformProxy();
+  const sql = readFileSync("./schema.sql", "utf8");
+  const statements = sql
+    .split(";")
+    .map((statement) => statement.trim())
+    .filter(Boolean)
+    .map((statement) => platform.env.DB.prepare(statement));
+  await platform.env.DB.batch(statements);
+  return platform;
+}
 
 function cloudflareWorkerApiPlugin() {
   let platformPromise;
@@ -11,9 +25,7 @@ function cloudflareWorkerApiPlugin() {
           next();
           return;
         }
-        platformPromise ??= import("wrangler").then(({ getPlatformProxy }) =>
-          getPlatformProxy(),
-        );
+        platformPromise ??= createLocalPlatform();
         const platform = await platformPromise;
         const chunks = [];
         for await (const chunk of req) {

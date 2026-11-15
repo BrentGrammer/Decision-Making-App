@@ -1,32 +1,46 @@
-# Handoff: Duplicate Considerations Detector (Decision-Making-App)
+# Handoff: Cloudflare Migration & Duplicate Considerations Detector (Decision-Making-App)
 
 Last updated: 2026-11-15
 
 ## Goal
 
-Implement [`docs/ai-duplicate-detection.md`](/home/amddesktop/Work/Decision-Making-App/docs/ai-duplicate-detection.md) in `/home/amddesktop/Work/Decision-Making-App`: warn when two or more pros (or cons) of the same decision say the same thing (e.g. "Higher salary", "More disposable income", "Better finances"), with an option to remove duplicates or dismiss the warning.
+1. Implement [`docs/ai-duplicate-detection.md`](/home/amddesktop/Work/Decision-Making-App/docs/ai-duplicate-detection.md) in `/home/amddesktop/Work/Decision-Making-App`: warn when two or more pros (or cons) of the same decision say the same thing, with an option to remove duplicates or dismiss the warning.
+2. Implement [`docs/cloudflare-migration-plan.md`](/home/amddesktop/Work/Decision-Making-App/docs/cloudflare-migration-plan.md): migrate to Cloudflare Workers + Static Assets + D1 SQLite + **Sign in with Google** (as the sole auth method) + server-side `OPENROUTER_API_KEY`.
 
 ## Where we are
 
-* **Branch:** `feature/jev-duplicate-detection`
-* **Status:** **Feature complete and tested end-to-end.**
-  * **Vitest:** 200 passed across 12 test files (`npx vitest run`), including 20 UI behavior tests in [`test/duplicate-considerations-detector-ui.test.js`](/home/amddesktop/Work/Decision-Making-App/test/duplicate-considerations-detector-ui.test.js) and 6 detector unit tests in [`test/duplicate-considerations-detector.test.js`](/home/amddesktop/Work/Decision-Making-App/test/duplicate-considerations-detector.test.js).
-  * **Playwright e2e:** `detects and removes duplicate considerations` added to [`e2e/decision.spec.js`](/home/amddesktop/Work/Decision-Making-App/e2e/decision.spec.js) and verified passing against the live app.
-  * **Future architecture plan:** [`docs/cloudflare-migration-plan.md`](/home/amddesktop/Work/Decision-Making-App/docs/cloudflare-migration-plan.md) documents the planned migration to Cloudflare Workers + Static Assets + D1 SQLite + **Sign in with Google** (as the sole auth method) + server-side `OPENROUTER_API_KEY`.
+* **Branch:** `feature/cloudflare` (branched with `feature/jev-duplicate-detection` merged in).
+* **Status:** **Phases 1–4 of the Cloudflare migration are implemented and unit/integration-tested locally.**
+  * **Vitest:** 218 passed across 13 test files (`npx vitest run`), including:
+    * 13 Worker + real local D1 SQLite tests in [`test/worker.test.js`](/home/amddesktop/Work/Decision-Making-App/test/worker.test.js) covering `/api/duplicate-considerations`, `/api/auth/*`, and `/api/decisions/*`.
+    * 7 UI behavior tests in [`test/saved-decisions-ui.test.js`](/home/amddesktop/Work/Decision-Making-App/test/saved-decisions-ui.test.js) covering signed-out file fallback, `.app-bar` Sign in with Google / Sign out, and signed-in cloud save/load/delete dialog.
+    * 14 unit tests in [`test/saved-decisions.test.js`](/home/amddesktop/Work/Decision-Making-App/test/saved-decisions.test.js) covering serialization, validation, and `createCloudDecisionsStore`.
+    * 20 UI behavior tests in [`test/duplicate-considerations-detector-ui.test.js`](/home/amddesktop/Work/Decision-Making-App/test/duplicate-considerations-detector-ui.test.js) and 4 detector unit tests in [`test/duplicate-considerations-detector.test.js`](/home/amddesktop/Work/Decision-Making-App/test/duplicate-considerations-detector.test.js).
+  * **Build & Wrangler verification:** `npm run build` produces a browser bundle (`dist/`) with zero references to OpenRouter, Jev, or `OPENROUTER_API_KEY`, and `npx wrangler deploy --dry-run` succeeds with `env.DB` and `env.ASSETS` bound.
+* **Next steps:**
+  1. Run Playwright e2e verification (`sudo docker compose run --rm app npx playwright test`) against the updated stack (and optionally add an e2e test for signed-in cloud save/load).
+  2. Provision remote Cloudflare D1 & Google OAuth credentials and deploy (`npx wrangler login`, `npx wrangler d1 create decision-making-app-db`, update `database_id` in `wrangler.toml`, `npm run db:migrate:remote`, set Worker secrets `OPENROUTER_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and run `npm run deploy`).
 
-## Architecture & files
+## Architecture & directory layout
 
-* **[`js/duplicate-considerations-detector.js`](/home/amddesktop/Work/Decision-Making-App/js/duplicate-considerations-detector.js):** Provider-agnostic domain module (`createDuplicateConsiderationsDetector`). Owns the `< 2` guard and `mergeConnectedPairs()` (merging connected duplicate pairs into sorted index groups `number[][]`), delegating pairwise detection to a swappable `detectDuplicatePairs` provider.
-* **[`js/jev-duplicate-detector.js`](/home/amddesktop/Work/Decision-Making-App/js/jev-duplicate-detector.js):** Jev provider adapter (`createJevDuplicatePairsDetector`) — the only file in `js/` that knows about Jev or OpenRouter. Sends all pairs for one list in a single `POST https://openrouter.ai/api/alpha/decisions` (`typesafe/jev-1.14`) request using `score` (`0–2`) and flags pairs with `score >= 1.5`. Defaults `apiKey` to `import.meta.env?.VITE_OPENROUTER_API_KEY` (returns `[]` with zero network calls when unset).
-* **[`js/duplicate-considerations-detector-ui.js`](/home/amddesktop/Work/Decision-Making-App/js/duplicate-considerations-detector-ui.js)** & **[`css/duplicate-considerations-detector-ui.css`](/home/amddesktop/Work/Decision-Making-App/css/duplicate-considerations-detector-ui.css):**
-  * Wires `#detect-duplicates` (**Detect duplicate considerations**) in `.action-buttons`.
-  * Opens `#validation-dialog` (`DUPLICATE_NEEDS_PAIR_VALIDATION_ERROR`) if no pro/con list has at least 2 non-blank considerations.
-  * Opens `#duplicate-privacy-dialog` (`Continue` / `Cancel`, remembered for the current page session) before sending consideration text to the external API.
-  * Renders one `.duplicate-warning` banner per duplicate group inside `[data-group="..."] .duplicate-warnings`, naming every duplicate consideration in the group.
-  * Each warning has two buttons:
-    * **Remove duplicates** (`DUPLICATE_WARNING_REMOVE`) — calls `removeDuplicateConsiderations(groupId, considerations)` in [`js/consideration-rows.js`](/home/amddesktop/Work/Decision-Making-App/js/consideration-rows.js), keeping the consideration with the highest 0–10 slider rating (or the first consideration on a tie) and removing the others.
-    * **Dismiss** (`DUPLICATE_WARNING_DISMISS`) — hides the warning and remembers the dismissed group across rescans until reset.
-  * Automatically prunes warnings when a consideration in that group is edited or removed, and clears all warnings on **Reset**.
+* **`wrangler.toml` & `schema.sql`:**
+  * [`wrangler.toml`](/home/amddesktop/Work/Decision-Making-App/wrangler.toml) declares the Cloudflare Worker (`worker/worker.js`), Static Assets (`./dist` via `env.ASSETS` with `run_worker_first = ["/api/*"]`), and D1 database (`decision-making-app-db` via `env.DB`).
+  * [`schema.sql`](/home/amddesktop/Work/Decision-Making-App/schema.sql) defines idempotent D1 tables (`users`, `sessions`, `saved_decisions`) and index (`idx_saved_decisions_user_updated`).
+* **`worker/` (Cloudflare Worker backend — server-only):**
+  * **[`worker/worker.js`](/home/amddesktop/Work/Decision-Making-App/worker/worker.js):** Thin request router dispatching `/api/*` routes and delegating static requests to `env.ASSETS.fetch(request)`.
+  * **[`worker/auth.js`](/home/amddesktop/Work/Decision-Making-App/worker/auth.js):** Google OAuth 2.0 flow (`GET /api/auth/google`, `GET /api/auth/google/callback`), SHA-256 hashed session token lookup (`GET /api/auth/me`, `authenticatedUser`), and `POST /api/auth/logout`.
+  * **[`worker/decisions-api.js`](/home/amddesktop/Work/Decision-Making-App/worker/decisions-api.js):** Per-user CRUD routes (`GET /api/decisions`, `POST /api/decisions`, `GET /api/decisions/:id`, `PUT /api/decisions/:id`, `DELETE /api/decisions/:id`) validated with `parseSavedDecisions()`.
+  * **[`worker/duplicate-considerations-api.js`](/home/amddesktop/Work/Decision-Making-App/worker/duplicate-considerations-api.js):** Handles `POST /api/duplicate-considerations` using `env.OPENROUTER_API_KEY`.
+  * **[`worker/jev-duplicate-detector.js`](/home/amddesktop/Work/Decision-Making-App/worker/jev-duplicate-detector.js):** Jev provider adapter (`createJevDuplicatePairsDetector`) — the only file that knows about Jev (`typesafe/jev-1.14`) or OpenRouter (`POST https://openrouter.ai/api/alpha/decisions`, `score` `0–2` with cutoff `>= 1.5`).
+* **`js/` (Browser frontend):**
+  * **[`js/duplicate-considerations-detector.js`](/home/amddesktop/Work/Decision-Making-App/js/duplicate-considerations-detector.js):** Provider-agnostic domain module (`createDuplicateConsiderationsDetector`). Defaults to posting `{ considerations }` to `POST /api/duplicate-considerations` and merging connected `duplicatePairs` into sorted index groups `number[][]`.
+  * **[`js/duplicate-considerations-detector-ui.js`](/home/amddesktop/Work/Decision-Making-App/js/duplicate-considerations-detector-ui.js)** & **[`css/duplicate-considerations-detector-ui.css`](/home/amddesktop/Work/Decision-Making-App/css/duplicate-considerations-detector-ui.css):** Wires `#detect-duplicates`, validation/privacy dialogs, `.duplicate-warning` banners, **Remove duplicates** (`removeDuplicateConsiderations`), and **Dismiss**.
+  * **[`js/saved-decisions.js`](/home/amddesktop/Work/Decision-Making-App/js/saved-decisions.js)** & **[`js/saved-decisions-ui.js`](/home/amddesktop/Work/Decision-Making-App/js/saved-decisions-ui.js):**
+    * Shared `serializeSavedDecisions()` and `parseSavedDecisions()` plus `createCloudDecisionsStore()`.
+    * Renders **Sign in with Google** (`#sign-in-google`) when signed out, or the user's name (`#signed-in-user`) + **Sign out** (`#sign-out`) when signed in.
+    * **Signed out:** **Save** and **Load** use local `.json` file download/upload.
+    * **Signed in:** **Save** creates/updates in `/api/decisions`; **Load** opens `#saved-decisions-dialog` to load or delete saved comparisons.
+* **[`vite.config.js`](/home/amddesktop/Work/Decision-Making-App/vite.config.js):** Includes a dev-server middleware backed by Wrangler's `getPlatformProxy()` so `npm run serve` (and Playwright e2e) routes `/api/*` requests through `worker/worker.js` with local D1 and `.env` secrets.
 
 ## Jev spike findings (2026-11-14 – 2026-11-15)
 
@@ -34,14 +48,14 @@ Implement [`docs/ai-duplicate-detection.md`](/home/amddesktop/Work/Decision-Maki
 * **Question type & cutoff:** `score` (`0–2` scale) with cutoff `>= 1.5`.
 * **Prompt sensitivity:**
   * Quoting both consideration strings directly in each question's `instructions` (rather than indirect `row_0`/`row_2` pointers) is required for a clean split on 6-item lists.
-  * Tested 4 alternative wordings for the 3rd criterion (`"Same consideration worded differently"`, `"Direct restatement of the same consideration"`, `"Counting both double-counts the same consideration"`, `"Same consideration worded differently, so counting both double-counts it"`). None separated as cleanly at `1.5` as the proven wording: `"Same underlying consideration worded differently (counting both double-counts it)"`. Kept the proven wording.
+  * Proven 3rd criterion wording: `"Same underlying consideration worded differently (counting both double-counts it)"`.
 
 ## Terminology & conventions (strictly enforced)
 
 * **Domain terms:** Use **detect** (never "find" or "evaluate"), **considerations** plural for the detector (`duplicateConsiderationsDetector`, `createDuplicateConsiderationsDetector`, `initDuplicateConsiderationsDetector`), and **consideration / considerations** (never "row / rows") in duplicate-detection functions and test descriptions.
 * **Remove action:** Called **Remove duplicates** (`DUPLICATE_WARNING_REMOVE`, `removeDuplicateConsiderations`), not "consolidate".
 * **No vendor names (Jev / OpenRouter) in tests or UI:** Even the Playwright e2e test in `e2e/decision.spec.js` drives only the public UI without intercepting or referencing OpenRouter URLs.
-* **No hardcoded UI strings in tests:** Tests import shared label/message constants from `js/constants/strings.js` (`DETECT_DUPLICATES_LABEL`, `DUPLICATE_PRIVACY_CONTINUE`, `DUPLICATE_PRIVACY_CANCEL`, `DUPLICATE_WARNING_REMOVE`, `DUPLICATE_WARNING_DISMISS`, etc.).
+* **No hardcoded UI strings in tests:** Tests import shared label/message constants from `js/constants/strings.js` (`DETECT_DUPLICATES_LABEL`, `DUPLICATE_PRIVACY_CONTINUE`, `DUPLICATE_PRIVACY_CANCEL`, `DUPLICATE_WARNING_REMOVE`, `DUPLICATE_WARNING_DISMISS`, `SIGN_IN_WITH_GOOGLE_LABEL`, `SIGN_OUT_LABEL`, etc.).
 
 ## Environment & how the user wants to work
 

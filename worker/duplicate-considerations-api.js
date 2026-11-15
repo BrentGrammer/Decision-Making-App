@@ -1,4 +1,4 @@
-import { createJevDuplicatePairsDetector } from "../js/jev-duplicate-detector.js";
+import { createJevDuplicatePairsDetector } from "./jev-duplicate-detector.js";
 
 function isStringArray(value) {
     return (
@@ -7,7 +7,11 @@ function isStringArray(value) {
     );
 }
 
-async function handleDuplicateConsiderations(request, env, options = {}) {
+export async function handleDuplicateConsiderations(
+    request,
+    env,
+    options = {},
+) {
     let body;
     try {
         body = await request.json();
@@ -40,22 +44,3 @@ async function handleDuplicateConsiderations(request, env, options = {}) {
         );
     }
 }
-
-export default {
-    async fetch(request, env, options) {
-        const url = new URL(request.url);
-
-        if (
-            request.method === "POST" &&
-            url.pathname === "/api/duplicate-considerations"
-        ) {
-            return handleDuplicateConsiderations(request, env, options);
-        }
-
-        if (url.pathname.startsWith("/api/")) {
-            return Response.json({ error: "Not found" }, { status: 404 });
-        }
-
-        return env.ASSETS.fetch(request);
-    },
-};

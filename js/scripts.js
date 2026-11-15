@@ -110,7 +110,7 @@ function onFormClick(event) {
     }
 }
 
-function initApp({ duplicateConsiderationsDetector } = {}) {
+function initApp({ duplicateConsiderationsDetector, decisionsStore } = {}) {
     window.sliderChange = sliderChange;
     window.resetSliders = resetSliders;
     window.calculate = calculate;
@@ -121,7 +121,7 @@ function initApp({ duplicateConsiderationsDetector } = {}) {
 
     restoreDefaultRows();
     initModelControls();
-    initSavedDecisions({ setSelectedModel });
+    initSavedDecisions({ setSelectedModel, decisionsStore });
 
     initDecisionValidation();
     initDuplicateConsiderationsDetector({

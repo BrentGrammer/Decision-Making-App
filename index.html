@@ -16,6 +16,11 @@
   <body>
     <header class="app-bar">
       <h1>Decision calculator</h1>
+      <div class="auth-controls">
+        <a id="sign-in-google" class="auth-button" href="/api/auth/google"></a>
+        <span id="signed-in-user" class="signed-in-user" hidden></span>
+        <button type="button" id="sign-out" class="auth-button" hidden></button>
+      </div>
     </header>
     <svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg">
       <symbol id="icon-info" viewBox="0 0 24 24">
@@ -155,6 +160,15 @@
         <div class="dialog-actions">
           <button type="button" class="button dialog-continue"></button>
           <button type="button" class="button button-secondary dialog-cancel"></button>
+        </div>
+      </dialog>
+
+      <dialog id="saved-decisions-dialog" class="dialog" aria-labelledby="saved-decisions-dialog-title">
+        <h2 id="saved-decisions-dialog-title" class="dialog-title"></h2>
+        <p id="saved-decisions-empty" class="dialog-message" hidden></p>
+        <ul id="saved-decisions-list" class="saved-decisions-list"></ul>
+        <div class="dialog-actions">
+          <button type="button" class="button button-secondary dialog-close"></button>
         </div>
       </dialog>
     </main>

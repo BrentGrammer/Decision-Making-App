@@ -26,11 +26,19 @@ export const DUPLICATE_PRIVACY_CANCEL = "Cancel";
 export const DUPLICATE_WARNING_REMOVE = "Remove duplicates";
 export const DUPLICATE_WARNING_DISMISS = "Dismiss";
 export const SAVE_LABEL = "Save";
+export const SAVE_SUCCESS = "Decisions saved.";
+export const SAVE_ERROR = "Decisions could not be saved.";
 export const LOAD_LABEL = "Load";
 export const LOAD_SUCCESS = "Saved decisions loaded.";
 export const LOAD_ERROR = "This file could not be loaded.";
 export const REPLACE_CONFIRMATION =
     "Loading this file will replace your unsaved changes. Continue?";
+export const SIGN_IN_WITH_GOOGLE_LABEL = "Sign in with Google";
+export const SIGN_OUT_LABEL = "Sign out";
+export const SAVED_DECISIONS_DIALOG_TITLE = "Saved decisions";
+export const SAVED_DECISIONS_EMPTY = "No saved decisions yet.";
+export const DELETE_SAVED_DECISION_LABEL = "Delete";
+export const SAVED_DECISIONS_CLOSE = "Cancel";
 
 export const MODEL_LABELS = Object.freeze({
     [MODELS.linear.id]: "Linear",
