@@ -132,7 +132,11 @@ function initApp({ duplicateConsiderationsDetector, decisionsStore } = {}) {
 
     restoreDefaultRows();
     initModelControls();
-    initSavedDecisions({ setSelectedModel, decisionsStore });
+    initSavedDecisions({
+        setSelectedModel,
+        decisionsStore,
+        resetApp: resetSliders,
+    });
 
     initDecisionValidation();
     initDuplicateConsiderationsDetector({

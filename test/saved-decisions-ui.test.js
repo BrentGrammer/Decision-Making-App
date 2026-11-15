@@ -216,6 +216,40 @@ describe("saving and loading decisions when signed in", () => {
         });
     });
 
+    it("clears application state when signing out", async () => {
+        const decisionsStore = createMockStore();
+        loadApp({ decisionsStore });
+
+        await vi.waitFor(() => {
+            expect(
+                document.getElementById(ELEMENT_IDS.accountMenu).hidden,
+            ).toBe(false);
+        });
+
+        setDecisionNames("Stay", "Leave");
+        enterConsideration("prosA", 0, "Good team", 8);
+        const modelSelect = document.getElementById(ELEMENT_IDS.model);
+        modelSelect.value = "linear";
+        modelSelect.dispatchEvent(new Event("change", { bubbles: true }));
+
+        document.getElementById(ELEMENT_IDS.accountMenuTrigger).click();
+        document.getElementById(ELEMENT_IDS.signOut).click();
+
+        await vi.waitFor(() => {
+            expect(decisionsStore.logout).toHaveBeenCalledTimes(1);
+        });
+        expect(document.getElementById(ELEMENT_IDS.decisionA).value).toBe("");
+        expect(document.getElementById(ELEMENT_IDS.decisionB).value).toBe("");
+        expect(document.getElementById(ELEMENT_IDS.model).value).toBe("squared");
+        expect(
+            document
+                .getElementsByClassName("prosA")[0]
+                .parentElement.previousElementSibling.querySelector(
+                    "input[type='text']",
+                ).value,
+        ).toBe("");
+    });
+
     it("saves the decision table to the user's account and updates it when saved again", async () => {
         const decisionsStore = createMockStore();
         loadApp({ decisionsStore });

@@ -373,7 +373,11 @@ function restorePendingSignInDraft(setSelectedModel) {
     }
 }
 
-export function initSavedDecisions({ setSelectedModel, decisionsStore } = {}) {
+export function initSavedDecisions({
+    setSelectedModel,
+    decisionsStore,
+    resetApp,
+} = {}) {
     activeStore = decisionsStore ?? createCloudDecisionsStore();
     resetSavedDecisionsState();
     restorePendingSignInDraft(setSelectedModel);
@@ -417,8 +421,8 @@ export function initSavedDecisions({ setSelectedModel, decisionsStore } = {}) {
                 async () => {
                     setAccountMenuOpen(false);
                     await activeStore.logout();
-                    activeDecisionId = null;
                     renderAuthState(null);
+                    resetApp();
                 },
                 { alsoDisable: [menuTrigger, deleteAccountButton] },
             );
@@ -438,8 +442,8 @@ export function initSavedDecisions({ setSelectedModel, decisionsStore } = {}) {
                     showLoadError("");
                     try {
                         await activeStore.deleteAccount();
-                        activeDecisionId = null;
                         renderAuthState(null);
+                        resetApp();
                     } catch {
                         showLoadError(DELETE_ACCOUNT_ERROR);
                     }
